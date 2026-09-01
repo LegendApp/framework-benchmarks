@@ -1,0 +1,103 @@
+import Foundation
+
+public struct ChatBenchmarkFixture: Codable, Sendable {
+  public let id: String
+  public let lastActivityAt: Double
+  public let modifiedAt: Double
+  public let path: String
+  public let provider: ChatProvider
+  public let sha256: String
+  public let sourceBytes: Int
+  public let title: String
+  public let updatedAt: Double
+
+  public var summary: ChatSummary {
+    ChatSummary(id: id, path: path, provider: provider, title: title, updatedAt: updatedAt)
+  }
+}
+
+public struct ChatBenchmarkConfig: Codable, Sendable {
+  public let fixtures: [ChatBenchmarkFixture]
+  public let loadImages: Bool
+  public let switchDelayMs: Double
+  public let version: Int
+}
+
+public enum ChatBenchmarkPhase: String, Codable, Sendable {
+  case initial
+  case `switch`
+}
+
+public struct ChatBenchmarkContentReadyEvent: Codable, Sendable {
+  public let contentDigest: String
+  public let durationMs: Double
+  public let name: String
+  public let path: String
+  public let phase: ChatBenchmarkPhase
+  public let recordCount: Int
+  public let rowCount: Int
+  public let sourceBytes: Int
+  public let timestampMs: Double
+  public let timing: NativeTiming
+
+  public init(durationMs: Double, document: ChatDocument, phase: ChatBenchmarkPhase) {
+    self.contentDigest = document.contentDigest
+    self.durationMs = durationMs
+    self.name = "contentReady"
+    self.path = document.path
+    self.phase = phase
+    self.recordCount = document.recordCount
+    self.rowCount = document.rows.count
+    self.sourceBytes = document.sourceBytes
+    self.timestampMs = Date().timeIntervalSince1970 * 1_000
+    self.timing = document.timing
+  }
+}
+
+public enum ChatBenchmark {
+  public static func load(environment: [String: String] = ProcessInfo.processInfo.environment)
+    throws -> ChatBenchmarkConfig?
+  {
+    guard let path = environment["CHAT_HISTORY_BENCHMARK_CONFIG"] else { return nil }
+    let config = try JSONDecoder().decode(
+      ChatBenchmarkConfig.self, from: Data(contentsOf: URL(fileURLWithPath: path)))
+    guard config.version == 1, config.fixtures.count == 2 else {
+      throw CocoaError(.fileReadCorruptFile)
+    }
+    return config
+  }
+
+  public static func emit<T: Encodable>(
+    _ event: T, environment: [String: String] = ProcessInfo.processInfo.environment
+  ) {
+    guard let path = environment["CHAT_HISTORY_BENCHMARK_EVENTS"],
+      let data = try? JSONEncoder().encode(event)
+    else { return }
+    let url = URL(fileURLWithPath: path)
+    if !FileManager.default.fileExists(atPath: path) {
+      FileManager.default.createFile(atPath: path, contents: nil)
+    }
+    guard let handle = try? FileHandle(forWritingTo: url) else { return }
+    defer { try? handle.close() }
+    do {
+      try handle.seekToEnd()
+      try handle.write(contentsOf: data)
+      try handle.write(contentsOf: Data([0x0A]))
+    } catch {
+      return
+    }
+  }
+
+  public static func emitWindowShown(
+    environment: [String: String] = ProcessInfo.processInfo.environment
+  ) {
+    emit(
+      WindowShownEvent(name: "windowShown", timestampMs: Date().timeIntervalSince1970 * 1_000),
+      environment: environment)
+  }
+}
+
+private struct WindowShownEvent: Codable {
+  let name: String
+  let timestampMs: Double
+}

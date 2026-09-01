@@ -1,0 +1,16 @@
+node_modules/
+.build/
+.toolchains/
+.DS_Store
+.env
+*.log
+
+apps/chat-history-deno/build/
+apps/chat-history-electron/dist/
+apps/chat-history-flutter/build/
+apps/chat-history-gpui/target/
+apps/chat-history-tauri/dist/
+apps/chat-history-tauri/src-tauri/gen/schemas/
+apps/chat-history-tauri/src-tauri/target/
+benchmarks/chat-history/fixtures.local.json
+benchmarks/chat-history/results/

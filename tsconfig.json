@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "types": ["bun", "jest", "node"]
+  },
+  "include": ["apps", "benchmarks", "packages", "scripts"],
+  "exclude": [
+    "**/.build",
+    "**/build",
+    "**/dist",
+    "**/node_modules",
+    "**/target",
+    "apps/chat-history-deno/src/main_cef.ts",
+    "apps/chat-history-deno/src/main_webview.ts",
+    "apps/chat-history-deno/src/runtime.ts",
+    "packages/*/vendor"
+  ]
+}

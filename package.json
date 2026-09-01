@@ -1,0 +1,40 @@
+{
+  "name": "chat-history-comparison",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "chat-history:appkit": "swift run --package-path apps/chat-history-appkit",
+    "chat-history:appkit:build-benchmark": "swift build -c release --package-path apps/chat-history-appkit && bun apps/chat-history-appkit/scripts/package-benchmark.ts",
+    "chat-history:deno:cef": "bun --cwd apps/chat-history-deno start:cef",
+    "chat-history:deno:webview": "bun --cwd apps/chat-history-deno start:webview",
+    "chat-history:electron": "bun --cwd apps/chat-history-electron start",
+    "chat-history:flutter": "cd apps/chat-history-flutter && ../../scripts/with-local-flutter.sh flutter run -d macos",
+    "chat-history:flutter:build-benchmark": "cd apps/chat-history-flutter && ../../scripts/with-local-flutter.sh flutter build macos --release && bun scripts/package-benchmark.ts",
+    "chat-history:gpui": "scripts/with-local-rust.sh cargo run --manifest-path apps/chat-history-gpui/Cargo.toml",
+    "chat-history:gpui:build-benchmark": "scripts/with-local-rust.sh cargo build --release --manifest-path apps/chat-history-gpui/Cargo.toml && bun apps/chat-history-gpui/scripts/package-benchmark.ts",
+    "chat-history:swiftui": "swift run --package-path apps/chat-history-swiftui",
+    "chat-history:swiftui:build-benchmark": "swift build -c release --package-path apps/chat-history-swiftui && bun apps/chat-history-swiftui/scripts/package-benchmark.ts",
+    "chat-history:tauri": "bun --cwd apps/chat-history-tauri start",
+    "benchmark": "bun run benchmark:build && bun run benchmark:run",
+    "benchmark:build": "bun --cwd apps/chat-history-electron build:benchmark && bun --cwd apps/chat-history-tauri build:benchmark && bun --cwd apps/chat-history-deno build:benchmark && bun run chat-history:flutter:build-benchmark && bun run chat-history:gpui:build-benchmark && bun run chat-history:swiftui:build-benchmark && bun run chat-history:appkit:build-benchmark",
+    "benchmark:fixtures": "bun benchmarks/chat-history/select-fixtures.ts",
+    "benchmark:run": "bun benchmarks/chat-history/run.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.5",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.0",
+    "@types/react": "~19.1.0",
+    "typescript": "^5.9.2"
+  },
+  "catalog": {
+    "react": "19.1.4"
+  }
+}
