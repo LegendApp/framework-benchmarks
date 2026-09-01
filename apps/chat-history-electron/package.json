@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/main.js",
   "scripts": {
-    "build": "bun build src/main.ts src/parser-worker.ts --outdir dist --target node --format esm --external electron --minify && bun build src/electron-renderer.ts --outfile dist/renderer.js --target browser --format esm --minify --define process.env.NODE_ENV='\"production\"' && cp src/preload.cjs dist/preload.cjs && cp src/index.html dist/index.html",
+    "build": "bun build src/main.ts src/parser-worker.ts --outdir dist --target node --format esm --external electron --minify && bun build src/electron-renderer.ts --outdir dist --target browser --format esm --minify --define process.env.NODE_ENV='\"production\"' && cp src/preload.cjs dist/preload.cjs && cp src/index.html dist/index.html",
     "build:benchmark": "bun run build && bun scripts/package-benchmark.ts",
     "start": "bun run build && electron .",
     "test": "bun test src/*.test.ts"
