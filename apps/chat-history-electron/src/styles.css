@@ -1,0 +1,488 @@
+:root {
+  color: #1d1d1f;
+  color-scheme: light dark;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+}
+
+button,
+select {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  height: 100vh;
+}
+
+.sidebar {
+  background: #ececef;
+  border-right: 1px solid #d2d2d7;
+  overflow-y: auto;
+  padding: 0 8px;
+}
+
+.sidebar section + section {
+  margin-top: 12px;
+}
+
+.sidebar h2 {
+  align-items: center;
+  color: #6e6e73;
+  display: flex;
+  font-size: 13px;
+  height: 40px;
+  margin: 0;
+  padding: 0 8px;
+}
+
+.sidebar button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: default;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  height: 34px;
+  padding: 0 8px;
+  text-align: left;
+  width: 100%;
+}
+
+.sidebar button.selected {
+  background: #5e9fec;
+  color: white;
+}
+
+.sidebar button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar time {
+  font-size: 11px;
+  opacity: 0.65;
+}
+
+.content {
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.content > header {
+  align-items: center;
+  border-bottom: 1px solid #e5e5e7;
+  display: flex;
+  height: 46px;
+  justify-content: space-between;
+  padding: 0 12px 0 18px;
+}
+
+.content > header > div {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.content > header span {
+  color: #6e6e73;
+  font-size: 12px;
+}
+
+.settings-button {
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 16px;
+  height: 30px;
+  width: 30px;
+}
+
+.settings-button:hover {
+  background: #e8e8eb;
+}
+
+.empty {
+  align-items: center;
+  color: #6e6e73;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+}
+
+.error {
+  color: #b42318;
+}
+
+.transcript-shell {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.timing {
+  background: #f6f6f8;
+  border-bottom: 1px solid #e5e5e7;
+  display: flex;
+  flex-wrap: wrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  gap: 5px 14px;
+  padding: 8px 18px;
+}
+
+.transcript {
+  flex: 1;
+  min-height: 0;
+}
+
+.row {
+  margin: 0 auto;
+  max-width: 860px;
+}
+
+.message-row {
+  display: flex;
+  padding: 12px 22px;
+}
+
+.assistant-row {
+  justify-content: flex-start;
+}
+
+.user-row {
+  justify-content: flex-end;
+}
+
+.message-content {
+  max-width: 92%;
+  min-width: 0;
+}
+
+.user-row .message-content {
+  background: #ededf0;
+  border-radius: 18px;
+  max-width: 82%;
+  padding: 10px 14px;
+}
+
+.markdown {
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.markdown > :first-child {
+  margin-top: 0;
+}
+
+.markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  line-height: 1.25;
+}
+
+.markdown h1 {
+  font-size: 22px;
+}
+
+.markdown h2 {
+  font-size: 19px;
+}
+
+.markdown h3 {
+  font-size: 16px;
+}
+
+.markdown blockquote {
+  border-left: 3px solid #b5b5ba;
+  color: #55555a;
+  margin-left: 0;
+  padding-left: 12px;
+}
+
+.markdown code {
+  background: #ededf0;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+  padding: 2px 4px;
+}
+
+.markdown pre {
+  background: #f1f1f3;
+  border-radius: 7px;
+  max-width: 100%;
+  overflow: auto;
+  padding: 12px;
+}
+
+.markdown pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.markdown table {
+  border-collapse: collapse;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.markdown td,
+.markdown th {
+  border: 1px solid #d2d2d7;
+  padding: 6px 9px;
+}
+
+.markdown a {
+  color: #0878d1;
+}
+
+.message-image {
+  border-radius: 12px;
+  display: block;
+  margin-bottom: 8px;
+  max-height: 440px;
+  max-width: min(100%, 560px);
+  object-fit: contain;
+}
+
+.attachment {
+  border: 1px solid #d2d2d7;
+  border-radius: 7px;
+  color: #6e6e73;
+  font-size: 12px;
+  margin-top: 8px;
+  padding: 8px;
+}
+
+.tool-row {
+  color: #6e6e73;
+  padding: 9px 22px;
+}
+
+.tool-row summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 4px 0;
+}
+
+.tool-row pre {
+  background: #f6f6f8;
+  border-radius: 7px;
+  color: #1d1d1f;
+  max-height: 260px;
+  overflow: auto;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+
+.files-row {
+  border: 1px solid #d2d2d7;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.files-row header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+}
+
+.file-icon {
+  align-items: center;
+  background: #ededf0;
+  border-radius: 8px;
+  display: flex;
+  font-size: 22px;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}
+
+.additions {
+  color: #16843c;
+}
+
+.deletions {
+  color: #c22f2f;
+}
+
+.file-list {
+  border-top: 1px solid #e5e5e7;
+}
+
+.file-change {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 9px 14px;
+}
+
+.file-change > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.expand-files {
+  background: #f6f6f8;
+  border: 0;
+  border-top: 1px solid #e5e5e7;
+  cursor: pointer;
+  padding: 10px 14px;
+  text-align: left;
+  width: 100%;
+}
+
+.modal-backdrop {
+  align-items: center;
+  background: rgb(0 0 0 / 35%);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  position: fixed;
+  z-index: 10;
+}
+
+.settings-modal {
+  background: #fff;
+  border: 1px solid #d2d2d7;
+  border-radius: 14px;
+  box-shadow: 0 20px 70px rgb(0 0 0 / 30%);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: calc(100vw - 40px);
+  padding: 20px;
+  width: 440px;
+}
+
+.settings-modal header,
+.settings-modal footer,
+.settings-modal > label:not(.toggle) {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.settings-modal h2 {
+  font-size: 19px;
+  margin: 0;
+}
+
+.settings-modal header button {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 22px;
+}
+
+.settings-modal select {
+  min-width: 130px;
+}
+
+.settings-modal .toggle {
+  align-items: center;
+  display: flex;
+  gap: 9px;
+}
+
+.settings-modal footer {
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.settings-modal footer button {
+  background: #ededf0;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+  padding: 7px 14px;
+}
+
+.settings-modal footer button.primary {
+  background: #0878d1;
+  color: white;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-appearance="light"]) {
+    color: #f5f5f7;
+  }
+
+  :root:not([data-appearance="light"]) .sidebar,
+  :root:not([data-appearance="light"]) .timing,
+  :root:not([data-appearance="light"]) .tool-row pre,
+  :root:not([data-appearance="light"]) .expand-files {
+    background: #252528;
+  }
+
+  :root:not([data-appearance="light"]) .content,
+  :root:not([data-appearance="light"]) .settings-modal {
+    background: #1c1c1e;
+  }
+
+  :root:not([data-appearance="light"]) .user-row .message-content,
+  :root:not([data-appearance="light"]) .file-icon,
+  :root:not([data-appearance="light"]) .markdown code,
+  :root:not([data-appearance="light"]) .markdown pre {
+    background: #343438;
+  }
+}
+
+:root[data-appearance="dark"] {
+  color: #f5f5f7;
+}
+
+:root[data-appearance="dark"] .sidebar,
+:root[data-appearance="dark"] .timing,
+:root[data-appearance="dark"] .tool-row pre,
+:root[data-appearance="dark"] .expand-files {
+  background: #252528;
+}
+
+:root[data-appearance="dark"] .content,
+:root[data-appearance="dark"] .settings-modal {
+  background: #1c1c1e;
+}
+
+:root[data-appearance="dark"] .user-row .message-content,
+:root[data-appearance="dark"] .file-icon,
+:root[data-appearance="dark"] .markdown code,
+:root[data-appearance="dark"] .markdown pre {
+  background: #343438;
+}

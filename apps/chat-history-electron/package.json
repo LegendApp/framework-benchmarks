@@ -1,0 +1,24 @@
+{
+  "name": "@legend-apps/chat-history-electron",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "bun build src/main.ts src/parser-worker.ts --outdir dist --target node --format esm --external electron --minify && bun build src/electron-renderer.ts --outfile dist/renderer.js --target browser --format esm --minify --define process.env.NODE_ENV='\"production\"' && cp src/preload.cjs dist/preload.cjs && cp src/index.html dist/index.html",
+    "build:benchmark": "bun run build && bun scripts/package-benchmark.ts",
+    "start": "bun run build && electron .",
+    "test": "bun test src/*.test.ts"
+  },
+  "dependencies": {
+    "@legendapp/list": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "19.1.4",
+    "react-markdown": "10.1.0",
+    "remark-gfm": "4.0.1"
+  },
+  "devDependencies": {
+    "@types/react-dom": "19.1.9",
+    "electron": "44.0.0"
+  }
+}
