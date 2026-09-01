@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "compilerOptions": {
+    "lib": ["deno.ns", "dom", "dom.iterable", "esnext"]
+  },
+  "desktop": {
+    "app": {
+      "name": "Legend Chat History Deno",
+      "identifier": "so.legend.chathistory.deno"
+    }
+  }
+}
