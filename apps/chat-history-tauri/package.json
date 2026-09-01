@@ -1,0 +1,23 @@
+{
+  "name": "@legend-apps/chat-history-tauri",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:web": "bun build src/bootstrap.ts --outdir dist --target browser --format esm --minify --define process.env.NODE_ENV='\"production\"' && cp src/index.html dist/index.html",
+    "build": "bun run build:web && ../../scripts/with-local-rust.sh tauri build --debug --no-bundle",
+    "build:benchmark": "bun run build:web && ../../scripts/with-local-rust.sh tauri build --bundles app && bun scripts/package-benchmark.ts",
+    "start": "bun run build:web && ../../scripts/with-local-rust.sh tauri dev --no-watch",
+    "test": "bun run build:web && ../../scripts/with-local-rust.sh cargo test --manifest-path src-tauri/Cargo.toml"
+  },
+  "dependencies": {
+    "@legendapp/list": "workspace:*",
+    "@tauri-apps/api": "2.11.1",
+    "@tauri-apps/plugin-opener": "2.5.4",
+    "react": "catalog:",
+    "react-dom": "19.1.4"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.11.4"
+  }
+}

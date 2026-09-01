@@ -1,0 +1,19 @@
+[package]
+name = "legend-chat-history-tauri"
+version = "0.0.1"
+description = "Tauri chat history performance benchmark"
+edition = "2024"
+
+[lib]
+name = "legend_chat_history_tauri"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+chat-history-rust = { path = "../../../packages/chat-history-rust" }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = { version = "1.0.145", features = ["preserve_order"] }
+tauri = { version = "2.11.5", features = ["protocol-asset"] }
+tauri-plugin-opener = "2.5.4"

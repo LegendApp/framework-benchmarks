@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Chat History — Tauri",
+  "version": "0.0.1",
+  "identifier": "so.legend.chathistory.tauri",
+  "build": {
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Legend Chat History — Tauri",
+        "width": 1280,
+        "height": 720,
+        "minWidth": 640,
+        "minHeight": 460
+      }
+    ],
+    "security": {
+      "assetProtocol": {
+        "enable": true,
+        "scope": {
+          "allow": ["$HOME/**/*", "/tmp/**/*"],
+          "requireLiteralLeadingDot": false
+        }
+      },
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true
+  }
+}
