@@ -1,0 +1,192 @@
+import { execFileSync, spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+
+type BuildTarget =
+  | "appkit"
+  | "deno"
+  | "electron"
+  | "flutter"
+  | "gpui"
+  | "react-native"
+  | "swiftui"
+  | "tauri";
+
+type BuildRecord = {
+  builtAt: string;
+  gitCommit: string;
+  gitDirty: boolean;
+  repositoryPath: string;
+};
+
+const repositoryRoot = resolve(import.meta.dir, "../..");
+const buildRoot = resolve(repositoryRoot, ".build/chat-history-benchmarks");
+const buildManifestPath = resolve(buildRoot, "build-manifest.json");
+const allTargets: BuildTarget[] = [
+  "react-native",
+  "electron",
+  "tauri",
+  "deno",
+  "flutter",
+  "gpui",
+  "swiftui",
+  "appkit",
+];
+
+function option(name: string) {
+  const equals = process.argv.find((argument) => argument.startsWith(`${name}=`));
+  if (equals) {
+    return equals.slice(name.length + 1);
+  }
+  const index = process.argv.indexOf(name);
+  return index >= 0 ? process.argv[index + 1] : undefined;
+}
+
+function run(command: string, args: string[], cwd = repositoryRoot) {
+  console.log(`\n$ ${command} ${args.join(" ")}`);
+  const result = spawnSync(command, args, {
+    cwd,
+    env: process.env,
+    stdio: "inherit",
+  });
+  if (result.status !== 0) {
+    process.exit(result.status ?? 1);
+  }
+}
+
+function hasExporter(path: string) {
+  try {
+    const packageJson = JSON.parse(readFileSync(resolve(path, "package.json"), "utf8")) as {
+      scripts?: Record<string, string>;
+    };
+    return typeof packageJson.scripts?.["chat-history:benchmark:export"] === "string";
+  } catch {
+    return false;
+  }
+}
+
+function mainWorktree(path: string) {
+  try {
+    const output = execFileSync("git", ["-C", path, "worktree", "list", "--porcelain"], {
+      encoding: "utf8",
+    });
+    let worktree: string | undefined;
+    for (const line of output.split("\n")) {
+      if (line.startsWith("worktree ")) {
+        worktree = line.slice("worktree ".length);
+      } else if (line === "branch refs/heads/main" && worktree && hasExporter(worktree)) {
+        return worktree;
+      }
+    }
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
+function reactNativeRepository() {
+  const explicit = option("--react-native-repo") ?? process.env.LEGEND_APPS_REPO;
+  if (explicit) {
+    const path = resolve(explicit);
+    if (!hasExporter(path)) {
+      throw new Error(
+        `React Native repository at ${path} does not expose chat-history:benchmark:export`,
+      );
+    }
+    return path;
+  }
+
+  const sibling = resolve(repositoryRoot, "../legend-apps");
+  let siblingBranch: string | undefined;
+  try {
+    siblingBranch = execFileSync("git", ["-C", sibling, "branch", "--show-current"], {
+      encoding: "utf8",
+    }).trim();
+  } catch {
+    siblingBranch = undefined;
+  }
+  if (siblingBranch === "main" && hasExporter(sibling)) {
+    return sibling;
+  }
+  const main = existsSync(sibling) ? mainWorktree(sibling) : undefined;
+  if (main) {
+    return main;
+  }
+  if (hasExporter(sibling)) {
+    return sibling;
+  }
+  throw new Error(
+    "Could not find legend-apps with chat-history:benchmark:export. " +
+    "Set LEGEND_APPS_REPO or pass --react-native-repo <path>.",
+  );
+}
+
+function selectedTargets(): BuildTarget[] {
+  const app = option("--app") ?? "all";
+  if (app === "all") {
+    return allTargets;
+  }
+  if (app === "deno-cef" || app === "deno-webview") {
+    return ["deno"];
+  }
+  if (allTargets.includes(app as BuildTarget)) {
+    return [app as BuildTarget];
+  }
+  throw new Error(`Unknown build target: ${app}`);
+}
+
+function gitRecord(path: string): BuildRecord {
+  const git = (...args: string[]) => execFileSync("git", ["-C", path, ...args], {
+    encoding: "utf8",
+  }).trim();
+  return {
+    builtAt: new Date().toISOString(),
+    gitCommit: git("rev-parse", "HEAD"),
+    gitDirty: git("status", "--porcelain").length > 0,
+    repositoryPath: path,
+  };
+}
+
+function readBuildManifest() {
+  try {
+    return JSON.parse(readFileSync(buildManifestPath, "utf8")) as {
+      builds: Partial<Record<BuildTarget, BuildRecord>>;
+      version: 1;
+    };
+  } catch {
+    return { builds: {}, version: 1 as const };
+  }
+}
+
+const commands: Record<Exclude<BuildTarget, "react-native">, [string, string[]]> = {
+  appkit: ["bun", ["run", "chat-history:appkit:build-benchmark"]],
+  deno: ["bun", ["--cwd", "apps/chat-history-deno", "build:benchmark"]],
+  electron: ["bun", ["--cwd", "apps/chat-history-electron", "build:benchmark"]],
+  flutter: ["bun", ["run", "chat-history:flutter:build-benchmark"]],
+  gpui: ["bun", ["run", "chat-history:gpui:build-benchmark"]],
+  swiftui: ["bun", ["run", "chat-history:swiftui:build-benchmark"]],
+  tauri: ["bun", ["--cwd", "apps/chat-history-tauri", "build:benchmark"]],
+};
+
+const targets = selectedTargets();
+const manifest = readBuildManifest();
+for (const target of targets) {
+  if (target === "react-native") {
+    const sourceRepository = reactNativeRepository();
+    const output = resolve(buildRoot, "Chat History — React Native.app");
+    run(
+      "bun",
+      ["run", "chat-history:benchmark:export", "--output", output],
+      sourceRepository,
+    );
+    manifest.builds[target] = gitRecord(sourceRepository);
+  } else {
+    const [command, args] = commands[target];
+    run(command, args);
+    manifest.builds[target] = gitRecord(repositoryRoot);
+  }
+}
+
+mkdirSync(dirname(buildManifestPath), { recursive: true });
+writeFileSync(buildManifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+console.log(`\nBuild manifest: ${buildManifestPath}`);

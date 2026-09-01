@@ -2,7 +2,9 @@
 
 Canonical macOS implementations of the same Codex and Claude chat-history browser in Electron, Tauri, Deno Desktop, Flutter, GPUI, SwiftUI, and AppKit. The apps share behavior and benchmark fixtures while using the architecture, parser, list, settings, and packaging conventions natural to each framework.
 
-The production React Native app remains in the sibling `legend-apps` repository. This repository contains only the alternate implementations used to compare framework performance.
+The production React Native app remains in the sibling `legend-apps` repository.
+The benchmark builds it through that repository's export command and includes
+it in the default comparison without copying its source here.
 
 ## Setup
 
@@ -34,4 +36,13 @@ The benchmark uses two pinned, old, large transcripts and checks a canonical dig
 ```sh
 bun run benchmark:fixtures
 bun run benchmark
+```
+
+By default the build finds `../legend-apps`, or its `main` worktree. Override
+that location when necessary:
+
+```sh
+LEGEND_APPS_REPO=/absolute/path/to/legend-apps bun run benchmark
+# or
+bun run benchmark --react-native-repo /absolute/path/to/legend-apps
 ```

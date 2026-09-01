@@ -21,8 +21,8 @@
     "chat-history:swiftui": "swift run --package-path apps/chat-history-swiftui",
     "chat-history:swiftui:build-benchmark": "swift build -c release --package-path apps/chat-history-swiftui && bun apps/chat-history-swiftui/scripts/package-benchmark.ts",
     "chat-history:tauri": "bun --cwd apps/chat-history-tauri start",
-    "benchmark": "bun run benchmark:build && bun run benchmark:run",
-    "benchmark:build": "bun --cwd apps/chat-history-electron build:benchmark && bun --cwd apps/chat-history-tauri build:benchmark && bun --cwd apps/chat-history-deno build:benchmark && bun run chat-history:flutter:build-benchmark && bun run chat-history:gpui:build-benchmark && bun run chat-history:swiftui:build-benchmark && bun run chat-history:appkit:build-benchmark",
+    "benchmark": "bun benchmarks/chat-history/benchmark.ts",
+    "benchmark:build": "bun benchmarks/chat-history/build.ts",
     "benchmark:fixtures": "bun benchmarks/chat-history/select-fixtures.ts",
     "benchmark:run": "bun benchmarks/chat-history/run.ts",
     "typecheck": "tsc --noEmit"
@@ -34,6 +34,9 @@
     "@types/react": "~19.1.0",
     "typescript": "^5.9.2"
   },
+  "trustedDependencies": [
+    "electron"
+  ],
   "catalog": {
     "react": "19.1.4"
   }

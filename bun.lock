@@ -67,6 +67,9 @@
       ],
     },
   },
+  "trustedDependencies": [
+    "electron",
+  ],
   "catalog": {
     "react": "19.1.4",
   },

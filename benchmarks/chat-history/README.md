@@ -1,9 +1,9 @@
 # Chat History Framework Benchmark
 
-This benchmark compares the Electron, Tauri, Deno Desktop WebView, Deno Desktop
-CEF, Flutter, GPUI, SwiftUI, and AppKit implementations. The production React
-Native app is maintained and measured separately in the sibling `legend-apps`
-repository.
+This benchmark compares React Native macOS, Electron, Tauri, Deno Desktop
+WebView, Deno Desktop CEF, Flutter, GPUI, SwiftUI, and AppKit. React Native is
+maintained in the sibling `legend-apps` repository and exported into this
+repository's common production-build directory for every default run.
 
 ## What is measured
 
@@ -23,7 +23,7 @@ warning count. Measurements must come from release builds on the same machine.
 
 ## Production benchmark suite
 
-The automated suite records these end-to-end metrics from the comparison apps.
+The automated suite records these end-to-end metrics from every app.
 User-visible timing comes from an
 external ScreenCaptureKit recording rather than each framework's readiness
 callback:
@@ -80,7 +80,7 @@ is at least eight days old. It writes an ignored local manifest containing the
 paths, activity times, byte sizes, and SHA-256 hashes:
 
 ```sh
-bun run chat-history:benchmark:fixtures
+bun run benchmark:fixtures
 ```
 
 The runner verifies size and hash before launching an app and aborts if either
@@ -95,22 +95,40 @@ Claude performance corpus requires importing and pinning a stable Claude file.
 
 ### Build and run
 
-Build all production `.app` bundles:
+Build all production-mode `.app` bundles, including React Native from
+`legend-apps`:
 
 ```sh
-bun run chat-history:benchmark:build
+bun run benchmark:build
 ```
+
+The build uses a `main` checkout at `../legend-apps`, or discovers the
+repository's `main` worktree when the sibling checkout is on another branch.
+It falls back to the sibling only when no usable `main` worktree exists. An
+explicit path always wins:
+
+```sh
+LEGEND_APPS_REPO=/absolute/path/to/legend-apps bun run benchmark:build
+bun run benchmark:build --react-native-repo /absolute/path/to/legend-apps
+```
+
+React Native is built in Xcode's Release configuration and copied into the
+common build directory with an ad-hoc signature. This is production-mode code,
+but intentionally skips distribution signing and notarization so every
+framework is measured under the same local conditions. The build manifest
+records both repository commits and whether either checkout was dirty.
 
 Run two discarded warm-up rounds and ten measured iterations per app:
 
 ```sh
-bun run chat-history:benchmark:run
+bun run benchmark:run
 ```
 
 Useful focused runs:
 
 ```sh
 bun benchmarks/chat-history/run.ts --app electron --warmups 0 --iterations 1
+bun benchmarks/chat-history/run.ts --app react-native --warmups 0 --iterations 1
 bun benchmarks/chat-history/run.ts --app all --warmups 2 --iterations 10
 ```
 
@@ -122,7 +140,7 @@ marked non-visual and are not comparable with the final reports.
 Machine-readable JSON, a Markdown summary, cropped videos, and frame sidecars
 are written under the ignored `benchmarks/chat-history/results/` directory. Run
 the full build and benchmark in one command with
-`bun run chat-history:benchmark`.
+`bun run benchmark`.
 
 ## Modes
 
@@ -130,6 +148,8 @@ the full build and benchmark in one command with
 
 Each framework uses its idiomatic host implementation:
 
+- React Native macOS: C++ parser behind a Nitro hybrid object, with the
+  production React Native renderer and LegendList virtualization.
 - Electron: Node filesystem and parser in a persistent worker thread, copied
   over isolated IPC without blocking the main process.
 - Tauri: shared Rust filesystem and parser on the async runtime's blocking

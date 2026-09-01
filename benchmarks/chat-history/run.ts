@@ -13,8 +13,8 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { homedir, tmpdir } from "node:os";
+import { basename, join, resolve } from "node:path";
 import type {
   BenchmarkConfig,
   BenchmarkContentReadyEvent,
@@ -35,6 +35,7 @@ type AppName =
   | "electron"
   | "flutter"
   | "gpui"
+  | "react-native"
   | "swiftui"
   | "tauri";
 type WindowShownEvent = { name: "windowShown"; timestampMs: number };
@@ -128,6 +129,10 @@ const apps: Record<AppName, { bundle: string; executable: string }> = {
       "Chat History — GPUI.app/Contents/MacOS/legend-chat-history-gpui",
     ),
   },
+  "react-native": {
+    bundle: resolve(buildRoot, "Chat History — React Native.app"),
+    executable: resolve(buildRoot, "Chat History — React Native.app/Contents/MacOS/Legend Chat History"),
+  },
   swiftui: {
     bundle: resolve(buildRoot, "Chat History — SwiftUI.app"),
     executable: resolve(buildRoot, "Chat History — SwiftUI.app/Contents/MacOS/ChatHistorySwiftUI"),
@@ -145,8 +150,12 @@ function option(name: string) {
 
 function selectedApps(): AppName[] {
   const value = option("--app") ?? "all";
+  if (value === "deno") {
+    return ["deno-webview", "deno-cef"];
+  }
   if (value === "all") {
     return [
+      "react-native",
       "electron",
       "tauri",
       "deno-webview",
@@ -361,10 +370,16 @@ async function runIteration(
   const temporaryDirectory = mkdtempSync(join(tmpdir(), `chat-history-${app}-`));
   const recordingPath = join(temporaryDirectory, "screen.mp4");
   const runtimeManifestPath = join(temporaryDirectory, "manifest.json");
-  const eventsPath = join(temporaryDirectory, "events.jsonl");
+  const eventFileName = `${basename(temporaryDirectory)}.json`;
+  const eventsPath = app === "react-native"
+    ? join(homedir(), "Library/Application Support/Legend Chat History/chat-history-benchmark", eventFileName)
+    : join(temporaryDirectory, "events.jsonl");
   const launchArguments = [
     "-ApplePersistenceIgnoreState",
     "YES",
+    ...(app === "react-native"
+      ? [`--chat-history-benchmark=${encodeURIComponent(JSON.stringify({ ...config, eventFileName }))}`]
+      : []),
   ];
   rmSync(eventsPath, { force: true });
   writeFileSync(runtimeManifestPath, `${JSON.stringify(config)}\n`);
@@ -657,7 +672,7 @@ async function main() {
   for (const app of requestedApps) {
     const definition = apps[app];
     if (!existsSync(definition.executable)) {
-      throw new Error(`Missing production build for ${app}; run bun run chat-history:benchmark:build`);
+      throw new Error(`Missing production build for ${app}; run bun run benchmark:build`);
     }
   }
   const rotatedApps = (round: number) => requestedApps.map(
@@ -709,6 +724,9 @@ async function main() {
   mkdirSync(resultsRoot, { recursive: true });
   const result = {
     apps: results,
+    buildManifest: existsSync(resolve(buildRoot, "build-manifest.json"))
+      ? JSON.parse(readFileSync(resolve(buildRoot, "build-manifest.json"), "utf8"))
+      : undefined,
     fixtures: config.fixtures,
     gitCommit: command("git", ["rev-parse", "HEAD"]),
     machine: {
