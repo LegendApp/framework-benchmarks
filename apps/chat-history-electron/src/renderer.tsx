@@ -7,12 +7,13 @@ import {
   defaultChatHistorySettings,
   normalizeChatHistorySettings,
   type BenchmarkConfig,
-  type BenchmarkContentReadyEvent,
+  type BenchmarkEvent,
   type ChatDocument,
   type ChatHistorySettings,
   type ChatRow,
   type ChatSummary,
   type OpenChatResult,
+  normalizedContentDigest,
 } from "./model";
 import "./styles.css";
 
@@ -255,8 +256,8 @@ function usesWebKitLayoutPolling() {
     || window.chatHistory.implementationName === "Deno WebView";
 }
 
-function ReadyTranscript({ onContentReady, openedAt, phase, result, settings }: {
-  onContentReady?: (event: BenchmarkContentReadyEvent) => void;
+function ReadyTranscript({ onBenchmarkEvent, openedAt, phase, result, settings }: {
+  onBenchmarkEvent?: (event: BenchmarkEvent) => Promise<void>;
   openedAt: number;
   phase?: "initial" | "switch";
   result: OpenChatResult;
@@ -273,8 +274,7 @@ function ReadyTranscript({ onContentReady, openedAt, phase, result, settings }: 
       const durationMs = performance.now() - openedAt;
       setFirstPaintMs(durationMs);
       if (phase) {
-        onContentReady?.({
-          contentDigest: result.document.contentDigest,
+        void onBenchmarkEvent?.({
           durationMs,
           name: "contentReady",
           path: result.document.path,
@@ -283,10 +283,17 @@ function ReadyTranscript({ onContentReady, openedAt, phase, result, settings }: 
           rowCount: result.document.rows.length,
           sourceBytes: result.document.sourceBytes,
           timing: result.document.timing,
-        });
+        }).then(() => new Promise<void>((resolve) => window.setTimeout(resolve, 0))).then(() => (
+          onBenchmarkEvent?.({
+            contentDigest: normalizedContentDigest(result.document.rows),
+            name: "contentDigest",
+            path: result.document.path,
+            phase,
+          })
+        ));
       }
     });
-  }, [onContentReady, openedAt, phase, result.document]);
+  }, [onBenchmarkEvent, openedAt, phase, result.document]);
   useEffect(() => {
     if (!usesWebKitLayoutPolling()) {
       return;
@@ -475,9 +482,9 @@ function App() {
     ? "Scanning recent chats…"
     : summaries.length === 0 ? noLocalHistoriesMessage : "Select a conversation";
 
-  async function handleContentReady(event: BenchmarkContentReadyEvent) {
+  async function handleBenchmarkEvent(event: BenchmarkEvent) {
     await window.chatHistory.emitBenchmarkEvent?.(event);
-    if (event.phase === "initial" && benchmarkConfig) {
+    if (event.name === "contentReady" && event.phase === "initial" && benchmarkConfig) {
       window.setTimeout(() => {
         void select(benchmarkConfig.fixtures[1], settings, "switch");
       }, benchmarkConfig.switchDelayMs);
@@ -502,7 +509,7 @@ function App() {
         {!catalogError && selection.status === "error" ? <div className="empty error">{selection.error}</div> : null}
         {!catalogError && selection.status === "ready" ? (
           <ReadyTranscript
-            onContentReady={selection.phase ? (event) => void handleContentReady(event) : undefined}
+            onBenchmarkEvent={selection.phase ? handleBenchmarkEvent : undefined}
             openedAt={selection.openedAt}
             phase={selection.phase}
             result={selection.result}

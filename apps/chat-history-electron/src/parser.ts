@@ -669,7 +669,6 @@ export async function openChatFile(provider: ChatProvider, path: string): Promis
     : parseClaude(decodeLines(source, ranges));
   const parseMs = performance.now() - parseStartedAt;
   return {
-    contentDigest: normalizedContentDigest(result.rows),
     path,
     provider,
     recordCount: ranges.length / 2,

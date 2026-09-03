@@ -79,7 +79,6 @@ export type NativeTiming = {
 };
 
 export type ChatDocument = {
-  contentDigest: string;
   path: string;
   provider: ChatProvider;
   recordCount: number;
@@ -114,7 +113,6 @@ export type BenchmarkConfig = {
 };
 
 export type BenchmarkContentReadyEvent = {
-  contentDigest: string;
   durationMs: number;
   name: "contentReady";
   path: string;
@@ -123,6 +121,13 @@ export type BenchmarkContentReadyEvent = {
   rowCount: number;
   sourceBytes: number;
   timing: NativeTiming & { documentMs?: number };
+};
+
+export type BenchmarkContentDigestEvent = {
+  contentDigest: string;
+  name: "contentDigest";
+  path: string;
+  phase: "initial" | "switch";
 };
 
 const fnvOffset = 0xcbf29ce484222325n;
@@ -168,7 +173,7 @@ export function normalizedContentDigest(rows: readonly ChatRow[]) {
   return digest.toString(16).padStart(16, "0");
 }
 
-export type BenchmarkEvent = BenchmarkContentReadyEvent;
+export type BenchmarkEvent = BenchmarkContentDigestEvent | BenchmarkContentReadyEvent;
 
 export type ChatHistoryApi = {
   implementationName:
