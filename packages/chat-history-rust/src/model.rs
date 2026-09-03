@@ -44,7 +44,6 @@ pub struct NativeTiming {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChatDocument {
-    pub content_digest: String,
     pub path: String,
     pub provider: String,
     pub record_count: usize,

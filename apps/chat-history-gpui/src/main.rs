@@ -11,7 +11,8 @@ use std::{
 
 use benchmark::{Benchmark, emit_window_shown};
 use chat_history_rust::{
-    ChatDocument, ChatRow, ChatSummary, get_recent_chat_catalog, open_chat_file, user_home,
+    ChatDocument, ChatRow, ChatSummary, get_recent_chat_catalog, normalized_content_digest,
+    open_chat_file, user_home,
 };
 use chrono::{Local, TimeZone};
 use gpui::{
@@ -233,9 +234,8 @@ impl ChatHistory {
                             let row_count = document.rows.len();
                             view.list_state.reset(row_count);
                             view.document = Some(Arc::new(document));
-                            view.markdown = Arc::new(
-                                (0..row_count).map(|_| OnceLock::new()).collect(),
-                            );
+                            view.markdown =
+                                Arc::new((0..row_count).map(|_| OnceLock::new()).collect());
                             view.loading = false;
                             let pending = phase.and_then(|phase| {
                                 view.benchmark.as_ref().map(|_| PendingReady {
@@ -286,7 +286,6 @@ impl ChatHistory {
         let duration_ms = pending.started.elapsed().as_secs_f64() * 1000.0;
         let timing = &document.timing;
         let _ = benchmark.emit(serde_json::json!({
-            "contentDigest": document.content_digest,
             "durationMs": duration_ms,
             "name": "contentReady",
             "path": document.path,
@@ -301,6 +300,17 @@ impl ChatHistory {
                 "scanMs": timing.scan_ms
             }
         }));
+        let benchmark_for_digest = benchmark.clone();
+        let document_for_digest = document.clone();
+        cx.background_spawn(async move {
+            let _ = benchmark_for_digest.emit(serde_json::json!({
+                "contentDigest": normalized_content_digest(&document_for_digest.rows),
+                "name": "contentDigest",
+                "path": document_for_digest.path,
+                "phase": pending.phase,
+            }));
+        })
+        .detach();
         if pending.phase != "initial" {
             return;
         }

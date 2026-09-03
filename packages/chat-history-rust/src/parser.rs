@@ -8,9 +8,7 @@ use std::{
 use chrono::DateTime;
 use serde_json::{Map, Value};
 
-use crate::model::{
-    ChatDocument, ChatFileChange, ChatRow, NativeTiming, normalized_content_digest,
-};
+use crate::model::{ChatDocument, ChatFileChange, ChatRow, NativeTiming};
 
 #[derive(Clone, Default)]
 struct WorkingRow {
@@ -802,7 +800,6 @@ pub fn open_chat_file(provider: &str, path: &Path) -> Result<ChatDocument, Strin
     let (rows, warning_count, record_count, scan_ms, parse_ms) =
         parse_chat_text(provider, &source)?;
     Ok(ChatDocument {
-        content_digest: normalized_content_digest(&rows),
         path: path.to_string_lossy().into_owned(),
         provider: provider.into(),
         record_count,
@@ -821,6 +818,7 @@ pub fn open_chat_file(provider: &str, path: &Path) -> Result<ChatDocument, Strin
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::normalized_content_digest;
 
     fn fixture(name: &str) -> String {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../chat-history/tests/fixtures");

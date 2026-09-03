@@ -27,6 +27,7 @@ struct Manifest {
     version: usize,
 }
 
+#[derive(Clone)]
 pub struct Benchmark {
     pub fixtures: Vec<ChatSummary>,
     pub load_images: bool,
