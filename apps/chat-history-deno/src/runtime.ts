@@ -232,7 +232,7 @@ export async function runDesktop(
     }
   });
 
-  Deno.serve((request) => {
+  Deno.serve({ hostname: "127.0.0.1", port: 8000 }, (request) => {
     const url = new URL(request.url);
     return url.pathname === "/__local_file"
       ? serveLocalFile(url)
