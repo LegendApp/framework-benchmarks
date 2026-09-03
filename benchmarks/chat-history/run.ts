@@ -45,11 +45,19 @@ type DiagnosticEvent = {
   payload?: Record<string, unknown>;
   sequence: number;
 };
-type LoggedContentReadyEvent = BenchmarkContentReadyEvent & {
+type LoggedContentReadyEvent = Omit<BenchmarkContentReadyEvent, "contentDigest"> & {
+  contentDigest?: string;
   diagnostics?: DiagnosticEvent[];
   timestampMs: number;
 };
-type LoggedEvent = LoggedContentReadyEvent | WindowShownEvent;
+type LoggedContentDigestEvent = {
+  contentDigest: string;
+  name: "contentDigest";
+  path: string;
+  phase: "initial" | "switch";
+  timestampMs: number;
+};
+type LoggedEvent = LoggedContentDigestEvent | LoggedContentReadyEvent | WindowShownEvent;
 type MemorySample = {
   physicalFootprintBytes: number;
   processCount: number;
@@ -422,6 +430,12 @@ async function runIteration(
     if (!initialEvent.timing) {
       throw new Error(`${app} did not report benchmark stage timings; rebuild production apps`);
     }
+    const initialContentDigest = initialEvent.contentDigest ?? (
+      await waitForEvent(
+        eventsPath,
+        (event) => event.name === "contentDigest" && event.phase === "initial",
+      ) as LoggedContentDigestEvent
+    ).contentDigest;
     const initialMemory = await stabilizedMemory(appPid, webKitBaseline);
     const switchEvent = await waitForEvent(
       eventsPath,
@@ -430,6 +444,12 @@ async function runIteration(
     if (!switchEvent.timing) {
       throw new Error(`${app} did not report switched benchmark stage timings; rebuild production apps`);
     }
+    const switchContentDigest = switchEvent.contentDigest ?? (
+      await waitForEvent(
+        eventsPath,
+        (event) => event.name === "contentDigest" && event.phase === "switch",
+      ) as LoggedContentDigestEvent
+    ).contentDigest;
     const switchedMemory = await stabilizedMemory(appPid, webKitBaseline);
     if (recording) {
       // Keep recording after app readiness so self-sizing native lists can reach their final frame.
@@ -467,13 +487,13 @@ async function runIteration(
       internalSwitchContentMs,
       internalWindowOpenMs,
       initialContentDurationMs: initialEvent.durationMs,
-      initialContentDigest: initialEvent.contentDigest,
+      initialContentDigest,
       initialMemory,
       initialStages: initialEvent.timing,
       switchContentMs: videoEvidence
         ? videoEvidence.switchContentTimestampMs - switchStartedTimestampMs
         : internalSwitchContentMs,
-      switchContentDigest: switchEvent.contentDigest,
+      switchContentDigest,
       switchStages: switchEvent.timing,
       switchedMemory,
       videoEvidence,
