@@ -66,12 +66,14 @@ Tauri and Deno WebView memory also includes the WebKit GPU, networking, and
 content XPC helpers created by its iteration; macOS reparents those helpers to
 `launchd`, so they do not appear in the normal process-descendant tree.
 
-Every measured content event also carries a canonical 64-bit FNV-1a digest of
-the normalized display rows. The digest covers row kind, Markdown, tool label,
-preview and status, image state and sources, and file paths and line counts;
-each UTF-8 field is length-prefixed. The runner aborts before writing a report
-if any implementation or iteration produces a different initial or switched
-digest. This prevents fast but incomplete parsers from entering the table.
+Every measured content selection also emits a canonical 64-bit FNV-1a digest
+of the normalized display rows. Apps report visual readiness first, then
+compute the digest outside the measured path. The digest covers row kind,
+Markdown, tool label, preview and status, image state and sources, and file
+paths and line counts; each UTF-8 field is length-prefixed. The runner aborts
+before writing a report if any implementation or iteration produces a
+different initial or switched digest. This prevents fast but incomplete
+parsers from entering the table without making validation part of the timing.
 
 ### Pin stable fixtures
 
