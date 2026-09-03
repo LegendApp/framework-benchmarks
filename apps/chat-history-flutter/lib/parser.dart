@@ -794,7 +794,6 @@ ChatDocument openChatFile(ChatProvider provider, String path) {
   total.stop();
 
   return ChatDocument(
-    contentDigest: normalizedContentDigest(parsed.rows),
     path: path,
     provider: provider,
     recordCount: ranges.length ~/ 2,

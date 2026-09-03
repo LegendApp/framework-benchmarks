@@ -51,7 +51,7 @@ void main() {
         'packages/old.ts:0:2',
       ],
     );
-    expect(result.contentDigest, 'ea203684aeae72fb');
+    expect(normalizedContentDigest(result.rows), 'ea203684aeae72fb');
   });
 
   test("selects Claude's latest main chain", () {
@@ -69,7 +69,7 @@ void main() {
     expect(result.rows[1].toolPreview, 'I will check.\n\nRead files');
     expect(result.rows[2].markdown, 'Latest answer');
     expect(result.rows[2].hasImagePlaceholder, isTrue);
-    expect(result.contentDigest, '4cb20d4c68d78408');
+    expect(normalizedContentDigest(result.rows), '4cb20d4c68d78408');
   });
 
   test('reads response-item user turns', () {

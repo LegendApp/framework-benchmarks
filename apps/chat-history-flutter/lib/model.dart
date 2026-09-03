@@ -97,7 +97,6 @@ class NativeTiming {
 
 class ChatDocument {
   const ChatDocument({
-    required this.contentDigest,
     required this.path,
     required this.provider,
     required this.recordCount,
@@ -107,7 +106,6 @@ class ChatDocument {
     required this.warningCount,
   });
 
-  final String contentDigest;
   final String path;
   final ChatProvider provider;
   final int recordCount;

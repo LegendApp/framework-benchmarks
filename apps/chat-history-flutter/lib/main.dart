@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -246,7 +247,6 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
       return;
     }
     await benchmark.emit(<String, dynamic>{
-      'contentDigest': document.contentDigest,
       'durationMs': durationMs,
       'name': 'contentReady',
       'path': document.path,
@@ -256,6 +256,16 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
       'sourceBytes': document.sourceBytes,
       'timing': document.timing.toJson(),
     });
+    unawaited(
+      Isolate.run(() => normalizedContentDigest(document.rows)).then(
+        (digest) => benchmark.emit(<String, dynamic>{
+          'contentDigest': digest,
+          'name': 'contentDigest',
+          'path': document.path,
+          'phase': phase,
+        }),
+      ),
+    );
     if (phase == 'initial') {
       await Future<void>.delayed(
         Duration(milliseconds: benchmark.config.switchDelayMs),
