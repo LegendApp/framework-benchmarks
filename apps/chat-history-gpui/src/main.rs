@@ -100,11 +100,18 @@ struct RowRenderState {
 
 impl ChatHistory {
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let settings = Settings::load();
         let benchmark = Benchmark::load().unwrap_or_else(|error| {
             eprintln!("{error}");
             None
         });
+        let settings = benchmark
+            .as_ref()
+            .map(|benchmark| Settings {
+                load_images: benchmark.load_images,
+                restore_selection: false,
+                ..Settings::default()
+            })
+            .unwrap_or_else(Settings::load);
         let summaries = benchmark
             .as_ref()
             .map(|value| value.fixtures.clone())
@@ -130,7 +137,6 @@ impl ChatHistory {
             window: window.window_handle(),
         };
         if let Some(benchmark) = &view.benchmark {
-            view.settings.load_images = benchmark.load_images;
             if let Some(initial) = benchmark.fixtures.first().cloned() {
                 view.select(initial, Some("initial"), cx);
             }
