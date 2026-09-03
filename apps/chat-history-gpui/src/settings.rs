@@ -30,8 +30,9 @@ impl Settings {
     pub fn load() -> Self {
         fs::read(settings_path())
             .ok()
-            .and_then(|source| serde_json::from_slice(&source).ok())
+            .and_then(|source| serde_json::from_slice::<Self>(&source).ok())
             .unwrap_or_default()
+            .normalized()
     }
 
     pub fn save(&self) {
@@ -43,6 +44,19 @@ impl Settings {
             let _ = fs::write(path, source);
         }
     }
+
+    fn normalized(mut self) -> Self {
+        if !matches!(self.appearance.as_str(), "dark" | "light" | "system") {
+            self.appearance = "system".into();
+        }
+        if !matches!(self.recent_chat_limit, 20 | 50 | 100) {
+            self.recent_chat_limit = 20;
+        }
+        if !self.restore_selection {
+            self.selected_id = None;
+        }
+        self
+    }
 }
 
 fn settings_path() -> PathBuf {
@@ -50,4 +64,25 @@ fn settings_path() -> PathBuf {
         .map(PathBuf::from)
         .unwrap_or_default()
         .join("Library/Application Support/Legend Chat History GPUI/settings.json")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalizes_invalid_and_disabled_settings() {
+        let settings = Settings {
+            appearance: "sepia".into(),
+            recent_chat_limit: 500,
+            restore_selection: false,
+            selected_id: Some("codex:example".into()),
+            ..Settings::default()
+        }
+        .normalized();
+
+        assert_eq!(settings.appearance, "system");
+        assert_eq!(settings.recent_chat_limit, 20);
+        assert_eq!(settings.selected_id, None);
+    }
 }

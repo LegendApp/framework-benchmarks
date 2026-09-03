@@ -650,7 +650,11 @@ impl ChatHistory {
                                 _ => 20,
                             };
                             view.settings.save();
-                            cx.notify();
+                            if view.benchmark.is_none() {
+                                view.refresh_catalog(cx);
+                            } else {
+                                cx.notify();
+                            }
                         }),
                     ))
                     .child(toggle_setting(
