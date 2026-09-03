@@ -3,6 +3,16 @@ import Testing
 
 @testable import ChatHistoryCore
 
+@Test func missingProviderDirectoriesReturnAnEmptyCatalog() throws {
+  let fileManager = FileManager.default
+  let home = fileManager.temporaryDirectory.appending(
+    path: "legend-swift-empty-catalog-\(UUID().uuidString)")
+  defer { try? fileManager.removeItem(at: home) }
+  try fileManager.createDirectory(at: home, withIntermediateDirectories: true)
+
+  #expect(getRecentChats(limit: 20, home: home.path).summaries.isEmpty)
+}
+
 @Test func discoversIndexedSessionsAndExcludesSubagents() throws {
   let fileManager = FileManager.default
   let home = fileManager.temporaryDirectory.appending(

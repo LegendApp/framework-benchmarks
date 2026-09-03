@@ -3,6 +3,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { getRecentChats } from "./catalog";
 
+test("returns an empty catalog when neither provider is installed", async () => {
+  const home = await mkdtemp(join(tmpdir(), "legend-electron-empty-catalog-"));
+  try {
+    const result = await getRecentChats(20, home);
+    expect(result.summaries).toEqual([]);
+  } finally {
+    await rm(home, { force: true, recursive: true });
+  }
+});
+
 test("discovers indexed sessions while excluding subagents", async () => {
   const home = await mkdtemp(join(tmpdir(), "legend-electron-catalog-"));
   try {

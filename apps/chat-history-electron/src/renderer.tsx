@@ -16,6 +16,8 @@ import {
 } from "./model";
 import "./styles.css";
 
+const noLocalHistoriesMessage = "No local Codex or Claude transcripts found.";
+
 const fallbackSettingsKey = "legend-chat-history-settings";
 
 type SelectionState =
@@ -377,12 +379,14 @@ function App() {
   const [settings, setSettings] = useState(defaultChatHistorySettings);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [catalogError, setCatalogError] = useState<string>();
+  const selectionGenerationRef = useRef(0);
 
   async function select(
     summary: ChatSummary,
     activeSettings = settings,
     phase?: "initial" | "switch",
   ) {
+    const generation = ++selectionGenerationRef.current;
     const startedAt = performance.now();
     setSelection({ id: summary.id, status: "loading" });
     const nextSettings = {
@@ -395,9 +399,13 @@ function App() {
     }
     try {
       const result = await window.chatHistory.openChat(summary.provider, summary.path);
-      setSelection({ id: summary.id, openedAt: startedAt, phase, result, status: "ready" });
+      if (generation === selectionGenerationRef.current) {
+        setSelection({ id: summary.id, openedAt: startedAt, phase, result, status: "ready" });
+      }
     } catch (error) {
-      setSelection({ error: error instanceof Error ? error.message : String(error), id: summary.id, status: "error" });
+      if (generation === selectionGenerationRef.current) {
+        setSelection({ error: error instanceof Error ? error.message : String(error), id: summary.id, status: "error" });
+      }
     }
   }
 
@@ -411,6 +419,9 @@ function App() {
       const initial = result.summaries.find((summary) => summary.id === initialId) ?? result.summaries[0];
       if (initial) {
         await select(initial, activeSettings);
+      } else {
+        selectionGenerationRef.current += 1;
+        setSelection({ status: "idle" });
       }
     } catch (error) {
       setCatalogError(error instanceof Error ? error.message : String(error));
@@ -460,6 +471,9 @@ function App() {
   const selectedId = selection.status === "idle" ? undefined : selection.id;
   const selectedTitle = summaries.find((summary) => summary.id === selectedId)?.title ?? "Legend Chat History";
   const implementationName = window.chatHistory.implementationName;
+  const idleMessage = catalogMs === undefined
+    ? "Scanning recent chats…"
+    : summaries.length === 0 ? noLocalHistoriesMessage : "Select a conversation";
 
   async function handleContentReady(event: BenchmarkContentReadyEvent) {
     await window.chatHistory.emitBenchmarkEvent?.(event);
@@ -483,7 +497,7 @@ function App() {
           <div><span>{catalogMs === undefined ? "Loading catalog…" : `catalog ${catalogMs.toFixed(2)} ms`}</span><button aria-label="Open settings" className="settings-button" onClick={() => setSettingsOpen(true)} type="button">⚙</button></div>
         </header>
         {catalogError ? <div className="empty error">{catalogError}</div> : null}
-        {!catalogError && selection.status === "idle" ? <div className="empty">Select a conversation</div> : null}
+        {!catalogError && selection.status === "idle" ? <div className="empty">{idleMessage}</div> : null}
         {!catalogError && selection.status === "loading" ? <div className="empty">Loading and parsing natively…</div> : null}
         {!catalogError && selection.status === "error" ? <div className="empty error">{selection.error}</div> : null}
         {!catalogError && selection.status === "ready" ? (

@@ -48,8 +48,12 @@ final class ChatHistoryStore: ObservableObject {
     if let initial {
       select(initial)
     } else {
+      generation += 1
       selectedId = nil
       document = nil
+      errorMessage = nil
+      firstPaintMs = nil
+      isLoading = false
     }
   }
 
@@ -155,6 +159,10 @@ struct ContentView: View {
           EmptyState(errorMessage, color: .red)
         } else if store.isLoading {
           EmptyState("Loading and parsing natively…")
+        } else if store.catalogMs == nil {
+          EmptyState("Scanning recent chats…")
+        } else if store.summaries.isEmpty {
+          EmptyState("No local Codex or Claude transcripts found.")
         } else {
           EmptyState("Select a conversation")
         }

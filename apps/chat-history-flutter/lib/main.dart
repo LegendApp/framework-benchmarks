@@ -147,9 +147,15 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
         }
       }
       initial ??= result.summaries.firstOrNull;
+      if (initial == null) {
+        _selectionGeneration += 1;
+      }
       setState(() {
         _catalogError = null;
         _catalogMs = result.nativeTotalMs;
+        if (initial == null) {
+          _selection = null;
+        }
         _summaries = result.summaries;
       });
       if (initial != null) {
@@ -635,6 +641,14 @@ class _Content extends StatelessWidget {
     }
     final current = selection;
     if (current == null) {
+      if (catalogMs == null) {
+        return const _CenteredStatus('Scanning recent chats…');
+      }
+      if (summaries.isEmpty) {
+        return const _CenteredStatus(
+          'No local Codex or Claude transcripts found.',
+        );
+      }
       return const _CenteredStatus('Select a conversation');
     }
     if (current.isLoading) {

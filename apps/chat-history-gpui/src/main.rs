@@ -65,6 +65,7 @@ impl Palette {
 
 struct ChatHistory {
     benchmark: Option<Benchmark>,
+    catalog_loaded: bool,
     catalog_ms: f64,
     document: Option<Arc<ChatDocument>>,
     error: Option<String>,
@@ -108,8 +109,10 @@ impl ChatHistory {
             .as_ref()
             .map(|value| value.fixtures.clone())
             .unwrap_or_default();
+        let catalog_loaded = benchmark.is_some();
         let mut view = Self {
             benchmark,
+            catalog_loaded,
             catalog_ms: 0.0,
             document: None,
             error: None,
@@ -154,6 +157,7 @@ impl ChatHistory {
             let result = task.await;
             let _ = this.update(cx, |view, cx| match result {
                 Ok(catalog) => {
+                    view.catalog_loaded = true;
                     view.catalog_ms = catalog.native_total_ms;
                     view.summaries = Arc::new(catalog.summaries);
                     let initial = selected_id
@@ -165,6 +169,11 @@ impl ChatHistory {
                     if let Some(summary) = initial {
                         view.select(summary, None, cx);
                     } else {
+                        view.generation += 1;
+                        view.selected_id = None;
+                        view.document = None;
+                        view.markdown = Arc::new(Vec::new());
+                        view.list_state.reset(0);
                         cx.notify();
                     }
                 }
@@ -485,7 +494,11 @@ impl ChatHistory {
                 .items_center()
                 .justify_center()
                 .text_color(palette.muted)
-                .child("Loading transcript…")
+                .child(if self.selected_id.is_some() {
+                    "Loading transcript…"
+                } else {
+                    "Scanning recent chats…"
+                })
                 .into_any_element()
         } else if let Some(error) = &self.error {
             div()
@@ -520,13 +533,18 @@ impl ChatHistory {
             .size_full()
             .into_any_element()
         } else {
+            let message = if self.catalog_loaded && self.summaries.is_empty() {
+                "No local Codex or Claude transcripts found."
+            } else {
+                "No transcript selected"
+            };
             div()
                 .flex_1()
                 .flex()
                 .items_center()
                 .justify_center()
                 .text_color(palette.muted)
-                .child("No transcript selected")
+                .child(message)
                 .into_any_element()
         };
 

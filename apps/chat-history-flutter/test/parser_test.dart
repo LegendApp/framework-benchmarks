@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:chat_history_flutter/catalog.dart';
 import 'package:chat_history_flutter/model.dart';
 import 'package:chat_history_flutter/parser.dart';
 import 'package:chat_history_flutter/parser_worker.dart';
@@ -12,6 +13,16 @@ String fixture(String name) {
 }
 
 void main() {
+  test('returns an empty catalog when neither provider is installed', () {
+    final home = Directory.systemTemp.createTempSync(
+      'legend-flutter-empty-catalog-',
+    );
+    addTearDown(() => home.deleteSync(recursive: true));
+
+    expect(getRecentChats(20, home.path).summaries, isEmpty);
+    expect(getRecentChats(20, '').summaries, isEmpty);
+  });
+
   test('normalizes Codex history', () {
     final result = openChatFile(ChatProvider.codex, fixture('codex.jsonl'));
 

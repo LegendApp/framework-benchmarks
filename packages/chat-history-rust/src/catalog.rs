@@ -314,6 +314,14 @@ mod tests {
     }
 
     #[test]
+    fn missing_provider_directories_return_an_empty_catalog() {
+        let root = temporary_home();
+        let result = get_recent_chat_catalog(20, &root);
+        fs::remove_dir_all(root).unwrap();
+        assert!(result.summaries.is_empty());
+    }
+
+    #[test]
     fn empty_limit_avoids_catalog_work() {
         let root = temporary_home();
         let result = get_recent_chat_catalog(0, &root);

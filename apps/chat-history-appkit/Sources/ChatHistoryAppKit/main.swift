@@ -177,7 +177,10 @@ private final class ChatSplitViewController: NSSplitViewController, NSToolbarDel
     guard
       let initial = result.summaries.first(where: { $0.id == restoredId }) ?? result.summaries.first
     else {
+      generation += 1
       selectedId = nil
+      view.window?.title = "Legend Chat History"
+      content.showEmptyCatalog()
       return
     }
     sidebar.select(id: initial.id)
@@ -489,7 +492,7 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
   private var renderedMarkdown: [String: NSAttributedString] = [:]
   private var metricsHeight: NSLayoutConstraint!
   private var settings = ChatHistorySettings()
-  private let emptyLabel = NSTextField(labelWithString: "Select a conversation")
+  private let emptyLabel = NSTextField(labelWithString: "Scanning recent chats…")
   private let metricsLabel = NSTextField(labelWithString: "")
   private let scroll = NSScrollView()
   private let tableView = NSTableView()
@@ -566,6 +569,20 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
     emptyLabel.isHidden = false
     emptyLabel.textColor = .systemRed
     emptyLabel.stringValue = message
+  }
+
+  func showEmptyCatalog() {
+    isLoading = false
+    document = nil
+    expandedRows.removeAll()
+    renderedMarkdown.removeAll(keepingCapacity: true)
+    firstPaintMs = nil
+    updateMetricsVisibility()
+    scroll.isHidden = true
+    emptyLabel.isHidden = false
+    emptyLabel.textColor = .secondaryLabelColor
+    emptyLabel.stringValue = "No local Codex or Claude transcripts found."
+    tableView.reloadData()
   }
 
   func show(
