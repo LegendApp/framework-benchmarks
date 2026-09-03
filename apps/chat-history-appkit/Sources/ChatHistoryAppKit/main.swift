@@ -234,6 +234,7 @@ private final class ChatSplitViewController: NSSplitViewController, NSToolbarDel
     guard let phase else { return }
     ChatBenchmark.emit(
       ChatBenchmarkContentReadyEvent(durationMs: durationMs, document: document, phase: phase))
+    ChatBenchmark.emitContentDigest(document: document, phase: phase)
     if phase == .initial, let benchmarkConfig, benchmarkConfig.fixtures.count == 2 {
       let secondary = benchmarkConfig.fixtures[1].summary
       Task {

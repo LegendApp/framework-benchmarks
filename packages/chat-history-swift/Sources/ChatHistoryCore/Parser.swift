@@ -777,7 +777,6 @@ public func openChatFile(provider: ChatProvider, path: String) throws -> ChatDoc
   let loadMs = monotonicMilliseconds() - loadStartedAt
   let parsed = parseChatData(provider: provider, source: source)
   return ChatDocument(
-    contentDigest: normalizedContentDigest(parsed.rows),
     path: path,
     provider: provider,
     recordCount: parsed.recordCount,

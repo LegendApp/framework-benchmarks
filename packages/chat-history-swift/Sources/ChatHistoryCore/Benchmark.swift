@@ -29,7 +29,6 @@ public enum ChatBenchmarkPhase: String, Codable, Sendable {
 }
 
 public struct ChatBenchmarkContentReadyEvent: Codable, Sendable {
-  public let contentDigest: String
   public let durationMs: Double
   public let name: String
   public let path: String
@@ -41,7 +40,6 @@ public struct ChatBenchmarkContentReadyEvent: Codable, Sendable {
   public let timing: NativeTiming
 
   public init(durationMs: Double, document: ChatDocument, phase: ChatBenchmarkPhase) {
-    self.contentDigest = document.contentDigest
     self.durationMs = durationMs
     self.name = "contentReady"
     self.path = document.path
@@ -52,6 +50,13 @@ public struct ChatBenchmarkContentReadyEvent: Codable, Sendable {
     self.timestampMs = Date().timeIntervalSince1970 * 1_000
     self.timing = document.timing
   }
+}
+
+public struct ChatBenchmarkContentDigestEvent: Encodable, Sendable {
+  public let contentDigest: String
+  public let name = "contentDigest"
+  public let path: String
+  public let phase: ChatBenchmarkPhase
 }
 
 public enum ChatBenchmark {
@@ -94,6 +99,16 @@ public enum ChatBenchmark {
     emit(
       WindowShownEvent(name: "windowShown", timestampMs: Date().timeIntervalSince1970 * 1_000),
       environment: environment)
+  }
+
+  public static func emitContentDigest(document: ChatDocument, phase: ChatBenchmarkPhase) {
+    Task.detached(priority: .utility) {
+      emit(
+        ChatBenchmarkContentDigestEvent(
+          contentDigest: normalizedContentDigest(document.rows),
+          path: document.path,
+          phase: phase))
+    }
   }
 }
 

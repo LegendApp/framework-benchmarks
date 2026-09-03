@@ -96,7 +96,6 @@ public struct NativeTiming: Codable, Sendable {
 }
 
 public struct ChatDocument: Codable, Sendable {
-  public let contentDigest: String
   public let path: String
   public let provider: ChatProvider
   public let recordCount: Int
@@ -106,7 +105,6 @@ public struct ChatDocument: Codable, Sendable {
   public let warningCount: Int
 
   public init(
-    contentDigest: String,
     path: String,
     provider: ChatProvider,
     recordCount: Int,
@@ -115,7 +113,6 @@ public struct ChatDocument: Codable, Sendable {
     timing: NativeTiming,
     warningCount: Int
   ) {
-    self.contentDigest = contentDigest
     self.path = path
     self.provider = provider
     self.recordCount = recordCount
