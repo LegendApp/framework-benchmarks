@@ -5,7 +5,7 @@ mod settings;
 use std::{
     collections::HashSet,
     path::PathBuf,
-    sync::Arc,
+    sync::{Arc, OnceLock},
     time::{Duration, Instant},
 };
 
@@ -75,7 +75,7 @@ struct ChatHistory {
     list_state: ListState,
     loading: bool,
     loading_task: Option<Task<()>>,
-    markdown: Arc<Vec<Vec<MarkdownBlock>>>,
+    markdown: Arc<Vec<OnceLock<Vec<MarkdownBlock>>>>,
     selected_id: Option<String>,
     settings: Settings,
     settings_open: bool,
@@ -213,12 +213,7 @@ impl ChatHistory {
         let started = Instant::now();
         let task = cx.background_spawn(async move {
             let document = open_chat_file(&provider, &path)?;
-            let markdown = document
-                .rows
-                .iter()
-                .map(|row| blocks(&row.markdown))
-                .collect();
-            Ok::<_, String>((document, markdown))
+            Ok::<_, String>(document)
         });
         self.loading_task = Some(cx.spawn(async move |this, cx| {
             let result = task.await;
@@ -228,11 +223,13 @@ impl ChatHistory {
                         return None;
                     }
                     match result {
-                        Ok((document, markdown)) => {
+                        Ok(document) => {
                             let row_count = document.rows.len();
                             view.list_state.reset(row_count);
                             view.document = Some(Arc::new(document));
-                            view.markdown = Arc::new(markdown);
+                            view.markdown = Arc::new(
+                                (0..row_count).map(|_| OnceLock::new()).collect(),
+                            );
                             view.loading = false;
                             let pending = phase.and_then(|phase| {
                                 view.benchmark.as_ref().map(|_| PendingReady {
@@ -516,9 +513,10 @@ impl ChatHistory {
             let view = cx.entity();
             list(self.list_state.clone(), move |index, window, _cx| {
                 let row = &document.rows[index];
+                let markdown = markdown[index].get_or_init(|| blocks(&row.markdown));
                 render_row(
                     row,
-                    markdown.get(index).map(Vec::as_slice).unwrap_or_default(),
+                    markdown,
                     RowRenderState {
                         files_expanded: expanded_files.contains(&row.id),
                         index,
