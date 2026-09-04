@@ -88,8 +88,8 @@ bun run benchmark:fixtures
 The runner verifies size and hash before launching an app and aborts if either
 fixture changed. On the current benchmark machine the pinned pair is:
 
-- `Audit app performance issues` — 140.99 MiB, last active August 18, 2026;
-- `Test chat scrolling stability` — 96.53 MiB, last active August 16, 2026.
+- `Diagnose LegendList overlap` — 228.25 MiB, last active August 20, 2026;
+- `Audit app performance issues` — 140.99 MiB, last active August 18, 2026.
 
 Both are Codex histories because this machine currently has no `~/.claude`
 history store. Claude remains covered by parser conformance fixtures, but a real

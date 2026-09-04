@@ -6,6 +6,7 @@ node_modules/
 *.log
 
 apps/chat-history-deno/build/
+apps/chat-history-deno/dist/
 apps/chat-history-electron/dist/
 apps/chat-history-flutter/build/
 apps/chat-history-gpui/target/
