@@ -19,6 +19,18 @@ CatalogResult _loadCatalog(({String home, int limit}) request) {
   return getRecentChats(request.limit, request.home);
 }
 
+void _computeContentDigest((List<ChatRow>, SendPort) request) {
+  request.$2.send(normalizedContentDigest(request.$1));
+}
+
+Future<String> _contentDigestInBackground(List<ChatRow> rows) async {
+  final result = ReceivePort();
+  await Isolate.spawn(_computeContentDigest, (rows, result.sendPort));
+  final digest = await result.first as String;
+  result.close();
+  return digest;
+}
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const ChatHistoryApp());
@@ -257,7 +269,7 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
       'timing': document.timing.toJson(),
     });
     unawaited(
-      Isolate.run(() => normalizedContentDigest(document.rows)).then(
+      _contentDigestInBackground(document.rows).then(
         (digest) => benchmark.emit(<String, dynamic>{
           'contentDigest': digest,
           'name': 'contentDigest',
