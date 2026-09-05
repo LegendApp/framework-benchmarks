@@ -24,7 +24,7 @@ const fallbackSettingsKey = "legend-chat-history-settings";
 type SelectionState =
   | { status: "idle" }
   | { id: string; status: "loading" }
-  | { id: string; openedAt: number; phase?: "initial" | "switch"; result: OpenChatResult; status: "ready" }
+  | { discoveryMs?: number; id: string; openedAt: number; phase?: "initial" | "switch"; result: OpenChatResult; status: "ready" }
   | { error: string; id: string; status: "error" };
 
 function applyAppearance(appearance: ChatHistorySettings["appearance"]) {
@@ -256,7 +256,8 @@ function usesWebKitLayoutPolling() {
     || window.chatHistory.implementationName === "Deno WebView";
 }
 
-function ReadyTranscript({ onBenchmarkEvent, openedAt, phase, result, settings }: {
+function ReadyTranscript({ discoveryMs, onBenchmarkEvent, openedAt, phase, result, settings }: {
+  discoveryMs?: number;
   onBenchmarkEvent?: (event: BenchmarkEvent) => Promise<void>;
   openedAt: number;
   phase?: "initial" | "switch";
@@ -275,6 +276,7 @@ function ReadyTranscript({ onBenchmarkEvent, openedAt, phase, result, settings }
       setFirstPaintMs(durationMs);
       if (phase) {
         void onBenchmarkEvent?.({
+          discoveryMs: phase === "initial" ? discoveryMs : undefined,
           durationMs,
           name: "contentReady",
           path: result.document.path,
@@ -293,7 +295,7 @@ function ReadyTranscript({ onBenchmarkEvent, openedAt, phase, result, settings }
         ));
       }
     });
-  }, [onBenchmarkEvent, openedAt, phase, result.document]);
+  }, [discoveryMs, onBenchmarkEvent, openedAt, phase, result.document]);
   useEffect(() => {
     if (!usesWebKitLayoutPolling()) {
       return;
@@ -392,6 +394,7 @@ function App() {
     summary: ChatSummary,
     activeSettings = settings,
     phase?: "initial" | "switch",
+    discoveryMs?: number,
   ) {
     const generation = ++selectionGenerationRef.current;
     const startedAt = performance.now();
@@ -407,7 +410,7 @@ function App() {
     try {
       const result = await window.chatHistory.openChat(summary.provider, summary.path);
       if (generation === selectionGenerationRef.current) {
-        setSelection({ id: summary.id, openedAt: startedAt, phase, result, status: "ready" });
+        setSelection({ discoveryMs, id: summary.id, openedAt: startedAt, phase, result, status: "ready" });
       }
     } catch (error) {
       if (generation === selectionGenerationRef.current) {
@@ -448,7 +451,9 @@ function App() {
         setBenchmarkConfig(benchmark);
         setSettings(benchmarkSettings);
         applyAppearance(benchmarkSettings.appearance);
+        const discoveryStartedAt = performance.now();
         const result = await window.chatHistory.getRecentChats(Number.MAX_SAFE_INTEGER);
+        const discoveryMs = performance.now() - discoveryStartedAt;
         const targets = benchmark.targets.map((target) => result.summaries.find(
           (summary) => summary.id === target.id && summary.provider === target.provider,
         ));
@@ -464,7 +469,7 @@ function App() {
         }
         setSummaries(visibleSummaries);
         setCatalogMs(result.nativeTotalMs);
-        await select(resolvedTargets[0], benchmarkSettings, "initial");
+        await select(resolvedTargets[0], benchmarkSettings, "initial", discoveryMs);
         return;
       }
       setSettings(loadedSettings);
@@ -532,6 +537,7 @@ function App() {
         {!catalogError && selection.status === "error" ? <div className="empty error">{selection.error}</div> : null}
         {!catalogError && selection.status === "ready" ? (
           <ReadyTranscript
+            discoveryMs={selection.discoveryMs}
             onBenchmarkEvent={selection.phase ? handleBenchmarkEvent : undefined}
             openedAt={selection.openedAt}
             phase={selection.phase}

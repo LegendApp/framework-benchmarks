@@ -16,6 +16,7 @@ final class ChatHistoryStore: ObservableObject {
 
   private var generation = 0
   private let benchmarkConfig: ChatBenchmarkConfig?
+  private var benchmarkDiscoveryMs: Double?
   private var benchmarkPhase: ChatBenchmarkPhase?
   private var openedAt = 0.0
   private var paintPending = false
@@ -32,10 +33,12 @@ final class ChatHistoryStore: ObservableObject {
 
   func loadCatalog(preferredId: String? = nil) async {
     let limit = benchmarkConfig == nil ? settings.recentChatLimit : Int.max
+    let discoveryStartedAt = ProcessInfo.processInfo.systemUptime * 1_000
     let result = await Task.detached(priority: .userInitiated) {
       getRecentChats(limit: limit)
     }.value
     if let benchmarkConfig {
+      benchmarkDiscoveryMs = ProcessInfo.processInfo.systemUptime * 1_000 - discoveryStartedAt
       let targets = benchmarkConfig.targets.compactMap { target in
         result.summaries.first { $0.id == target.id && $0.provider == target.provider }
       }
@@ -127,7 +130,11 @@ final class ChatHistoryStore: ObservableObject {
     firstPaintMs = durationMs
     guard let phase = benchmarkPhase else { return }
     ChatBenchmark.emit(
-      ChatBenchmarkContentReadyEvent(durationMs: durationMs, document: document, phase: phase))
+      ChatBenchmarkContentReadyEvent(
+        discoveryMs: phase == .initial ? benchmarkDiscoveryMs : nil,
+        durationMs: durationMs,
+        document: document,
+        phase: phase))
     ChatBenchmark.emitContentDigest(document: document, phase: phase)
     if phase == .initial, let benchmarkConfig, benchmarkConfig.targets.count == 2,
       let secondary = summaries.first(where: {

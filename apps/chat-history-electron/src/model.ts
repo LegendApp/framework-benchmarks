@@ -122,6 +122,7 @@ export type BenchmarkFixtureManifest = {
 };
 
 export type BenchmarkContentReadyEvent = {
+  discoveryMs?: number;
   durationMs: number;
   name: "contentReady";
   path: string;

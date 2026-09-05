@@ -18,6 +18,7 @@ public enum ChatBenchmarkPhase: String, Codable, Sendable {
 }
 
 public struct ChatBenchmarkContentReadyEvent: Codable, Sendable {
+  public let discoveryMs: Double?
   public let durationMs: Double
   public let name: String
   public let path: String
@@ -28,7 +29,13 @@ public struct ChatBenchmarkContentReadyEvent: Codable, Sendable {
   public let timestampMs: Double
   public let timing: NativeTiming
 
-  public init(durationMs: Double, document: ChatDocument, phase: ChatBenchmarkPhase) {
+  public init(
+    discoveryMs: Double? = nil,
+    durationMs: Double,
+    document: ChatDocument,
+    phase: ChatBenchmarkPhase
+  ) {
+    self.discoveryMs = discoveryMs
     self.durationMs = durationMs
     self.name = "contentReady"
     self.path = document.path

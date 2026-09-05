@@ -57,6 +57,7 @@ private final class ChatSplitViewController: NSSplitViewController, NSToolbarDel
   private let content = ContentViewController()
   private let catalogLabel = NSTextField(labelWithString: "Loading catalog…")
   private let benchmarkConfig = try? ChatBenchmark.load()
+  private var benchmarkDiscoveryMs: Double?
   private let parserQueue = DispatchQueue(
     label: "so.legend.chathistory.appkit.parser", qos: .userInitiated)
   private var generation = 0
@@ -159,10 +160,12 @@ private final class ChatSplitViewController: NSSplitViewController, NSToolbarDel
 
   private func loadCatalog(preferredId: String? = nil) async {
     let limit = benchmarkConfig == nil ? settings.recentChatLimit : Int.max
+    let discoveryStartedAt = ProcessInfo.processInfo.systemUptime * 1_000
     let result = await Task.detached(priority: .userInitiated) { getRecentChats(limit: limit) }
       .value
     catalogLabel.stringValue = "catalog \(formatMs(result.nativeTotalMs)) ms"
     if let benchmarkConfig {
+      benchmarkDiscoveryMs = ProcessInfo.processInfo.systemUptime * 1_000 - discoveryStartedAt
       let targets = benchmarkConfig.targets.compactMap { target in
         result.summaries.first { $0.id == target.id && $0.provider == target.provider }
       }
@@ -240,7 +243,11 @@ private final class ChatSplitViewController: NSSplitViewController, NSToolbarDel
   ) {
     guard let phase else { return }
     ChatBenchmark.emit(
-      ChatBenchmarkContentReadyEvent(durationMs: durationMs, document: document, phase: phase))
+      ChatBenchmarkContentReadyEvent(
+        discoveryMs: phase == .initial ? benchmarkDiscoveryMs : nil,
+        durationMs: durationMs,
+        document: document,
+        phase: phase))
     ChatBenchmark.emitContentDigest(document: document, phase: phase)
     if phase == .initial, let benchmarkConfig, benchmarkConfig.targets.count == 2,
       let secondary = sidebar.summary(id: benchmarkConfig.targets[1].id)

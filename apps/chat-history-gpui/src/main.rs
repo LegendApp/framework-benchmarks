@@ -66,6 +66,7 @@ impl Palette {
 
 struct ChatHistory {
     benchmark: Option<Benchmark>,
+    benchmark_discovery_ms: Option<f64>,
     catalog_loaded: bool,
     catalog_ms: f64,
     document: Option<Arc<ChatDocument>>,
@@ -115,6 +116,7 @@ impl ChatHistory {
             .unwrap_or_else(Settings::load);
         let mut view = Self {
             benchmark,
+            benchmark_discovery_ms: None,
             catalog_loaded: false,
             catalog_ms: 0.0,
             document: None,
@@ -142,6 +144,7 @@ impl ChatHistory {
         let target_ids = self.benchmark.as_ref().map(|benchmark| {
             benchmark.targets.iter().map(|target| (target.id.clone(), target.provider.clone())).collect::<Vec<_>>()
         });
+        let discovery_started = Instant::now();
         let limit = if target_ids.is_some() { usize::MAX } else { self.settings.recent_chat_limit };
         let selected_id = self
             .settings
@@ -156,6 +159,9 @@ impl ChatHistory {
             let result = task.await;
             let _ = this.update(cx, |view, cx| match result {
                 Ok(catalog) => {
+                    if target_ids.is_some() {
+                        view.benchmark_discovery_ms = Some(discovery_started.elapsed().as_secs_f64() * 1000.0);
+                    }
                     view.catalog_loaded = true;
                     view.catalog_ms = catalog.native_total_ms;
                     let resolved_targets = target_ids.as_ref().map(|ids| ids.iter().map(|(id, provider)| {
@@ -296,6 +302,7 @@ impl ChatHistory {
         let duration_ms = pending.started.elapsed().as_secs_f64() * 1000.0;
         let timing = &document.timing;
         let _ = benchmark.emit(serde_json::json!({
+            "discoveryMs": if pending.phase == "initial" { self.benchmark_discovery_ms } else { None },
             "durationMs": duration_ms,
             "name": "contentReady",
             "path": document.path,

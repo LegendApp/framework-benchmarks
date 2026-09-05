@@ -80,6 +80,7 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
   final String _home = Platform.environment['HOME'] ?? '';
 
   ChatBenchmark? _benchmark;
+  double? _benchmarkDiscoveryMs;
   double? _catalogMs;
   String? _catalogError;
   var _selectionGeneration = 0;
@@ -122,7 +123,9 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
         restoreSelection: false,
       );
       final home = _home;
+      final discoveryStopwatch = Stopwatch()..start();
       final result = await compute(_loadCatalog, (home: home, limit: 0x7fffffff));
+      discoveryStopwatch.stop();
       final targets = benchmark.config.targets.map((target) => result.summaries.where(
         (summary) => summary.id == target.id && summary.provider == target.provider,
       ).firstOrNull).toList(growable: false);
@@ -138,6 +141,7 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
       }
       setState(() {
         _benchmark = benchmark;
+        _benchmarkDiscoveryMs = discoveryStopwatch.elapsedMicroseconds / 1000;
         _settings = benchmarkSettings;
         _summaries = visible;
         _catalogMs = result.nativeTotalMs;
@@ -270,6 +274,7 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
       return;
     }
     await benchmark.emit(<String, dynamic>{
+      if (phase == 'initial') 'discoveryMs': _benchmarkDiscoveryMs,
       'durationMs': durationMs,
       'name': 'contentReady',
       'path': document.path,

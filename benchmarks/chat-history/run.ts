@@ -70,6 +70,7 @@ type IterationResult = {
     initial?: DiagnosticEvent[];
     switch?: DiagnosticEvent[];
   };
+  discoveryMs: number;
   firstContentMs: number;
   internalFirstContentMs: number;
   internalSwitchContentMs: number;
@@ -431,6 +432,9 @@ async function runIteration(
     if (!initialEvent.timing) {
       throw new Error(`${app} did not report benchmark stage timings; rebuild production apps`);
     }
+    if (typeof initialEvent.discoveryMs !== "number" || !Number.isFinite(initialEvent.discoveryMs)) {
+      throw new Error(`${app} did not report measured chat discovery time; rebuild production apps`);
+    }
     const initialContentDigest = initialEvent.contentDigest ?? (
       await waitForEvent(
         eventsPath,
@@ -481,6 +485,7 @@ async function runIteration(
         initial: initialEvent.diagnostics,
         switch: switchEvent.diagnostics,
       },
+      discoveryMs: initialEvent.discoveryMs,
       firstContentMs: videoEvidence
         ? videoEvidence.firstContentTimestampMs - launchedAt
         : internalFirstContentMs,
@@ -545,6 +550,7 @@ function aggregateResult(
     residentSetBytes: aggregate(iterations.map((result) => result[key].residentSetBytes)),
   });
   return {
+    discoveryMs: aggregate(iterations.map((result) => result.discoveryMs)),
     firstContentMs: aggregate(iterations.map((result) => result.firstContentMs)),
     internalFirstContentMs: aggregate(
       iterations.map((result) => result.internalFirstContentMs)),
@@ -626,11 +632,11 @@ function markdown(results: AppResult[]) {
       ? "Video-derived p50 / p90 for time columns; memory columns are p50 RSS / physical footprint."
       : "Internal-event p50 / p90 for time columns; memory columns are p50 RSS / physical footprint.",
     "",
-    "| App | Window open | First content | Switch content | Initial memory | Switched memory | Build size |",
-    "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+    "| App | Window open | Discovery | First content total | Switch content | Initial memory | Switched memory | Build size |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
   ];
   for (const result of results) {
-    lines.push(`| ${result.app} | ${formatMillisecondsPair(result.median.windowOpenMs, result.p90.windowOpenMs)} | ${formatMillisecondsPair(result.median.firstContentMs, result.p90.firstContentMs)} | ${formatMillisecondsPair(result.median.switchContentMs, result.p90.switchContentMs)} | ${formatMegabytes(result.median.initialMemory.residentSetBytes)} / ${formatMegabytes(result.median.initialMemory.physicalFootprintBytes)} | ${formatMegabytes(result.median.switchedMemory.residentSetBytes)} / ${formatMegabytes(result.median.switchedMemory.physicalFootprintBytes)} | ${formatMegabytes(result.buildSizeBytes)} |`);
+    lines.push(`| ${result.app} | ${formatMillisecondsPair(result.median.windowOpenMs, result.p90.windowOpenMs)} | ${formatMillisecondsPair(result.median.discoveryMs, result.p90.discoveryMs)} | ${formatMillisecondsPair(result.median.firstContentMs, result.p90.firstContentMs)} | ${formatMillisecondsPair(result.median.switchContentMs, result.p90.switchContentMs)} | ${formatMegabytes(result.median.initialMemory.residentSetBytes)} / ${formatMegabytes(result.median.initialMemory.physicalFootprintBytes)} | ${formatMegabytes(result.median.switchedMemory.residentSetBytes)} / ${formatMegabytes(result.median.switchedMemory.physicalFootprintBytes)} | ${formatMegabytes(result.buildSizeBytes)} |`);
   }
   if (results.length > 0) {
     lines.push(
@@ -767,6 +773,7 @@ async function main() {
     measuredAt: new Date().toISOString(),
     metrics: {
       buildSizeBytes: "Logical bytes of every file in the production .app bundle.",
+      discoveryMs: "App-side wall time from starting native Codex and Claude history traversal until the discovered catalog is available to the app. This interval is contained within firstContentMs.",
       firstContentMs: recordVideo
         ? "Process launch to the first of three recorded frames matching the settled initial viewport."
         : "Process launch to app-declared completed initial layout (--no-video diagnostic mode).",
