@@ -57,7 +57,11 @@ construction of every offscreen row.
 Images are disabled for the standard corpus so network availability and local
 attachment decoding do not contaminate renderer comparisons. Fixture hashing
 reads every byte before measurement to establish a controlled warm filesystem
-cache. Every run starts a new production process. Two warm-up rounds are
+cache. The runner keeps transcript paths and metadata in its private fixture
+manifest, but gives each app only the two pinned provider/id pairs. Every app
+must scan the native Codex and Claude stores, resolve those IDs to paths, and
+construct its sidebar catalog after process launch; that discovery is included
+in first-content time. Every run starts a new production process. Two warm-up rounds are
 discarded and ten measured rounds rotate app order deterministically, giving
 every app equal exposure to each position. Reports include p50 and p90 timing,
 all raw observations, and native-versus-post-native stage diagnostics. Memory
