@@ -113,14 +113,9 @@ impl ChatHistory {
                 ..Settings::default()
             })
             .unwrap_or_else(Settings::load);
-        let summaries = benchmark
-            .as_ref()
-            .map(|value| value.fixtures.clone())
-            .unwrap_or_default();
-        let catalog_loaded = benchmark.is_some();
         let mut view = Self {
             benchmark,
-            catalog_loaded,
+            catalog_loaded: false,
             catalog_ms: 0.0,
             document: None,
             error: None,
@@ -134,23 +129,20 @@ impl ChatHistory {
             selected_id: None,
             settings,
             settings_open: false,
-            summaries: Arc::new(summaries),
+            summaries: Arc::new(Vec::new()),
             window: window.window_handle(),
         };
-        if let Some(benchmark) = &view.benchmark {
-            if let Some(initial) = benchmark.fixtures.first().cloned() {
-                view.select(initial, Some("initial"), cx);
-            }
-        } else {
-            view.refresh_catalog(cx);
-        }
+        view.refresh_catalog(cx);
         view
     }
 
     fn refresh_catalog(&mut self, cx: &mut Context<Self>) {
         self.loading = true;
         self.error = None;
-        let limit = self.settings.recent_chat_limit;
+        let target_ids = self.benchmark.as_ref().map(|benchmark| {
+            benchmark.targets.iter().map(|target| (target.id.clone(), target.provider.clone())).collect::<Vec<_>>()
+        });
+        let limit = if target_ids.is_some() { usize::MAX } else { self.settings.recent_chat_limit };
         let selected_id = self
             .settings
             .restore_selection
@@ -166,15 +158,33 @@ impl ChatHistory {
                 Ok(catalog) => {
                     view.catalog_loaded = true;
                     view.catalog_ms = catalog.native_total_ms;
-                    view.summaries = Arc::new(catalog.summaries);
-                    let initial = selected_id
-                        .as_deref()
-                        .and_then(|id| view.summaries.iter().find(|item| item.id == id))
-                        .cloned()
+                    let resolved_targets = target_ids.as_ref().map(|ids| ids.iter().map(|(id, provider)| {
+                        catalog.summaries.iter().find(|item| item.id == *id && item.provider == *provider).cloned()
+                    }).collect::<Vec<_>>());
+                    let missing_target = resolved_targets.as_ref().is_some_and(|targets| targets.iter().any(Option::is_none));
+                    if missing_target {
+                        view.loading = false;
+                        view.error = Some("A pinned benchmark chat was not found during native history discovery".into());
+                        cx.notify();
+                        return;
+                    }
+                    let mut visible = catalog.summaries.into_iter().take(view.settings.recent_chat_limit).collect::<Vec<_>>();
+                    if let Some(targets) = &resolved_targets {
+                        for target in targets.iter().flatten() {
+                            if !visible.iter().any(|summary| summary.id == target.id) {
+                                visible.push(target.clone());
+                            }
+                        }
+                    }
+                    view.summaries = Arc::new(visible);
+                    let initial = resolved_targets
+                        .as_ref()
+                        .and_then(|targets| targets.first().and_then(Clone::clone))
+                        .or_else(|| selected_id.as_deref().and_then(|id| view.summaries.iter().find(|item| item.id == id)).cloned())
                         .or_else(|| view.summaries.first().cloned());
                     view.loading = false;
                     if let Some(summary) = initial {
-                        view.select(summary, None, cx);
+                        view.select(summary, target_ids.as_ref().map(|_| "initial"), cx);
                     } else {
                         view.generation += 1;
                         view.selected_id = None;
@@ -314,7 +324,12 @@ impl ChatHistory {
         if pending.phase != "initial" {
             return;
         }
-        let Some(summary) = benchmark.fixtures.get(1).cloned() else {
+        let Some(target) = benchmark.targets.get(1) else {
+            return;
+        };
+        let Some(summary) = self.summaries.iter().find(|summary| {
+            summary.id == target.id && summary.provider == target.provider
+        }).cloned() else {
             return;
         };
         let delay_ms = benchmark.switch_delay_ms;

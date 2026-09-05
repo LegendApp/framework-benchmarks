@@ -194,7 +194,6 @@ fn is_codex_subagent(path: &Path) -> bool {
 
 pub fn get_recent_chat_catalog(limit: usize, home: &Path) -> CatalogResult {
     let started = Instant::now();
-    let limit = limit.min(100);
     if limit == 0 {
         return CatalogResult {
             native_total_ms: started.elapsed().as_secs_f64() * 1000.0,

@@ -5,33 +5,29 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use chat_history_rust::ChatSummary;
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct Fixture {
-    id: String,
-    path: String,
-    provider: String,
-    title: String,
-    updated_at: f64,
+pub struct Target {
+    pub id: String,
+    pub provider: String,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Manifest {
-    fixtures: Vec<Fixture>,
     load_images: bool,
     switch_delay_ms: u64,
+    targets: Vec<Target>,
     version: usize,
 }
 
 #[derive(Clone)]
 pub struct Benchmark {
-    pub fixtures: Vec<ChatSummary>,
     pub load_images: bool,
     pub switch_delay_ms: u64,
+    pub targets: Vec<Target>,
     events_path: Option<PathBuf>,
 }
 
@@ -44,23 +40,13 @@ impl Benchmark {
             .map_err(|error| format!("Could not read benchmark manifest: {error}"))?;
         let manifest: Manifest = serde_json::from_str(&source)
             .map_err(|error| format!("Invalid benchmark manifest: {error}"))?;
-        if manifest.version != 1 || manifest.fixtures.len() != 2 {
+        if manifest.version != 2 || manifest.targets.len() != 2 {
             return Err("Unsupported chat history benchmark manifest".into());
         }
         Ok(Some(Self {
-            fixtures: manifest
-                .fixtures
-                .into_iter()
-                .map(|fixture| ChatSummary {
-                    id: fixture.id,
-                    path: fixture.path,
-                    provider: fixture.provider,
-                    title: fixture.title,
-                    updated_at: fixture.updated_at,
-                })
-                .collect(),
             load_images: manifest.load_images,
             switch_delay_ms: manifest.switch_delay_ms,
+            targets: manifest.targets,
             events_path: env::var_os("CHAT_HISTORY_BENCHMARK_EVENTS").map(PathBuf::from),
         }))
     }
