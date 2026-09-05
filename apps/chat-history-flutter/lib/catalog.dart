@@ -187,7 +187,7 @@ bool _isCodexSubagent(String path) {
 
 CatalogResult getRecentChats(int limit, String home) {
   final stopwatch = Stopwatch()..start();
-  final boundedLimit = limit.clamp(0, 100);
+  final boundedLimit = limit < 0 ? 0 : limit;
   if (boundedLimit == 0 || home.isEmpty) {
     return CatalogResult(
       nativeTotalMs: _elapsedMs(stopwatch),

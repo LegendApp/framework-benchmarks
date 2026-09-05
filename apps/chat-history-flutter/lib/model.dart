@@ -164,34 +164,46 @@ class CatalogResult {
 
 class BenchmarkConfig {
   const BenchmarkConfig({
-    required this.fixtures,
     required this.loadImages,
     required this.switchDelayMs,
+    required this.targets,
   });
 
-  final List<ChatSummary> fixtures;
   final bool loadImages;
   final int switchDelayMs;
+  final List<BenchmarkTarget> targets;
 
   factory BenchmarkConfig.fromJson(Map<String, dynamic> json) {
-    if (json['version'] != 1 || json['fixtures'] is! List) {
+    if (json['version'] != 2 || json['targets'] is! List) {
       throw const FormatException(
         'Unsupported chat history benchmark manifest',
       );
     }
-    final fixtures = (json['fixtures'] as List<dynamic>)
+    final targets = (json['targets'] as List<dynamic>)
         .cast<Map<String, dynamic>>()
-        .map(ChatSummary.fromJson)
+        .map(BenchmarkTarget.fromJson)
         .toList(growable: false);
-    if (fixtures.length != 2) {
-      throw const FormatException('Benchmark requires exactly two fixtures');
+    if (targets.length != 2) {
+      throw const FormatException('Benchmark requires exactly two targets');
     }
     return BenchmarkConfig(
-      fixtures: fixtures,
       loadImages: json['loadImages'] as bool? ?? false,
       switchDelayMs: (json['switchDelayMs'] as num).round(),
+      targets: targets,
     );
   }
+}
+
+class BenchmarkTarget {
+  const BenchmarkTarget({required this.id, required this.provider});
+
+  final String id;
+  final ChatProvider provider;
+
+  factory BenchmarkTarget.fromJson(Map<String, dynamic> json) => BenchmarkTarget(
+    id: json['id'] as String,
+    provider: ChatProviderName.parse(json['provider'] as String),
+  );
 }
 
 enum ChatAppearance { dark, light, system }

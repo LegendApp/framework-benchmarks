@@ -121,17 +121,28 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
         loadImages: benchmark.config.loadImages,
         restoreSelection: false,
       );
+      final home = _home;
+      final result = await compute(_loadCatalog, (home: home, limit: 0x7fffffff));
+      final targets = benchmark.config.targets.map((target) => result.summaries.where(
+        (summary) => summary.id == target.id && summary.provider == target.provider,
+      ).firstOrNull).toList(growable: false);
+      if (targets.any((target) => target == null)) {
+        throw StateError('A pinned benchmark chat was not found during native history discovery');
+      }
+      final resolvedTargets = targets.cast<ChatSummary>();
+      final visible = result.summaries.take(benchmarkSettings.recentChatLimit).toList();
+      for (final target in resolvedTargets) {
+        if (!visible.any((summary) => summary.id == target.id)) {
+          visible.add(target);
+        }
+      }
       setState(() {
         _benchmark = benchmark;
         _settings = benchmarkSettings;
-        _summaries = benchmark.config.fixtures;
-        _catalogMs = 0;
+        _summaries = visible;
+        _catalogMs = result.nativeTotalMs;
       });
-      await _select(
-        benchmark.config.fixtures.first,
-        settings: benchmarkSettings,
-        phase: 'initial',
-      );
+      await _select(resolvedTargets.first, settings: benchmarkSettings, phase: 'initial');
       return;
     }
     setState(() => _settings = loadedSettings);
@@ -283,11 +294,13 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
         Duration(milliseconds: benchmark.config.switchDelayMs),
       );
       if (mounted && generation == _selectionGeneration) {
-        await _select(
-          benchmark.config.fixtures[1],
-          settings: _settings,
-          phase: 'switch',
-        );
+        final target = benchmark.config.targets[1];
+        final summary = _summaries.where(
+          (item) => item.id == target.id && item.provider == target.provider,
+        ).firstOrNull;
+        if (summary != null) {
+          await _select(summary, settings: _settings, phase: 'switch');
+        }
       }
     }
   }
