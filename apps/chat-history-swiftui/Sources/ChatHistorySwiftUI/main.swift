@@ -26,21 +26,33 @@ final class ChatHistoryStore: ObservableObject {
       settings = ChatHistorySettings(
         loadImages: benchmarkConfig.loadImages,
         restoreSelection: false)
-      summaries = benchmarkConfig.fixtures.map(\.summary)
-      catalogMs = 0
-      if let initial = summaries.first {
-        select(initial, phase: .initial)
-      }
-    } else {
-      Task { await loadCatalog() }
     }
+    Task { await loadCatalog() }
   }
 
   func loadCatalog(preferredId: String? = nil) async {
-    let limit = settings.recentChatLimit
+    let limit = benchmarkConfig == nil ? settings.recentChatLimit : Int.max
     let result = await Task.detached(priority: .userInitiated) {
       getRecentChats(limit: limit)
     }.value
+    if let benchmarkConfig {
+      let targets = benchmarkConfig.targets.compactMap { target in
+        result.summaries.first { $0.id == target.id && $0.provider == target.provider }
+      }
+      guard targets.count == benchmarkConfig.targets.count else {
+        catalogMs = result.nativeTotalMs
+        errorMessage = "A pinned benchmark chat was not found during native history discovery"
+        isLoading = false
+        return
+      }
+      summaries = Array(result.summaries.prefix(settings.recentChatLimit))
+      for target in targets where !summaries.contains(where: { $0.id == target.id }) {
+        summaries.append(target)
+      }
+      catalogMs = result.nativeTotalMs
+      select(targets[0], phase: .initial)
+      return
+    }
     summaries = result.summaries
     catalogMs = result.nativeTotalMs
     let restoredId = settings.restoreSelection ? preferredId ?? settings.selectedId : nil
@@ -117,8 +129,11 @@ final class ChatHistoryStore: ObservableObject {
     ChatBenchmark.emit(
       ChatBenchmarkContentReadyEvent(durationMs: durationMs, document: document, phase: phase))
     ChatBenchmark.emitContentDigest(document: document, phase: phase)
-    if phase == .initial, let benchmarkConfig, benchmarkConfig.fixtures.count == 2 {
-      let secondary = benchmarkConfig.fixtures[1].summary
+    if phase == .initial, let benchmarkConfig, benchmarkConfig.targets.count == 2,
+      let secondary = summaries.first(where: {
+        $0.id == benchmarkConfig.targets[1].id && $0.provider == benchmarkConfig.targets[1].provider
+      })
+    {
       Task {
         try? await Task.sleep(for: .milliseconds(Int64(benchmarkConfig.switchDelayMs)))
         select(secondary, phase: .switch)

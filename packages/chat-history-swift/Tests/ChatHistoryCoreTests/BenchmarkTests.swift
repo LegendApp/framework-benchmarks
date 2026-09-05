@@ -10,21 +10,14 @@ import Testing
   defer { try? FileManager.default.removeItem(at: root) }
   let manifest = root.appending(path: "fixtures.json")
   let events = root.appending(path: "events.jsonl")
-  let fixture = """
+  let target = """
     {
       "id": "codex:fixture",
-      "lastActivityAt": 1,
-      "modifiedAt": 1,
-      "path": "/tmp/fixture.jsonl",
-      "provider": "codex",
-      "sha256": "abc",
-      "sourceBytes": 100,
-      "title": "Fixture",
-      "updatedAt": 1
+      "provider": "codex"
     }
     """
   try """
-    {"fixtures":[\(fixture),\(fixture)],"loadImages":false,"switchDelayMs":3000,"version":1}
+    {"targets":[\(target),\(target)],"loadImages":false,"switchDelayMs":3000,"version":2}
     """.write(to: manifest, atomically: true, encoding: .utf8)
   let environment = [
     "CHAT_HISTORY_BENCHMARK_CONFIG": manifest.path,
@@ -33,7 +26,7 @@ import Testing
 
   let loaded = try ChatBenchmark.load(environment: environment)
   let config = try #require(loaded)
-  #expect(config.fixtures.count == 2)
+  #expect(config.targets.count == 2)
   #expect(config.loadImages == false)
   ChatBenchmark.emitWindowShown(environment: environment)
 

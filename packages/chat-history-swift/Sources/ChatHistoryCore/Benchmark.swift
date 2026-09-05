@@ -1,25 +1,14 @@
 import Foundation
 
-public struct ChatBenchmarkFixture: Codable, Sendable {
+public struct ChatBenchmarkTarget: Codable, Sendable {
   public let id: String
-  public let lastActivityAt: Double
-  public let modifiedAt: Double
-  public let path: String
   public let provider: ChatProvider
-  public let sha256: String
-  public let sourceBytes: Int
-  public let title: String
-  public let updatedAt: Double
-
-  public var summary: ChatSummary {
-    ChatSummary(id: id, path: path, provider: provider, title: title, updatedAt: updatedAt)
-  }
 }
 
 public struct ChatBenchmarkConfig: Codable, Sendable {
-  public let fixtures: [ChatBenchmarkFixture]
   public let loadImages: Bool
   public let switchDelayMs: Double
+  public let targets: [ChatBenchmarkTarget]
   public let version: Int
 }
 
@@ -66,7 +55,7 @@ public enum ChatBenchmark {
     guard let path = environment["CHAT_HISTORY_BENCHMARK_CONFIG"] else { return nil }
     let config = try JSONDecoder().decode(
       ChatBenchmarkConfig.self, from: Data(contentsOf: URL(fileURLWithPath: path)))
-    guard config.version == 1, config.fixtures.count == 2 else {
+    guard config.version == 2, config.targets.count == 2 else {
       throw CocoaError(.fileReadCorruptFile)
     }
     return config

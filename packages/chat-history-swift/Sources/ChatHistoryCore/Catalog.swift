@@ -139,7 +139,7 @@ private func isCodexSubagent(_ path: String) -> Bool {
 
 public func getRecentChats(limit: Int = 20, home: String = NSHomeDirectory()) -> CatalogResult {
   let startedAt = monotonicMilliseconds()
-  let boundedLimit = max(0, min(100, limit))
+  let boundedLimit = max(0, limit)
   guard boundedLimit > 0 else {
     return CatalogResult(nativeTotalMs: monotonicMilliseconds() - startedAt, summaries: [])
   }

@@ -79,17 +79,7 @@ private final class ChatSplitViewController: NSSplitViewController, NSToolbarDel
         restoreSelection: false)
     }
     content.apply(settings: settings)
-    if let benchmarkConfig {
-      let summaries = benchmarkConfig.fixtures.map(\.summary)
-      sidebar.setSummaries(summaries)
-      catalogLabel.stringValue = "catalog 0.00 ms"
-      if let initial = summaries.first {
-        sidebar.select(id: initial.id)
-        open(initial, phase: .initial)
-      }
-    } else {
-      Task { await loadCatalog() }
-    }
+    Task { await loadCatalog() }
   }
 
   func makeToolbar() -> NSToolbar {
@@ -168,11 +158,28 @@ private final class ChatSplitViewController: NSSplitViewController, NSToolbarDel
   }
 
   private func loadCatalog(preferredId: String? = nil) async {
-    let limit = settings.recentChatLimit
+    let limit = benchmarkConfig == nil ? settings.recentChatLimit : Int.max
     let result = await Task.detached(priority: .userInitiated) { getRecentChats(limit: limit) }
       .value
-    sidebar.setSummaries(result.summaries)
     catalogLabel.stringValue = "catalog \(formatMs(result.nativeTotalMs)) ms"
+    if let benchmarkConfig {
+      let targets = benchmarkConfig.targets.compactMap { target in
+        result.summaries.first { $0.id == target.id && $0.provider == target.provider }
+      }
+      guard targets.count == benchmarkConfig.targets.count else {
+        content.showError("A pinned benchmark chat was not found during native history discovery")
+        return
+      }
+      var visible = Array(result.summaries.prefix(settings.recentChatLimit))
+      for target in targets where !visible.contains(where: { $0.id == target.id }) {
+        visible.append(target)
+      }
+      sidebar.setSummaries(visible)
+      sidebar.select(id: targets[0].id)
+      open(targets[0], phase: .initial)
+      return
+    }
+    sidebar.setSummaries(result.summaries)
     let restoredId = settings.restoreSelection ? preferredId ?? settings.selectedId : nil
     guard
       let initial = result.summaries.first(where: { $0.id == restoredId }) ?? result.summaries.first
@@ -235,8 +242,9 @@ private final class ChatSplitViewController: NSSplitViewController, NSToolbarDel
     ChatBenchmark.emit(
       ChatBenchmarkContentReadyEvent(durationMs: durationMs, document: document, phase: phase))
     ChatBenchmark.emitContentDigest(document: document, phase: phase)
-    if phase == .initial, let benchmarkConfig, benchmarkConfig.fixtures.count == 2 {
-      let secondary = benchmarkConfig.fixtures[1].summary
+    if phase == .initial, let benchmarkConfig, benchmarkConfig.targets.count == 2,
+      let secondary = sidebar.summary(id: benchmarkConfig.targets[1].id)
+    {
       Task {
         try? await Task.sleep(for: .milliseconds(Int64(benchmarkConfig.switchDelayMs)))
         open(secondary, phase: .switch)
@@ -328,6 +336,13 @@ private final class SidebarViewController: NSViewController, NSTableViewDataSour
     items.append(.header(.claude))
     items += summaries.filter { $0.provider == .claude }.map(Item.summary)
     tableView.reloadData()
+  }
+
+  func summary(id: String) -> ChatSummary? {
+    items.lazy.compactMap { item -> ChatSummary? in
+      if case .summary(let summary) = item { return summary }
+      return nil
+    }.first { $0.id == id }
   }
 
   func select(id: String) {
