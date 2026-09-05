@@ -13,8 +13,8 @@ import {
 import { homedir } from "node:os";
 import { basename, extname, join, resolve, sep } from "node:path";
 import type {
-  BenchmarkConfig,
   BenchmarkFixture,
+  BenchmarkFixtureManifest,
   ChatProvider,
 } from "../../apps/chat-history-electron/src/model";
 
@@ -169,11 +169,11 @@ async function main() {
     ...fixture,
     sha256: await sha256(fixture.path),
   }))) as [BenchmarkFixture, BenchmarkFixture];
-  const config: BenchmarkConfig = {
+  const config: BenchmarkFixtureManifest = {
     fixtures,
     loadImages: false,
     switchDelayMs: 3_000,
-    version: 1,
+    version: 2,
   };
   writeFileSync(outputPath, `${JSON.stringify(config, null, 2)}\n`);
   for (const fixture of fixtures) {

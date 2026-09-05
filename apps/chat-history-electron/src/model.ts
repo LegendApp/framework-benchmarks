@@ -105,11 +105,20 @@ export type BenchmarkFixture = ChatSummary & {
   sourceBytes: number;
 };
 
+export type BenchmarkTarget = Pick<ChatSummary, "id" | "provider">;
+
 export type BenchmarkConfig = {
+  loadImages: boolean;
+  switchDelayMs: number;
+  targets: [BenchmarkTarget, BenchmarkTarget];
+  version: 2;
+};
+
+export type BenchmarkFixtureManifest = {
   fixtures: [BenchmarkFixture, BenchmarkFixture];
   loadImages: boolean;
   switchDelayMs: number;
-  version: 1;
+  version: 2;
 };
 
 export type BenchmarkContentReadyEvent = {

@@ -18,6 +18,7 @@ import { basename, join, resolve } from "node:path";
 import type {
   BenchmarkConfig,
   BenchmarkContentReadyEvent,
+  BenchmarkFixtureManifest,
 } from "../../apps/chat-history-electron/src/model";
 import {
   analyzeRecording,
@@ -188,7 +189,7 @@ async function sha256(path: string) {
   return hash.digest("hex");
 }
 
-async function verifyFixtures(config: BenchmarkConfig) {
+async function verifyFixtures(config: BenchmarkFixtureManifest) {
   for (const fixture of config.fixtures) {
     if (statSync(fixture.path).size !== fixture.sourceBytes) {
       throw new Error(`Fixture size changed: ${fixture.path}`);
@@ -682,8 +683,17 @@ async function main() {
       }
     }
   }
-  const config = JSON.parse(readFileSync(manifestPath, "utf8")) as BenchmarkConfig;
-  await verifyFixtures(config);
+  const fixtureManifest = JSON.parse(readFileSync(manifestPath, "utf8")) as BenchmarkFixtureManifest;
+  if (fixtureManifest.version !== 2 || fixtureManifest.fixtures.length !== 2) {
+    throw new Error("Unsupported fixture manifest; rerun bun run benchmark:fixtures");
+  }
+  await verifyFixtures(fixtureManifest);
+  const config: BenchmarkConfig = {
+    loadImages: fixtureManifest.loadImages,
+    switchDelayMs: fixtureManifest.switchDelayMs,
+    targets: fixtureManifest.fixtures.map(({ id, provider }) => ({ id, provider })) as BenchmarkConfig["targets"],
+    version: 2,
+  };
   const iterations = Math.max(1, Number(option("--iterations") ?? 10));
   const warmups = Math.max(0, Number(option("--warmups") ?? 2));
   const requestedApps = selectedApps();
@@ -747,7 +757,7 @@ async function main() {
     buildManifest: existsSync(resolve(buildRoot, "build-manifest.json"))
       ? JSON.parse(readFileSync(resolve(buildRoot, "build-manifest.json"), "utf8"))
       : undefined,
-    fixtures: config.fixtures,
+    fixtures: fixtureManifest.fixtures,
     gitCommit: command("git", ["rev-parse", "HEAD"]),
     machine: {
       architecture: process.arch,
@@ -773,6 +783,7 @@ async function main() {
     iterations,
     protocol: {
       cache: "Fixture verification reads and hashes every byte before measurements, producing a controlled warm filesystem cache.",
+      discovery: "Every app receives only the two stable provider/id pairs, scans the native Codex and Claude history stores itself, and resolves both transcript paths inside the measured startup path.",
       memorySamples: 3,
       memorySettleMs: 300,
       order: "Deterministic round-robin rotation across apps for every warm-up and measured round.",
