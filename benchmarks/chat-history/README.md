@@ -61,7 +61,9 @@ cache. The runner keeps transcript paths and metadata in its private fixture
 manifest, but gives each app only the two pinned provider/id pairs. Every app
 must scan the native Codex and Claude stores, resolve those IDs to paths, and
 construct its sidebar catalog after process launch; that discovery is included
-in first-content time. Every run starts a new production process. Two warm-up rounds are
+in first-content time. Reports also show discovery separately as the app-side
+wall time from starting the native catalog request until the catalog is
+available back in the app. Every run starts a new production process. Two warm-up rounds are
 discarded and ten measured rounds rotate app order deterministically, giving
 every app equal exposure to each position. Reports include p50 and p90 timing,
 all raw observations, and native-versus-post-native stage diagnostics. Memory
