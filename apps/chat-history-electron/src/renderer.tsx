@@ -447,15 +447,34 @@ function App() {
         };
         setBenchmarkConfig(benchmark);
         setSettings(benchmarkSettings);
-        setSummaries(benchmark.fixtures);
-        setCatalogMs(0);
         applyAppearance(benchmarkSettings.appearance);
-        await select(benchmark.fixtures[0], benchmarkSettings, "initial");
+        const result = await window.chatHistory.getRecentChats(Number.MAX_SAFE_INTEGER);
+        const targets = benchmark.targets.map((target) => result.summaries.find(
+          (summary) => summary.id === target.id && summary.provider === target.provider,
+        ));
+        if (targets.some((target) => !target)) {
+          throw new Error("A pinned benchmark chat was not found during native history discovery");
+        }
+        const resolvedTargets = targets as [ChatSummary, ChatSummary];
+        const visibleSummaries = result.summaries.slice(0, defaultChatHistorySettings.recentChatLimit);
+        for (const target of resolvedTargets) {
+          if (!visibleSummaries.some((summary) => summary.id === target.id)) {
+            visibleSummaries.push(target);
+          }
+        }
+        setSummaries(visibleSummaries);
+        setCatalogMs(result.nativeTotalMs);
+        await select(resolvedTargets[0], benchmarkSettings, "initial");
         return;
       }
       setSettings(loadedSettings);
       applyAppearance(loadedSettings.appearance);
       await refreshCatalog(loadedSettings);
+    }).catch((error) => {
+      if (active) {
+        setCatalogError(error instanceof Error ? error.message : String(error));
+        setCatalogMs(0);
+      }
     });
     return () => { active = false; };
   }, []);
@@ -485,8 +504,12 @@ function App() {
   async function handleBenchmarkEvent(event: BenchmarkEvent) {
     await window.chatHistory.emitBenchmarkEvent?.(event);
     if (event.name === "contentReady" && event.phase === "initial" && benchmarkConfig) {
+      const secondary = summaries.find((summary) => summary.id === benchmarkConfig.targets[1].id);
+      if (!secondary) {
+        return;
+      }
       window.setTimeout(() => {
-        void select(benchmarkConfig.fixtures[1], settings, "switch");
+        void select(secondary, settings, "switch");
       }, benchmarkConfig.switchDelayMs);
     }
   }

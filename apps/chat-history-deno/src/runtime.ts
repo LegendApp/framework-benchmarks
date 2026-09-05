@@ -112,7 +112,7 @@ async function benchmarkConfig(): Promise<BenchmarkConfig | undefined> {
     return undefined;
   }
   const config = JSON.parse(await Deno.readTextFile(path)) as BenchmarkConfig;
-  if (config.version !== 1 || config.fixtures.length !== 2) {
+  if (config.version !== 2 || config.targets.length !== 2) {
     throw new Error("Unsupported chat history benchmark manifest");
   }
   return config;

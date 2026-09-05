@@ -151,7 +151,7 @@ async function isCodexSubagent(path: string) {
 
 export async function getRecentChats(limit = 20, home = homedir()): Promise<CatalogResult> {
   const startedAt = performance.now();
-  const boundedLimit = Math.max(0, Math.min(100, Math.floor(limit)));
+  const boundedLimit = Math.max(0, Math.floor(limit));
   if (boundedLimit === 0) {
     return { nativeTotalMs: performance.now() - startedAt, summaries: [] };
   }
