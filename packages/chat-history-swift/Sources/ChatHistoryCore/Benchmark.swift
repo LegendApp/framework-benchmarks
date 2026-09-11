@@ -116,7 +116,7 @@ public enum ChatBenchmark {
     Task.detached(priority: .utility) {
       emit(
         ChatBenchmarkContentDigestEvent(
-          contentDigest: normalizedContentDigest(document.rows),
+          contentDigest: document.contentDigest,
           path: document.path,
           phase: phase))
     }

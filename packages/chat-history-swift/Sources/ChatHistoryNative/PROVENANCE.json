@@ -1,0 +1,18 @@
+{
+  "repository": "legend-apps",
+  "revision": "89561d1ac6f39c8402797abbdbdd221fe1135ce8",
+  "sourceSHA256": {
+    "packages/chat-history/cpp/ChatJson.hpp": "6055f6e1280852547492d788693ec7e9185a4413ba08b53623d1b27f65715d12",
+    "packages/chat-history/cpp/ChatJson.cpp": "ad32cc3d7f138225757cdbaa78f41588cecbcd9dfb3a181f71c99949932d9535",
+    "packages/chat-history/cpp/ChatTime.hpp": "17226f8706d590df165fec092eaf44c21ed363499b933e76114ec970705f2432",
+    "packages/chat-history/cpp/ChatTime.cpp": "8ebb4437bfcc55c1e34c8127ceca2d210ece7a6156a16f9da358e549d25e26cb",
+    "packages/chat-history/cpp/ChatTranscriptParser.cpp": "9ce9fe2f01d3aac72d3c5f94b2e85fc8e2957a83f86318b4f9bebb6acd81e6a8",
+    "packages/native-text-source/cpp/NativeTextSource.hpp": "1e8a9075048f49a2c06da9292e4f7c8c0c017e6c4096fa143720c7228e9e934e",
+    "packages/chat-history/nitrogen/generated/shared/c++/ChatDocumentTiming.hpp": "9c06857a5dc504db559537cb045bbf275509d7fa4f4767c1c9ab9d75ddb1ffb8",
+    "packages/chat-history/nitrogen/generated/shared/c++/ChatRowMetadata.hpp": "b292bf6ee71ed75c73ff8b66957ed84bc9e67e5291057b39760535b22e7ce5f1",
+    "packages/chat-history/nitrogen/generated/shared/c++/ChatFileChange.hpp": "ffdaa3946e1f645bf35894a692d21d43288c5cbcca5b364f73f19e8bdb82053d",
+    "packages/chat-history/cpp/ChatDocument.hpp": "d87bbeffa3c1db13dd4583c34c69bb929e9eaf2b5c77846084f148dc9ebdbafc",
+    "packages/chat-history/cpp/HybridChatDocument.hpp": "b731188dfed60190eb746139ae9904a4fc633c5566201e37b3c84952472f1394",
+    "packages/chat-history/cpp/HybridChatDocument.cpp": "db63887cfd0fbbcb952ff77e025c7fd0bca8dff806574ce1e617451c06fb34fd"
+  }
+}

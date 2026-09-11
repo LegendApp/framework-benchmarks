@@ -770,7 +770,7 @@ public func parseChatText(provider: ChatProvider, text: String) -> ParsedChat {
   parseChatData(provider: provider, source: Data(text.utf8))
 }
 
-public func openChatFile(provider: ChatProvider, path: String) throws -> ChatDocument {
+func openChatFileSwiftReference(provider: ChatProvider, path: String) throws -> ChatDocument {
   let startedAt = monotonicMilliseconds()
   let loadStartedAt = monotonicMilliseconds()
   let source = try Data(contentsOf: URL(fileURLWithPath: path), options: [.mappedIfSafe])

@@ -13,11 +13,17 @@ let package = Package(
     .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.8.0")
   ],
   targets: [
-    .target(name: "ChatHistoryCore"),
+    .target(
+      name: "ChatHistoryNative",
+      exclude: ["PROVENANCE.json", "README.md"],
+      cxxSettings: [.unsafeFlags(["-fobjc-arc"])],
+      linkerSettings: [.linkedFramework("Foundation")]),
+    .target(name: "ChatHistoryCore", dependencies: ["ChatHistoryNative"]),
     .target(
       name: "ChatHistoryMarkdown",
       dependencies: [.product(name: "Markdown", package: "swift-markdown")]),
     .testTarget(name: "ChatHistoryCoreTests", dependencies: ["ChatHistoryCore"]),
     .testTarget(name: "ChatHistoryMarkdownTests", dependencies: ["ChatHistoryMarkdown"]),
-  ]
+  ],
+  cxxLanguageStandard: .cxx20
 )
