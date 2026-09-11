@@ -43,6 +43,7 @@ public struct ChatBenchmarkContentReadyEvent: Codable, Sendable {
   public let sourceBytes: Int
   public let timestampMs: Double
   public let timing: NativeTiming
+  public let parser: String
 
   public init(
     discoveryMs: Double? = nil,
@@ -60,6 +61,7 @@ public struct ChatBenchmarkContentReadyEvent: Codable, Sendable {
     self.sourceBytes = document.sourceBytes
     self.timestampMs = Date().timeIntervalSince1970 * 1_000
     self.timing = document.timing
+    self.parser = document.nativeStorage == nil ? "swift" : "cpp"
   }
 }
 

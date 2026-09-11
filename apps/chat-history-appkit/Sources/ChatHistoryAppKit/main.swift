@@ -68,8 +68,10 @@ private final class ChatSplitViewController: NSSplitViewController, NSToolbarDel
     super.viewDidLoad()
     splitView.isVertical = true
     let sidebarItem = NSSplitViewItem(sidebarWithViewController: sidebar)
-    sidebarItem.minimumThickness = 220
-    sidebarItem.maximumThickness = 360
+    sidebarItem.minimumThickness =
+      benchmarkConfig == nil ? 220 : TranscriptStyle.benchmarkSidebarPaneWidth
+    sidebarItem.maximumThickness =
+      benchmarkConfig == nil ? 360 : TranscriptStyle.benchmarkSidebarPaneWidth
     sidebarItem.preferredThicknessFraction = 260 / 1_280
     addSplitViewItem(sidebarItem)
     addSplitViewItem(NSSplitViewItem(viewController: content))
@@ -514,6 +516,10 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
   var isEmpty: Bool { document == nil }
   private(set) var isLoading = false
   private var document: ChatDocument?
+  private let demo = ChatDemo()
+  private var rows: ChatRows? { document?.rows.appending(demo.rows) }
+  private let composerInput = NSTextField()
+  private let composer = NSVisualEffectView()
   private var expandedRows = Set<String>()
   private var firstPaintMs: Double?
   private var renderedMarkdown: [String: NSAttributedString] = [:]
@@ -549,7 +555,8 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
     // Invalidate cached heights without instantiating offscreen cells. New/reused
     // cells receive the current column width in viewFor before their first measurement.
     if tableView.numberOfRows > 0 {
-      tableView.noteHeightOfRows(withIndexesChanged: IndexSet(integersIn: 0..<tableView.numberOfRows))
+      tableView.noteHeightOfRows(
+        withIndexesChanged: IndexSet(integersIn: 0..<tableView.numberOfRows))
     }
   }
 
@@ -565,10 +572,11 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
     column.resizingMask = .autoresizingMask
     tableView.addTableColumn(column)
     tableView.headerView = nil
-    tableView.backgroundColor = .textBackgroundColor
+    tableView.backgroundColor = TranscriptColors.background
     tableView.dataSource = self
     tableView.delegate = self
     tableView.intercellSpacing = .zero
+    tableView.style = .plain
     tableView.selectionHighlightStyle = .none
     tableView.rowHeight = 96
     tableView.usesAutomaticRowHeights = true
@@ -579,13 +587,49 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
     emptyLabel.textColor = .secondaryLabelColor
     emptyLabel.alignment = .center
     emptyLabel.translatesAutoresizingMaskIntoConstraints = false
-    for child in [metricsLabel, scroll, emptyLabel] { root.addSubview(child) }
+    composer.material = .contentBackground
+    composer.blendingMode = .withinWindow
+    composer.wantsLayer = true
+    composer.layer?.cornerRadius = 26
+    composer.layer?.borderWidth = 1
+    composer.layer?.borderColor = NSColor.separatorColor.cgColor
+    composer.translatesAutoresizingMaskIntoConstraints = false
+    composerInput.placeholderString = "Send a test message that doesn't actually do anything"
+    composerInput.font = .systemFont(ofSize: 15)
+    composerInput.isBordered = false
+    composerInput.drawsBackground = false
+    composerInput.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+    composerInput.target = self
+    composerInput.action = #selector(sendDemo)
+    composerInput.translatesAutoresizingMaskIntoConstraints = false
+    let send = NSButton(
+      image: NSImage(systemSymbolName: "arrow.up", accessibilityDescription: "Send test message")!,
+      target: self, action: #selector(sendDemo))
+    send.isBordered = false
+    send.translatesAutoresizingMaskIntoConstraints = false
+    composer.addSubview(composerInput)
+    composer.addSubview(send)
+    for child in [metricsLabel, scroll, emptyLabel, composer] { root.addSubview(child) }
     metricsHeight = metricsLabel.heightAnchor.constraint(equalToConstant: 0)
     NSLayoutConstraint.activate([
       metricsLabel.leadingAnchor.constraint(equalTo: root.leadingAnchor),
       metricsLabel.trailingAnchor.constraint(equalTo: root.trailingAnchor),
       metricsLabel.topAnchor.constraint(equalTo: root.safeAreaLayoutGuide.topAnchor),
       metricsHeight,
+      composer.centerXAnchor.constraint(equalTo: root.centerXAnchor),
+      composer.widthAnchor.constraint(lessThanOrEqualToConstant: 860),
+      composer.leadingAnchor.constraint(greaterThanOrEqualTo: root.leadingAnchor, constant: 24),
+      composer.trailingAnchor.constraint(lessThanOrEqualTo: root.trailingAnchor, constant: -24),
+      composer.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -20),
+      composer.heightAnchor.constraint(equalToConstant: 60),
+      composerInput.leadingAnchor.constraint(equalTo: composer.leadingAnchor, constant: 16),
+      composerInput.centerYAnchor.constraint(equalTo: composer.centerYAnchor),
+      composerInput.heightAnchor.constraint(equalToConstant: 36),
+      composerInput.trailingAnchor.constraint(equalTo: send.leadingAnchor, constant: -12),
+      send.trailingAnchor.constraint(equalTo: composer.trailingAnchor, constant: -16),
+      send.widthAnchor.constraint(equalToConstant: 36),
+      send.heightAnchor.constraint(equalToConstant: 36),
+      send.centerYAnchor.constraint(equalTo: composer.centerYAnchor),
       scroll.leadingAnchor.constraint(equalTo: root.leadingAnchor),
       scroll.trailingAnchor.constraint(equalTo: root.trailingAnchor),
       scroll.topAnchor.constraint(equalTo: metricsLabel.bottomAnchor),
@@ -593,6 +637,15 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
       emptyLabel.centerXAnchor.constraint(equalTo: root.centerXAnchor),
       emptyLabel.centerYAnchor.constraint(equalTo: root.centerYAnchor),
     ])
+    let composerWidth = composer.widthAnchor.constraint(equalToConstant: 860)
+    composerWidth.priority = .defaultLow
+    composerWidth.isActive = true
+    demo.onChange = { [weak self] in
+      guard let self else { return }
+      renderedMarkdown = renderedMarkdown.filter { !$0.key.contains(":assistant") }
+      tableView.reloadData()
+      tableView.scrollRowToVisible(tableView.numberOfRows - 1)
+    }
     view = root
   }
 
@@ -605,6 +658,7 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
 
   func showLoading() {
     isLoading = true
+    demo.reset()
     document = nil
     expandedRows.removeAll()
     renderedMarkdown.removeAll(keepingCapacity: true)
@@ -619,6 +673,7 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
 
   func showError(_ message: String) {
     isLoading = false
+    demo.reset()
     document = nil
     updateMetricsVisibility()
     scroll.isHidden = true
@@ -629,6 +684,7 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
 
   func showEmptyCatalog() {
     isLoading = false
+    demo.reset()
     document = nil
     expandedRows.removeAll()
     renderedMarkdown.removeAll(keepingCapacity: true)
@@ -647,6 +703,7 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
     onReady: @escaping @MainActor @Sendable (Double) -> Void
   ) {
     isLoading = false
+    demo.reset()
     self.document = document
     firstPaintMs = nil
     expandedRows.removeAll()
@@ -664,7 +721,13 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
     }
   }
 
-  func numberOfRows(in tableView: NSTableView) -> Int { document?.rows.count ?? 0 }
+  func numberOfRows(in tableView: NSTableView) -> Int { rows.map { $0.count + 1 } ?? 0 }
+
+  @objc private func sendDemo() {
+    guard document != nil else { return }
+    demo.send(composerInput.stringValue)
+    composerInput.stringValue = ""
+  }
 
   func scrollToTop() -> Double {
     let startedAt = ProcessInfo.processInfo.systemUptime * 1_000
@@ -675,12 +738,17 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
   }
 
   func tableView(_ tableView: NSTableView, viewFor column: NSTableColumn?, row: Int) -> NSView? {
-    guard let item = document?.rows[row] else { return nil }
+    guard let rows else { return nil }
+    if row == rows.count {
+      return TranscriptBottomSpacer()
+    }
+    let item = rows[row]
     let identifier = NSUserInterfaceItemIdentifier("transcript-row")
     let cell =
       tableView.makeView(withIdentifier: identifier, owner: self) as? TranscriptCell
       ?? TranscriptCell(identifier: identifier)
-    let markdown = item.markdown.isEmpty
+    let markdown =
+      item.markdown.isEmpty
       ? nil
       : renderedMarkdown[item.id]
         ?? RichMarkdownRenderer.render(
@@ -712,7 +780,13 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
     onReady: @escaping @MainActor @Sendable (Double) -> Void
   ) {
     guard self.document?.path == document.path else { return }
-    if !document.rows.isEmpty { tableView.scrollRowToVisible(document.rows.count - 1) }
+    if !document.rows.isEmpty { tableView.scrollRowToVisible(tableView.numberOfRows - 1) }
+    tableView.layoutSubtreeIfNeeded()
+    // Automatic row measurements can change the estimated document height.
+    // Anchor to the real end, including composer clearance, after that layout.
+    scroll.contentView.scroll(
+      to: NSPoint(x: 0, y: max(0, tableView.frame.height - scroll.contentView.bounds.height)))
+    scroll.reflectScrolledClipView(scroll.contentView)
     tableView.layoutSubtreeIfNeeded()
     view.window?.displayIfNeeded()
     let durationMs = ProcessInfo.processInfo.systemUptime * 1_000 - openedAt
@@ -736,11 +810,24 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
 }
 
 @MainActor
+private final class TranscriptBottomSpacer: NSTableCellView {
+  override var intrinsicContentSize: NSSize {
+    NSSize(
+      width: NSView.noIntrinsicMetric,
+      height: TranscriptStyle.composerHeight + TranscriptStyle.bottomGap)
+  }
+}
+
+@MainActor
 private final class TranscriptCell: NSTableCellView {
   private let stack = NSStackView()
   private var leadingConstraint: NSLayoutConstraint!
   private var toggle: (() -> Void)?
   private var measurementWidth: CGFloat = 0
+  private var rowKind: ChatRowKind = .assistant
+  private var trailingConstraint: NSLayoutConstraint!
+  private var topConstraint: NSLayoutConstraint!
+  private var bottomConstraint: NSLayoutConstraint!
   private var wrappingLabels: [NSTextField] = []
 
   override func setFrameSize(_ newSize: NSSize) {
@@ -752,6 +839,7 @@ private final class TranscriptCell: NSTableCellView {
 
   func updateMeasurementWidth(_ width: CGFloat) {
     measurementWidth = width
+    updateInsets()
     for label in wrappingLabels {
       let preferredWidth = availableTextWidth
       if abs(label.preferredMaxLayoutWidth - preferredWidth) > 0.5 {
@@ -762,7 +850,29 @@ private final class TranscriptCell: NSTableCellView {
   }
 
   private var availableTextWidth: CGFloat {
-    max(1, min(820, measurementWidth - leadingConstraint.constant - 22))
+    max(1, measurementWidth - leadingConstraint.constant + trailingConstraint.constant)
+  }
+
+  private func updateInsets() {
+    guard leadingConstraint != nil else { return }
+    let inner = max(1, measurementWidth - 40)
+    switch rowKind {
+    case .user:
+      leadingConstraint.constant = 20 + inner * (1 - TranscriptStyle.userWidthFraction) + 16
+      trailingConstraint.constant = -36
+      topConstraint.constant = 20
+      bottomConstraint.constant = -20
+    case .assistant:
+      leadingConstraint.constant = 20
+      trailingConstraint.constant = -(20 + inner * (1 - TranscriptStyle.assistantWidthFraction))
+      topConstraint.constant = 12
+      bottomConstraint.constant = -12
+    default:
+      leadingConstraint.constant = 20
+      trailingConstraint.constant = -20
+      topConstraint.constant = 8
+      bottomConstraint.constant = -8
+    }
   }
 
   init(identifier: NSUserInterfaceItemIdentifier) {
@@ -774,11 +884,11 @@ private final class TranscriptCell: NSTableCellView {
     stack.translatesAutoresizingMaskIntoConstraints = false
     addSubview(stack)
     leadingConstraint = stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 22)
+    trailingConstraint = stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20)
+    topConstraint = stack.topAnchor.constraint(equalTo: topAnchor, constant: 12)
+    bottomConstraint = stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12)
     NSLayoutConstraint.activate([
-      leadingConstraint,
-      stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -22),
-      stack.topAnchor.constraint(equalTo: topAnchor, constant: 10),
-      stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
+      leadingConstraint, trailingConstraint, topConstraint, bottomConstraint,
     ])
   }
 
@@ -793,10 +903,13 @@ private final class TranscriptCell: NSTableCellView {
     onToggle: @escaping () -> Void
   ) {
     reset()
+    rowKind = row.kind
+    stack.alignment = row.kind == .user ? .trailing : .leading
+    needsDisplay = true
+    updateInsets()
     toggle = onToggle
     switch row.kind {
     case .assistant, .user:
-      leadingConstraint.constant = row.kind == .user ? 100 : 22
       if loadImages {
         for source in row.imageSources { addImage(source) }
       }
@@ -807,20 +920,47 @@ private final class TranscriptCell: NSTableCellView {
         stack.addArrangedSubview(attachmentLabel("Image or attachment omitted"))
       }
     case .tool:
+      stack.spacing = 16
       let status = row.toolStatus == .failed ? "  Failed" : ""
       let button = disclosureButton("\(expanded ? "▾" : "▸") \(row.toolName)\(status)")
       button.contentTintColor = row.toolStatus == .failed ? .systemRed : .secondaryLabelColor
+      button.heightAnchor.constraint(equalToConstant: 44).isActive = true
       stack.addArrangedSubview(button)
       if expanded && !row.toolPreview.isEmpty {
         stack.addArrangedSubview(detailLabel(row.toolPreview))
       }
+      let separator = NSBox()
+      separator.boxType = .separator
+      stack.addArrangedSubview(separator)
+      stack.setCustomSpacing(0, after: button)
+      separator.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+      separator.heightAnchor.constraint(equalToConstant: 1).isActive = true
     case .files:
       addFileChanges(row, expanded: expanded)
+    }
+    for label in wrappingLabels {
+      label.widthAnchor.constraint(lessThanOrEqualTo: stack.widthAnchor).isActive = true
+    }
+  }
+
+  override func draw(_ dirtyRect: NSRect) {
+    super.draw(dirtyRect)
+    if rowKind == .user {
+      TranscriptColors.surfaceMuted.setFill()
+      let content = stack.arrangedSubviews.reduce(NSRect.null) {
+        $0.union(stack.convert($1.alignmentRect(forFrame: $1.frame), to: self))
+      }
+      let rect = NSRect(
+        x: content.isNull ? leadingConstraint.constant - 16 : content.minX - 16, y: 8,
+        width: content.isNull ? availableTextWidth + 32 : content.width + 32,
+        height: max(0, bounds.height - 16))
+      NSBezierPath(roundedRect: rect, xRadius: 16, yRadius: 16).fill()
     }
   }
 
   private func reset() {
     toggle = nil
+    stack.spacing = 8
     wrappingLabels.removeAll(keepingCapacity: true)
     leadingConstraint.constant = 22
     for view in stack.arrangedSubviews {
@@ -836,15 +976,8 @@ private final class TranscriptCell: NSTableCellView {
     label.maximumNumberOfLines = 0
     label.lineBreakMode = .byWordWrapping
     label.attributedStringValue = markdown
-    if user {
-      label.drawsBackground = true
-      label.backgroundColor = .controlBackgroundColor
-      label.wantsLayer = true
-      label.layer?.cornerRadius = 12
-    }
     label.preferredMaxLayoutWidth = availableTextWidth
     wrappingLabels.append(label)
-    label.widthAnchor.constraint(lessThanOrEqualToConstant: 820).isActive = true
     return label
   }
 
@@ -856,6 +989,7 @@ private final class TranscriptCell: NSTableCellView {
     imageView.layer?.cornerRadius = 12
     imageView.layer?.masksToBounds = true
     imageView.translatesAutoresizingMaskIntoConstraints = false
+    stack.addArrangedSubview(imageView)
     let preferredWidth = imageView.widthAnchor.constraint(equalToConstant: 560)
     preferredWidth.priority = .defaultHigh
     NSLayoutConstraint.activate([
@@ -864,30 +998,83 @@ private final class TranscriptCell: NSTableCellView {
       imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: 4 / 7),
     ])
     imageView.load(source: source)
-    stack.addArrangedSubview(imageView)
   }
 
   private func addFileChanges(_ row: ChatRow, expanded: Bool) {
-    let additions = row.fileChanges.reduce(0) { $0 + $1.additions }
-    let deletions = row.fileChanges.reduce(0) { $0 + $1.deletions }
-    let noun = row.fileChanges.count == 1 ? "file" : "files"
-    let heading = NSTextField(
-      labelWithString: "Edited \(row.fileChanges.count) \(noun)    +\(additions)    −\(deletions)")
-    heading.font = .systemFont(ofSize: 13, weight: .semibold)
-    stack.addArrangedSubview(heading)
-    let visibleFiles = expanded ? row.fileChanges : Array(row.fileChanges.prefix(3))
-    for file in visibleFiles {
-      let line = NSTextField(
-        labelWithString: "\(file.path)    +\(file.additions)    −\(file.deletions)")
-      line.isSelectable = true
-      line.lineBreakMode = .byTruncatingMiddle
-      line.textColor = .secondaryLabelColor
-      line.widthAnchor.constraint(lessThanOrEqualToConstant: 820).isActive = true
-      stack.addArrangedSubview(line)
+    let card = NSStackView()
+    card.orientation = .vertical
+    card.alignment = .leading
+    card.spacing = 0
+    card.wantsLayer = true
+    card.layer?.cornerRadius = 12
+    card.layer?.borderWidth = 1
+    card.layer?.borderColor = NSColor.separatorColor.cgColor
+    stack.addArrangedSubview(card)
+    card.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+    func label(
+      _ text: String, color: NSColor = .labelColor, size: CGFloat = 14,
+      weight: NSFont.Weight = .regular
+    ) -> NSTextField {
+      let label = NSTextField(labelWithString: text)
+      label.font = .systemFont(ofSize: size, weight: weight)
+      label.textColor = color
+      return label
+    }
+    func line(_ children: [NSView], height: CGFloat, vertical: CGFloat = 12) -> NSStackView {
+      let line = NSStackView(views: children)
+      line.orientation = .horizontal
+      line.alignment = .centerY
+      line.spacing = 12
+      line.edgeInsets = NSEdgeInsets(top: vertical, left: 16, bottom: vertical, right: 16)
+      card.addArrangedSubview(line)
+      line.widthAnchor.constraint(equalTo: card.widthAnchor).isActive = true
+      line.heightAnchor.constraint(equalToConstant: height).isActive = true
+      return line
+    }
+    func separator() {
+      let rule = NSBox()
+      rule.boxType = .separator
+      card.addArrangedSubview(rule)
+      rule.widthAnchor.constraint(equalTo: card.widthAnchor).isActive = true
+      rule.heightAnchor.constraint(equalToConstant: 1).isActive = true
+    }
+    let icon = NSImageView(
+      image: NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: nil)!)
+    icon.widthAnchor.constraint(equalToConstant: 40).isActive = true
+    icon.heightAnchor.constraint(equalToConstant: 40).isActive = true
+    let heading = label(
+      "Edited \(row.fileChanges.count) \(row.fileChanges.count == 1 ? "file" : "files")", size: 16,
+      weight: .semibold)
+    let totals = NSStackView(views: [
+      label("+\(row.fileChanges.reduce(0) { $0 + $1.additions })", color: .systemGreen),
+      label("-\(row.fileChanges.reduce(0) { $0 + $1.deletions })", color: .systemRed),
+    ])
+    totals.spacing = 8
+    let title = NSStackView(views: [heading, totals])
+    title.orientation = .vertical
+    title.alignment = .leading
+    title.spacing = 4
+    _ = line([icon, title, NSView()], height: 72, vertical: 16)
+    separator()
+    for file in expanded ? row.fileChanges : Array(row.fileChanges.prefix(3)) {
+      let path = label(file.path)
+      path.isSelectable = true
+      path.lineBreakMode = .byTruncatingTail
+      path.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+      path.setContentHuggingPriority(.defaultLow, for: .horizontal)
+      _ = line(
+        [
+          path, label("+\(file.additions)", color: .systemGreen),
+          label("-\(file.deletions)", color: .systemRed),
+        ], height: 44)
     }
     if row.fileChanges.count > 3 {
-      let title = expanded ? "Show less" : "Show \(row.fileChanges.count - 3) more files"
-      stack.addArrangedSubview(disclosureButton(title))
+      separator()
+      _ = line(
+        [
+          disclosureButton(
+            expanded ? "Show less ⌃" : "Show \(row.fileChanges.count - 3) more files ⌄"), NSView(),
+        ], height: 44)
     }
   }
 
@@ -895,7 +1082,7 @@ private final class TranscriptCell: NSTableCellView {
     let button = NSButton(title: title, target: self, action: #selector(togglePressed))
     button.bezelStyle = .inline
     button.isBordered = false
-    button.font = .systemFont(ofSize: 13, weight: .medium)
+    button.font = .systemFont(ofSize: 14, weight: .medium)
     button.setButtonType(.momentaryPushIn)
     return button
   }
@@ -903,7 +1090,7 @@ private final class TranscriptCell: NSTableCellView {
   private func detailLabel(_ text: String) -> NSTextField {
     let label = NSTextField(wrappingLabelWithString: text)
     label.isSelectable = true
-    label.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+    label.font = .systemFont(ofSize: 14)
     label.textColor = .secondaryLabelColor
     label.drawsBackground = true
     label.backgroundColor = .controlBackgroundColor
@@ -911,7 +1098,6 @@ private final class TranscriptCell: NSTableCellView {
     label.layer?.cornerRadius = 7
     label.preferredMaxLayoutWidth = availableTextWidth
     wrappingLabels.append(label)
-    label.widthAnchor.constraint(lessThanOrEqualToConstant: 820).isActive = true
     return label
   }
 

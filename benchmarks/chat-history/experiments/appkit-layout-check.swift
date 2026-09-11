@@ -38,7 +38,7 @@ private func runLayoutQA() {
       check(!labels.isEmpty, "No labels width \(width) row \(index)")
       for label in labels {
         let stack = label.superview!
-        check(abs(label.preferredMaxLayoutWidth - min(820, stack.bounds.width)) < 1, "Preferred width \(label.preferredMaxLayoutWidth) stack \(stack.bounds.width) at container \(width)")
+        check(abs(label.preferredMaxLayoutWidth - stack.bounds.width) < 1, "Preferred width \(label.preferredMaxLayoutWidth) stack \(stack.bounds.width) at container \(width)")
         check(label.alignmentRect(forFrame: label.frame).width <= stack.bounds.width + 1, "Text alignment rectangle exceeds its container")
         check(label.bounds.height.isFinite && label.bounds.height > 0, "Height invalid")
         check(label.frame.height + 1 >= label.intrinsicContentSize.height, "Row height clips text after resize")
@@ -50,4 +50,31 @@ private func runLayoutQA() {
   }
   print(String(data: try! JSONSerialization.data(withJSONObject: observations, options: [.prettyPrinted, .sortedKeys]), encoding: .utf8)!)
   window.orderOut(nil)
+}
+
+// Exercise the real split controller as well as isolated transcript resizing.
+// A composer width preference must not become a maximum width for the window.
+@MainActor
+private func runWindowGeometryQA() {
+  let delegate = AppDelegate()
+  delegate.applicationDidFinishLaunching(Notification(name: NSApplication.didFinishLaunchingNotification))
+  let deadline = Date(timeIntervalSinceNow: 5)
+  while Date() < deadline {
+    RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05))
+    if let window = NSApp.windows.first(where: \.isVisible),
+      let root = window.contentViewController as? ChatSplitViewController,
+      let content = root.children.first(where: { $0 is ContentViewController }) as? ContentViewController,
+      !content.isEmpty {
+      window.contentView?.layoutSubtreeIfNeeded()
+      let bounds = content.view.convert(content.view.bounds, to: nil)
+      guard abs(window.frame.width - 1280) < 1, abs(bounds.minX - 260) < 1,
+        abs(bounds.width - 1020) < 1 else {
+        fatalError("Unequal benchmark viewport: window \(window.frame), content \(bounds)")
+      }
+      print("Window geometry verified: 1280 wide, transcript x=260 width=1020")
+      window.orderOut(nil)
+      return
+    }
+  }
+  fatalError("Window did not finish loading for geometry verification")
 }

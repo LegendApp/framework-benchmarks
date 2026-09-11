@@ -20,7 +20,7 @@ public struct ChatHistorySettings: Codable, Equatable, Sendable {
     recentChatLimit: Int = 20,
     restoreSelection: Bool = true,
     selectedId: String? = nil,
-    showPerformanceMetrics: Bool = true
+    showPerformanceMetrics: Bool = false
   ) {
     self.appearance = appearance
     self.loadImages = loadImages

@@ -22,6 +22,8 @@ final class ChatHistoryStore: ObservableObject {
   private var paintPending = false
   private var topPaintPending = false
 
+  var usesBenchmarkViewport: Bool { benchmarkConfig != nil }
+
   var benchmarkTopDelayMs: Double? {
     benchmarkPhase == .initial ? benchmarkConfig?.topDelayMs : nil
   }
@@ -176,24 +178,27 @@ struct ChatHistorySwiftUIApp: App {
 
 struct ContentView: View {
   @StateObject private var store = ChatHistoryStore()
+  @StateObject private var demo = ChatDemo()
+  @State private var composerText = ""
   @State private var settingsOpen = false
   @State private var windowShownEmitted = false
 
   var body: some View {
     NavigationSplitView {
       Sidebar(store: store)
-        .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 360)
+        .navigationSplitViewColumnWidth(
+          min: store.usesBenchmarkViewport ? TranscriptStyle.benchmarkSidebarPaneWidth : 220,
+          ideal: store.usesBenchmarkViewport ? TranscriptStyle.benchmarkSidebarPaneWidth : 260,
+          max: store.usesBenchmarkViewport ? TranscriptStyle.benchmarkSidebarPaneWidth : 360)
     } detail: {
       Group {
         if let document = store.document {
           TranscriptView(
             document: document, firstPaintMs: store.firstPaintMs, settings: store.settings,
-            topDelayMs: store.benchmarkTopDelayMs
-          ) {
-            store.recordFirstPaint(for: document.path)
-          } onTopPaint: { startedAt in
-            store.recordTopPaint(for: document.path, startedAt: startedAt)
-          }
+            topDelayMs: store.benchmarkTopDelayMs,
+            onFirstPaint: { store.recordFirstPaint(for: document.path) },
+            onTopPaint: { store.recordTopPaint(for: document.path, startedAt: $0) },
+            demo: demo)
         } else if let errorMessage = store.errorMessage {
           EmptyState(errorMessage, color: .red)
         } else if store.isLoading {
@@ -206,6 +211,27 @@ struct ContentView: View {
           EmptyState("Select a conversation")
         }
       }
+      .overlay(alignment: .bottom) {
+        HStack(alignment: .bottom, spacing: 12) {
+          TextField("Send a test message that doesn't actually do anything", text: $composerText)
+            .textFieldStyle(.plain).font(.system(size: 15)).frame(minHeight: 36)
+            .onSubmit(sendDemo)
+          Button(action: sendDemo) { Image(systemName: "arrow.up").frame(width: 36, height: 36) }
+            .buttonStyle(.plain).background(.quaternary, in: Circle())
+            .disabled(composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 26))
+        .overlay(
+          RoundedRectangle(cornerRadius: 26).stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+        )
+        .frame(maxWidth: 860).padding(.horizontal, 24).padding(.top, 8).padding(.bottom, 20)
+      }
+      .onChange(of: store.selectedId) { _, _ in
+        demo.reset()
+        composerText = ""
+      }
+      .background(Color(nsColor: TranscriptColors.background))
       .navigationTitle(selectedTitle)
       .navigationSubtitle("SwiftUI")
       .toolbar {
@@ -235,6 +261,12 @@ struct ContentView: View {
         settingsOpen = false
       }
     }
+  }
+
+  private func sendDemo() {
+    guard store.document != nil else { return }
+    demo.send(composerText)
+    composerText = ""
   }
 
   private var selectedTitle: String {
@@ -307,6 +339,9 @@ private struct TranscriptView: View {
   let topDelayMs: Double?
   let onFirstPaint: () -> Void
   let onTopPaint: (Double) -> Void
+  @ObservedObject var demo: ChatDemo
+  private var rows: ChatRows { document.rows.appending(demo.rows) }
+  @State private var markdownCache = TranscriptMarkdownCache()
   @State private var topPaintReported = false
   @State private var topStartedAt: Double?
 
@@ -317,18 +352,20 @@ private struct TranscriptView: View {
         Divider()
       }
       ScrollViewReader { proxy in
-        List(document.rows) { row in
-          TranscriptRow(loadImages: settings.loadImages, row: row)
-            .frame(maxWidth: 860)
-            .frame(maxWidth: .infinity)
-            .id(row.id)
+        List {
+          ForEach(rows.indices, id: \.self) { index in
+            TranscriptRow(
+              loadImages: settings.loadImages, row: rows[index], markdownCache: markdownCache
+            )
+            .padding(.top, index == 0 ? 12 : 0)
+            .id(index)
             .listRowInsets(EdgeInsets())
             .listRowSeparator(.hidden)
             .onAppear {
-              if row.id == document.rows.last?.id {
+              if index == document.rows.count - 1 {
                 onFirstPaint()
               }
-              if row.id == document.rows.first?.id, let topStartedAt, !topPaintReported {
+              if index == 0, let topStartedAt, !topPaintReported {
                 topPaintReported = true
                 DispatchQueue.main.async {
                   DispatchQueue.main.async {
@@ -337,8 +374,12 @@ private struct TranscriptView: View {
                 }
               }
             }
+          }
+          Color.clear.frame(height: TranscriptStyle.composerHeight + TranscriptStyle.bottomGap)
+            .listRowInsets(EdgeInsets()).listRowSeparator(.hidden).id("transcript-bottom")
         }
         .listStyle(.plain)
+        .contentMargins(.horizontal, 0, for: .scrollContent)
         .scrollContentBackground(.hidden)
         .overlay {
           if document.rows.isEmpty {
@@ -346,20 +387,25 @@ private struct TranscriptView: View {
           }
         }
         .onAppear {
-          if let last = document.rows.last {
-            proxy.scrollTo(last.id, anchor: .bottom)
+          if !document.rows.isEmpty {
+            proxy.scrollTo("transcript-bottom", anchor: .bottom)
           }
         }
+        .onChange(of: demo.rows.last?.markdown) { _, _ in
+          proxy.scrollTo("transcript-bottom", anchor: .bottom)
+        }
         .task(id: firstPaintMs) {
-          guard firstPaintMs != nil, let topDelayMs, let first = document.rows.first else { return }
+          guard firstPaintMs != nil, let topDelayMs, !document.rows.isEmpty else { return }
           try? await Task.sleep(for: .milliseconds(Int64(topDelayMs)))
           guard !Task.isCancelled else { return }
           topStartedAt = ProcessInfo.processInfo.systemUptime * 1_000
-          proxy.scrollTo(first.id, anchor: .top)
+          proxy.scrollTo(0, anchor: .top)
         }
       }
+
     }
   }
+
 }
 
 private struct TimingView: View {
@@ -391,28 +437,37 @@ private struct TimingView: View {
 private struct TranscriptRow: View {
   let loadImages: Bool
   let row: ChatRow
+  let markdownCache: TranscriptMarkdownCache
+  @State private var toolExpanded = false
 
   var body: some View {
     switch row.kind {
     case .files:
       FileChangesRow(row: row)
     case .tool:
-      DisclosureGroup(row.toolName) {
-        if !row.toolPreview.isEmpty {
-          Text(row.toolPreview)
-            .font(.system(.caption, design: .monospaced))
-            .textSelection(.enabled)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(10)
-            .background(.quaternary, in: RoundedRectangle(cornerRadius: 7))
+      VStack(alignment: .leading, spacing: 16) {
+        Button {
+          toolExpanded.toggle()
+        } label: {
+          HStack(spacing: 8) {
+            Text(row.toolName).font(.system(size: 14, weight: .medium))
+            Text(toolExpanded ? "⌄" : "›").font(.system(size: 18))
+            Spacer(minLength: 0)
+          }.frame(height: 20)
+        }
+        .buttonStyle(.plain)
+        if toolExpanded, !row.toolPreview.isEmpty {
+          Text(row.toolPreview).font(.system(size: 14)).lineSpacing(7)
+            .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
         }
       }
       .foregroundStyle(.secondary)
-      .padding(.horizontal, 22)
-      .padding(.vertical, 9)
+      .padding(.vertical, 12)
+      .overlay(alignment: .bottom) { Divider() }
+      .padding(.horizontal, TranscriptStyle.horizontalInset)
+      .padding(.vertical, 8)
     case .assistant, .user:
-      HStack {
-        if row.kind == .user { Spacer(minLength: 80) }
+      MessageLayout(user: row.kind == .user) {
         VStack(alignment: .leading, spacing: 8) {
           if loadImages {
             ForEach(row.imageSources, id: \.self) { source in
@@ -420,36 +475,105 @@ private struct TranscriptRow: View {
             }
           }
           if !row.markdown.isEmpty {
-            RichMarkdownText(loadImages: loadImages, markdown: row.markdown)
+            RichMarkdownText(
+              rendered: markdownCache.render(row: row, loadImages: loadImages),
+              expand: row.kind != .user)
           }
           if row.hasImagePlaceholder || (!loadImages && !row.imageSources.isEmpty) {
             AttachmentLabel("Image or attachment omitted")
           }
         }
-        .padding(row.kind == .user ? 12 : 0)
+        .padding(.horizontal, row.kind == .user ? TranscriptStyle.userHorizontalPadding : 0)
+        .padding(.vertical, row.kind == .user ? TranscriptStyle.userVerticalPadding : 0)
         .background(
-          row.kind == .user ? Color(nsColor: .controlBackgroundColor) : Color.clear,
-          in: RoundedRectangle(cornerRadius: 18))
-        if row.kind == .assistant { Spacer(minLength: 80) }
+          row.kind == .user ? Color(nsColor: TranscriptColors.surfaceMuted) : Color.clear,
+          in: RoundedRectangle(cornerRadius: 16))
       }
-      .padding(.horizontal, 22)
-      .padding(.vertical, 12)
+      .padding(.horizontal, TranscriptStyle.horizontalInset)
+      .padding(.vertical, row.kind == .user ? 8 : 12)
     }
   }
 }
 
-private struct RichMarkdownText: View {
-  let loadImages: Bool
-  let markdown: String
+@MainActor
+private final class TranscriptMarkdownCache {
+  private var rendered: [String: (String, AttributedString)] = [:]
+  func render(row: ChatRow, loadImages: Bool) -> AttributedString {
+    let key = "\(row.id):\(loadImages)"
+    let source = row.markdown
+    if let value = rendered[key], value.0 == source { return value.1 }
+    let native = RichMarkdownRenderer.render(
+      row.markdown, imagePolicy: loadImages ? .loadLocal : .omit)
+    var value = AttributedString(native)
+    if #available(macOS 26, *) {
+      // Text does not honor bridged NSParagraphStyle line heights. Use its
+      // native paragraph attribute, including separate code/heading heights.
+      value.swiftUI.lineHeight = .exact(points: 22)
+      native.enumerateAttribute(.paragraphStyle, in: NSRange(location: 0, length: native.length)) {
+        style, range, _ in
+        guard let style = style as? NSParagraphStyle, style.minimumLineHeight > 0,
+          let range = Range(range, in: value)
+        else { return }
+        value[range].swiftUI.lineHeight = .exact(points: style.minimumLineHeight)
+      }
+    }
+    rendered[key] = (source, value)
+    return value
+  }
+}
 
+private struct RichMarkdownText: View {
+  let rendered: AttributedString
+  let expand: Bool
   var body: some View {
-    Text(
-      AttributedString(
-        RichMarkdownRenderer.render(
-          markdown, imagePolicy: loadImages ? .loadLocal : .omit)))
-      .textSelection(.enabled)
-      .lineSpacing(3)
-      .frame(maxWidth: .infinity, alignment: .leading)
+    ExplicitTextSpacing {
+      Text(rendered).textSelection(.enabled)
+        .frame(maxWidth: expand ? .infinity : nil, alignment: .leading)
+    }
+  }
+}
+
+// Rows own their spacing explicitly; querying Text's default spacing otherwise
+// triggers extra text measurement. Forward its real size and placement unchanged.
+private struct ExplicitTextSpacing: Layout {
+  func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+    subviews[0].sizeThatFits(proposal)
+  }
+  func spacing(subviews: Subviews, cache: inout ()) -> ViewSpacing { ViewSpacing() }
+  func placeSubviews(
+    in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()
+  ) {
+    subviews[0].place(
+      at: bounds.origin, anchor: .topLeading, proposal: ProposedViewSize(bounds.size))
+  }
+}
+
+private struct MessageLayout: Layout {
+  let user: Bool
+  private func contentSize(_ proposal: ProposedViewSize, _ subviews: Subviews) -> CGSize {
+    // An unspecified proposal asks for ideal size; do not turn it into a
+    // one-point column and measure the entire transcript one character wide.
+    let width = proposal.width.flatMap { width -> CGFloat? in
+      guard width.isFinite else { return nil }
+      return max(
+        1,
+        width * (user ? TranscriptStyle.userWidthFraction : TranscriptStyle.assistantWidthFraction))
+    }
+    return subviews[0].sizeThatFits(ProposedViewSize(width: width, height: nil))
+  }
+  func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+    let size = contentSize(proposal, subviews)
+    return CGSize(
+      width: proposal.width.flatMap { $0.isFinite ? $0 : nil } ?? size.width, height: size.height)
+  }
+  func spacing(subviews: Subviews, cache: inout ()) -> ViewSpacing { ViewSpacing() }
+  func placeSubviews(
+    in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()
+  ) {
+    let size = contentSize(ProposedViewSize(bounds.size), subviews)
+    subviews[0].place(
+      at: CGPoint(x: user ? bounds.maxX - size.width : bounds.minX, y: bounds.minY),
+      anchor: .topLeading, proposal: ProposedViewSize(size))
   }
 }
 
@@ -505,7 +629,7 @@ private struct FileChangesRow: View {
           .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
         VStack(alignment: .leading, spacing: 3) {
           Text("Edited \(row.fileChanges.count) \(row.fileChanges.count == 1 ? "file" : "files")")
-            .bold()
+            .font(.system(size: 16, weight: .semibold))
           HStack(spacing: 8) {
             Text("+\(additions)").foregroundStyle(.green)
             Text("−\(deletions)").foregroundStyle(.red)
@@ -513,7 +637,7 @@ private struct FileChangesRow: View {
         }
         Spacer()
       }
-      .padding(14)
+      .padding(16)
       Divider()
       ForEach(expanded ? row.fileChanges : Array(row.fileChanges.prefix(3)), id: \.path) { file in
         HStack {
@@ -522,8 +646,8 @@ private struct FileChangesRow: View {
           Text("+\(file.additions)").foregroundStyle(.green)
           Text("−\(file.deletions)").foregroundStyle(.red)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
       }
       if row.fileChanges.count > 3 {
         Divider()
@@ -538,7 +662,7 @@ private struct FileChangesRow: View {
     }
     .overlay(RoundedRectangle(cornerRadius: 12).stroke(.separator))
     .clipShape(RoundedRectangle(cornerRadius: 12))
-    .padding(.horizontal, 22)
+    .padding(.horizontal, TranscriptStyle.horizontalInset)
     .padding(.vertical, 10)
   }
 }

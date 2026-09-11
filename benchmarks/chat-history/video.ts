@@ -25,7 +25,7 @@ type Recording = {
 };
 
 export type VideoEvidence = {
-  analysisVersion: 3;
+  analysisVersion: 4;
   sourceFrameTimestampsMs: number[];
   legacyWindowContent: { firstContentTimestampMs: number | null; topContentTimestampMs: number | null; switchContentTimestampMs: number | null };
   captureFps: number;
@@ -486,7 +486,7 @@ export async function analyzeRecording({
     (frame, index) => frame.timestampMs - frames[index].timestampMs,
   );
   const evidence: VideoEvidence = {
-    analysisVersion: 3,
+    analysisVersion: 4,
     sourceFrameTimestampsMs: frames.map((frame) => frame.timestampMs),
     legacyWindowContent: {
       firstContentTimestampMs: frames[legacyFirstContentFrame]?.timestampMs ?? null,

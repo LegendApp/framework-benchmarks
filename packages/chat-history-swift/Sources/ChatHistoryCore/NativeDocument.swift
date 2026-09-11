@@ -4,21 +4,29 @@ import Foundation
 /// Native rows are immutable. Text caches are synchronized because the UI and
 /// background conformance checks may access the same document concurrently.
 final class NativeRowText: @unchecked Sendable {
-  let document: NativeDocumentStorage
-  let index: Int
+  private let decodeMarkdown: @Sendable () -> String
+  private let decodePreview: @Sendable () -> String
   private let lock = NSLock()
   private var cachedMarkdown: String?
   private var cachedPreview: String?
 
   init(document: NativeDocumentStorage, index: Int) {
-    self.document = document
-    self.index = index
+    self.decodeMarkdown = { document.native.markdown(at: UInt(index)) }
+    self.decodePreview = { document.native.preview(at: UInt(index)) }
   }
+
+  init(markdown: @escaping @Sendable () -> String, preview: @escaping @Sendable () -> String) {
+    decodeMarkdown = markdown
+    decodePreview = preview
+  }
+
+  var uncachedMarkdown: String { decodeMarkdown() }
+  var uncachedPreview: String { decodePreview() }
 
   var markdown: String {
     lock.withLock {
       if let cachedMarkdown { return cachedMarkdown }
-      let value = document.native.markdown(at: UInt(index))
+      let value = decodeMarkdown()
       cachedMarkdown = value
       return value
     }
@@ -27,7 +35,7 @@ final class NativeRowText: @unchecked Sendable {
   var preview: String {
     lock.withLock {
       if let cachedPreview { return cachedPreview }
-      let value = document.native.preview(at: UInt(index))
+      let value = decodePreview()
       cachedPreview = value
       return value
     }
@@ -45,12 +53,27 @@ final class NativeDocumentStorage: @unchecked Sendable {
   }
 }
 
-public func openChatFile(provider: ChatProvider, path: String) throws -> ChatDocument {
+public enum ChatParser: String, Sendable {
+  case swift, cpp
+}
+
+public func openChatFile(provider: ChatProvider, path: String, parser: ChatParser? = nil) throws
+  -> ChatDocument
+{
+  let selected =
+    parser ?? ChatParser(
+      rawValue: ProcessInfo.processInfo.environment["CHAT_HISTORY_PARSER"] ?? "swift") ?? .swift
+  return try selected == .swift
+    ? openChatFileSwift(provider: provider, path: path)
+    : openChatFileCPP(provider: provider, path: path)
+}
+
+func openChatFileCPP(provider: ChatProvider, path: String) throws -> ChatDocument {
   let startedAt = monotonicMilliseconds()
   let storage = try NativeDocumentStorage(provider: provider, path: path)
   let native = storage.native
-  let rows = (0..<Int(native.rowCount)).map { index in
-    let metadata = native.metadata(at: UInt(index))
+  let rows = ChatRows(count: Int(native.rowCount)) { index in
+    let metadata = storage.native.metadata(at: UInt(index))
     let files = (metadata["files"] as? [[String: Any]] ?? []).map { file in
       ChatFileChange(
         additions: (file["additions"] as? NSNumber)?.intValue ?? 0,

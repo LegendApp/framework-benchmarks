@@ -149,10 +149,55 @@ public struct NativeTiming: Codable, Sendable {
   }
 }
 
+/// Numeric indices are available without constructing row metadata or decoding text.
+/// The backing store retains the source and caches only rows requested by the UI.
+public struct ChatRows: RandomAccessCollection, Codable, Sendable {
+  public typealias Index = Int
+  private let storage: Storage
+  public var startIndex: Int { 0 }
+  public var endIndex: Int { storage.count }
+  public subscript(index: Int) -> ChatRow { storage.row(index, cached: true) }
+  func uncachedRow(_ index: Int) -> ChatRow { storage.row(index, cached: false) }
+  var cachedRowCount: Int { storage.lock.withLock { storage.cache.count } }
+
+  init(count: Int, makeRow: @escaping @Sendable (Int) -> ChatRow) {
+    storage = Storage(count: count, makeRow: makeRow)
+  }
+  public func appending(_ extra: [ChatRow]) -> ChatRows {
+    if extra.isEmpty { return self }
+    return ChatRows(count: count + extra.count) { $0 < count ? self[$0] : extra[$0 - count] }
+  }
+  public init(_ rows: [ChatRow]) { self.init(count: rows.count) { rows[$0] } }
+  public init(from decoder: Decoder) throws { self.init(try [ChatRow](from: decoder)) }
+  public func encode(to encoder: Encoder) throws { try Array(self).encode(to: encoder) }
+
+  private final class Storage: @unchecked Sendable {
+    let count: Int
+    let makeRow: @Sendable (Int) -> ChatRow
+    let lock = NSLock()
+    var cache: [Int: ChatRow] = [:]
+    init(count: Int, makeRow: @escaping @Sendable (Int) -> ChatRow) {
+      self.count = count
+      self.makeRow = makeRow
+    }
+    func row(_ index: Int, cached: Bool) -> ChatRow {
+      precondition(index >= 0 && index < count)
+      if !cached { return makeRow(index) }
+      return lock.withLock {
+        if let row = cache[index] { return row }
+        let row = makeRow(index)
+        cache[index] = row
+        return row
+      }
+    }
+  }
+}
+
 public struct ChatDocument: Codable, Sendable {
   var nativeStorage: NativeDocumentStorage?
   public var contentDigest: String {
-    nativeStorage?.native.contentDigest() ?? normalizedContentDigest(rows)
+    nativeStorage?.native.contentDigest()
+      ?? normalizedContentDigest(rows.indices.map { rows.uncachedRow($0) }, cacheText: false)
   }
   private enum CodingKeys: String, CodingKey {
     case path, provider, recordCount, rows, sourceBytes, timing, warningCount
@@ -160,7 +205,7 @@ public struct ChatDocument: Codable, Sendable {
   public let path: String
   public let provider: ChatProvider
   public let recordCount: Int
-  public let rows: [ChatRow]
+  public let rows: ChatRows
   public let sourceBytes: Int
   public let timing: NativeTiming
   public let warningCount: Int
@@ -177,6 +222,19 @@ public struct ChatDocument: Codable, Sendable {
     self.path = path
     self.provider = provider
     self.recordCount = recordCount
+    self.rows = ChatRows(rows)
+    self.sourceBytes = sourceBytes
+    self.timing = timing
+    self.warningCount = warningCount
+  }
+
+  init(
+    path: String, provider: ChatProvider, recordCount: Int, rows: ChatRows,
+    sourceBytes: Int, timing: NativeTiming, warningCount: Int
+  ) {
+    self.path = path
+    self.provider = provider
+    self.recordCount = recordCount
     self.rows = rows
     self.sourceBytes = sourceBytes
     self.timing = timing
@@ -184,11 +242,12 @@ public struct ChatDocument: Codable, Sendable {
   }
 
   init(
-    path: String, provider: ChatProvider, recordCount: Int, rows: [ChatRow],
+    path: String, provider: ChatProvider, recordCount: Int, rows: ChatRows,
     sourceBytes: Int, timing: NativeTiming, warningCount: Int,
     nativeStorage: NativeDocumentStorage
   ) {
-    self.init(path: path, provider: provider, recordCount: recordCount, rows: rows,
+    self.init(
+      path: path, provider: provider, recordCount: recordCount, rows: rows,
       sourceBytes: sourceBytes, timing: timing, warningCount: warningCount)
     self.nativeStorage = nativeStorage
   }
@@ -200,12 +259,13 @@ private func updateContentDigest<S: Sequence>(_ digest: inout UInt64, _ bytes: S
 where S.Element == UInt8 {
   for byte in bytes {
     digest ^= UInt64(byte)
-    digest &*= 0x100000001b3
+    digest &*= 0x100_0000_01b3
   }
 }
 
-public func normalizedContentDigest(_ rows: [ChatRow]) -> String {
-  var digest: UInt64 = 0xcbf29ce484222325
+public func normalizedContentDigest<C: Collection>(_ rows: C, cacheText: Bool = true) -> String
+where C.Element == ChatRow {
+  var digest: UInt64 = 0xcbf2_9ce4_8422_2325
   @inline(__always) func field(_ value: String) {
     let bytes = value.utf8
     updateContentDigest(&digest, String(bytes.count).utf8)
@@ -220,9 +280,9 @@ public func normalizedContentDigest(_ rows: [ChatRow]) -> String {
   field(rows.count)
   for row in rows {
     field(row.kind.rawValue)
-    field(row.markdown)
+    field(cacheText ? row.markdown : row.nativeText?.uncachedMarkdown ?? row.markdown)
     field(row.toolName)
-    field(row.toolPreview)
+    field(cacheText ? row.toolPreview : row.nativeText?.uncachedPreview ?? row.toolPreview)
     field(row.toolStatus.rawValue)
     field(row.hasImagePlaceholder ? 1 : 0)
     field(row.imageSources.count)

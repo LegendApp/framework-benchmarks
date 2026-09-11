@@ -43,9 +43,9 @@ bun run chat-history:appkit
 ## Benchmark
 
 The benchmark uses two pinned, old, large transcripts and checks a canonical digest before accepting any result. See [benchmarks/chat-history/README.md](benchmarks/chat-history/README.md) for methodology and prerequisites.
-The [performance analysis](benchmarks/chat-history/PERFORMANCE_ANALYSIS.md)
-explains the latest video-derived results and provides talk-ready conclusions
-with explicit confidence and claim boundaries.
+The [Swift/native parity results](benchmarks/chat-history/SWIFT_PARITY_RESULTS.md)
+contain the latest native comparison, recordings, and remaining implementation differences.
+The [performance analysis](benchmarks/chat-history/PERFORMANCE_ANALYSIS.md) preserves the earlier analysis.
 
 ```sh
 bun run benchmark:fixtures

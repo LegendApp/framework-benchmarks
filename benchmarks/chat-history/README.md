@@ -5,9 +5,13 @@ WebView, Deno Desktop CEF, Flutter, GPUI, SwiftUI, and AppKit. React Native is
 maintained in the sibling `legend-apps` repository and exported into this
 repository's common production-build directory for every default run.
 
-For the latest production timing comparison, see [responsive AppKit results and SwiftUI diagnosis](RESPONSIVE_LAYOUT_RESULTS.md). The earlier detector correction and causal experiments are in [CAUSAL_ANALYSIS.md](CAUSAL_ANALYSIS.md). The earlier eight-app run and memory measurements are in [RESULTS.md](RESULTS.md).
+For the latest comparison with the lazy Swift parser and standardized native layouts, see [Swift/native parity results](SWIFT_PARITY_RESULTS.md). The prior production comparison is in [responsive AppKit results and SwiftUI diagnosis](RESPONSIVE_LAYOUT_RESULTS.md). The earlier detector correction and causal experiments are in [CAUSAL_ANALYSIS.md](CAUSAL_ANALYSIS.md). The earlier eight-app run and memory measurements are in [RESULTS.md](RESULTS.md).
 [PERFORMANCE_ANALYSIS.md](PERFORMANCE_ANALYSIS.md) preserves the historical
 September 4 analysis and its earlier implementation/corpus.
+
+## Swift document backend
+
+AppKit and SwiftUI default to the equivalent lazy Swift parser. Their catalog discovery remains Swift/Foundation. Use `CHAT_HISTORY_PARSER=cpp` to run the same UIs with the vendored RN C++ document core; the report records the backend. See the [native implementation policy](../../packages/chat-history-swift/README.md) for the standardized layout rules and remaining renderer differences.
 
 ## Minimal-project counterpart
 
@@ -79,6 +83,8 @@ non-frontmost Space. The helper stores each WindowServer presentation timestamp.
 The harness retains app-declared readiness and parser stages as diagnostics, but
 they do not determine the visual result. A cropped MP4 and JSON frame-selection
 sidecar are saved for every measured iteration so every timing is auditable.
+
+Detector v4 keeps v3's transcript ROI and three-frame matching thresholds, but crops against the settled window bounds instead of an intermediate opening-animation frame. Recorded AppKit, SwiftUI, and RN runs also reject a settled window width other than 1280 points (within two points).
 
 Each settled reference is sampled after the app's diagnostic readiness boundary
 and before the next automated phase. The harness searches backward for the

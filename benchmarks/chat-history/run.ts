@@ -463,7 +463,7 @@ async function runIteration(
     }
     const windowEvent = await waitForEvent(
       eventsPath, (event) => event.name === "windowShown") as WindowShownEvent;
-    const capturedWindow = recording ? await waitForWindowInfo(appPid) : undefined;
+    let capturedWindow: WindowInfo | undefined;
     const initialEvent = await waitForEvent(
       eventsPath,
       (event) => event.name === "contentReady" && event.phase === "initial",
@@ -509,6 +509,13 @@ async function runIteration(
     if (recording) {
       // Keep recording after app readiness so self-sizing native lists can reach their final frame.
       await Bun.sleep(memorySettleMs + 750);
+      // Opening animations and split-view setup can temporarily resize the window.
+      // Crop all phases to its settled bounds, not an intermediate launch frame.
+      capturedWindow = await waitForWindowInfo(appPid);
+      if (["appkit", "swiftui", "react-native"].includes(app)
+        && Math.abs(capturedWindow.window.width - 1280) > 2) {
+        throw new Error(`${app} settled window width is ${capturedWindow.window.width}, expected 1280`);
+      }
       await stopRecording(recording);
       recordingStopped = true;
     }
@@ -892,6 +899,7 @@ async function main() {
       macOS: command("sw_vers", ["-productVersion"]),
     },
     measuredAt: new Date().toISOString(),
+    nativeParser: process.env.CHAT_HISTORY_PARSER ?? "swift",
     metrics: {
       buildSizeBytes: "Logical bytes of every file in the production .app bundle.",
       discoveryMs: "App-side wall time from starting native Codex and Claude history traversal until the discovered catalog is available to the app. This interval is contained within firstContentMs.",

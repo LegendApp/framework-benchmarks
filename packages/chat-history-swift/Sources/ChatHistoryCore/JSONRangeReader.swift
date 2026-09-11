@@ -18,7 +18,10 @@ struct JSONRangeValue {
   var arrayValues: [JSONRangeValue]? {
     guard kind == .array else { return nil }
     var values: [JSONRangeValue] = []
-    return reader.forEachArrayValue(self) { values.append($0); return true } ? values : nil
+    return reader.forEachArrayValue(self) {
+      values.append($0)
+      return true
+    } ? values : nil
   }
 
   var objectMembers: [(String, JSONRangeValue)]? {
@@ -33,6 +36,7 @@ struct JSONRangeValue {
 
 struct JSONRangeReader {
   let bytes: UnsafeRawBufferPointer
+  var source: Data? = nil
 
   func topLevelObject(_ range: Range<Int>) -> JSONRangeValue? {
     let start = skipWhitespace(range.lowerBound, end: range.upperBound)
@@ -42,22 +46,92 @@ struct JSONRangeReader {
     return JSONRangeValue(end: end, kind: .object, reader: self, start: start)
   }
 
+  // Match RN's two known envelope orders. Unrecognized orders use the general
+  // member scan; ignored payloads on the known path need no recursive traversal.
+  func codexEnvelope(_ object: JSONRangeValue) -> [String: JSONRangeValue]? {
+    var cursor = object.start + 1
+    if let timestamp = orderedMember(object, cursor: &cursor, key: "timestamp") {
+      _ = orderedMember(object, cursor: &cursor, key: "ordinal")
+      if let type = orderedMember(object, cursor: &cursor, key: "type"),
+        let payload = trailingMember(object, cursor: cursor, key: "payload")
+      {
+        return ["timestamp": timestamp, "type": type, "payload": payload]
+      }
+    }
+    guard let members = object.objectMembers else { return nil }
+    return Dictionary(members, uniquingKeysWith: { _, latest in latest })
+  }
+
+  private func memberStart(_ position: Int, end: Int, key: String) -> Int? {
+    let start = skipWhitespace(position, end: end)
+    guard let keyEnd = skipString(start, end: end),
+      stringEquals(JSONRangeValue(end: keyEnd, kind: .string, reader: self, start: start), key)
+    else { return nil }
+    let colon = skipWhitespace(keyEnd, end: end)
+    guard colon < end, bytes[colon] == 58 else { return nil }
+    return skipWhitespace(colon + 1, end: end)
+  }
+
+  private func orderedMember(_ object: JSONRangeValue, cursor: inout Int, key: String)
+    -> JSONRangeValue?
+  {
+    guard let start = memberStart(cursor, end: object.end, key: key),
+      let end = skipValue(start, end: object.end)
+    else { return nil }
+    let separator = skipWhitespace(end, end: object.end)
+    guard separator < object.end, bytes[separator] == 44 else { return nil }
+    cursor = separator + 1
+    return value(start: start, end: end)
+  }
+
+  private func trailingMember(_ object: JSONRangeValue, cursor: Int, key: String) -> JSONRangeValue?
+  {
+    guard let start = memberStart(cursor, end: object.end, key: key) else { return nil }
+    var end = object.end - 1
+    while end > start, isWhitespace(bytes[end - 1]) { end -= 1 }
+    guard let result = value(start: start, end: end) else { return nil }
+    switch result.kind {
+    case .object: guard bytes[end - 1] == 125 else { return nil }
+    case .array: guard bytes[end - 1] == 93 else { return nil }
+    case .string: guard bytes[end - 1] == 34 else { return nil }
+    case .primitive: break
+    }
+    return result
+  }
+
+  func validatedObject(_ range: Range<Int>) -> JSONRangeValue? {
+    guard let object = topLevelObject(range), skipValue(object.start, end: object.end) == object.end
+    else { return nil }
+    return object
+  }
+
   func member(_ object: JSONRangeValue, key: String) -> JSONRangeValue? {
+    guard let start = findMemberStart(object, key: key), let end = skipValue(start, end: object.end)
+    else { return nil }
+    return value(start: start, end: end)
+  }
+
+  func memberKind(_ object: JSONRangeValue, key: String) -> JSONRangeKind? {
+    guard let start = findMemberStart(object, key: key) else { return nil }
+    return value(start: start, end: object.end)?.kind
+  }
+
+  private func findMemberStart(_ object: JSONRangeValue, key: String) -> Int? {
     guard object.kind == .object, object.end <= bytes.count, object.end > object.start + 1 else {
       return nil
     }
     var cursor = object.start + 1
     while cursor < object.end - 1 {
       cursor = skipWhitespace(cursor, end: object.end)
-      if bytes[cursor] == 125 { return nil }
+      guard cursor < object.end, bytes[cursor] != 125 else { return nil }
       let keyStart = cursor
       guard let keyEnd = skipString(cursor, end: object.end) else { return nil }
       cursor = skipWhitespace(keyEnd, end: object.end)
       guard cursor < object.end, bytes[cursor] == 58 else { return nil }
       cursor = skipWhitespace(cursor + 1, end: object.end)
-      guard let valueEnd = skipValue(cursor, end: object.end) else { return nil }
       let keyValue = JSONRangeValue(end: keyEnd, kind: .string, reader: self, start: keyStart)
-      if stringEquals(keyValue, key) { return value(start: cursor, end: valueEnd) }
+      if stringEquals(keyValue, key) { return cursor }
+      guard let valueEnd = skipValue(cursor, end: object.end) else { return nil }
       cursor = skipWhitespace(valueEnd, end: object.end)
       guard cursor < object.end, bytes[cursor] == 44 else { return nil }
       cursor += 1
@@ -243,12 +317,13 @@ struct JSONRangeReader {
 
   private func value(start: Int, end: Int) -> JSONRangeValue? {
     guard start < end, start < bytes.count else { return nil }
-    let kind: JSONRangeKind = switch bytes[start] {
-    case 34: .string
-    case 91: .array
-    case 123: .object
-    default: .primitive
-    }
+    let kind: JSONRangeKind =
+      switch bytes[start] {
+      case 34: .string
+      case 91: .array
+      case 123: .object
+      default: .primitive
+      }
     return JSONRangeValue(end: end, kind: kind, reader: self, start: start)
   }
 
@@ -272,7 +347,8 @@ struct JSONRangeReader {
   private func rawEquals(_ range: Range<Int>, _ expected: String) -> Bool {
     let expectedBytes = Array(expected.utf8)
     guard range.count == expectedBytes.count else { return false }
-    for (offset, byte) in expectedBytes.enumerated() where bytes[range.lowerBound + offset] != byte {
+    for (offset, byte) in expectedBytes.enumerated() where bytes[range.lowerBound + offset] != byte
+    {
       return false
     }
     return true

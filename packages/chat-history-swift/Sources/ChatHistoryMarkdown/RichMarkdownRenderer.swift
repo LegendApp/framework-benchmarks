@@ -19,17 +19,18 @@ public enum RichMarkdownRenderer {
 
 @MainActor
 private struct Renderer {
-  private let baseFont = NSFont.systemFont(ofSize: 14)
+  private let baseFont = NSFont.systemFont(ofSize: 15)
   private let baseAttributes: [NSAttributedString.Key: Any]
   private let imagePolicy: RichMarkdownImagePolicy
 
   init(imagePolicy: RichMarkdownImagePolicy) {
     self.imagePolicy = imagePolicy
     let paragraph = NSMutableParagraphStyle()
-    paragraph.lineSpacing = 3
+    paragraph.minimumLineHeight = 22
+    paragraph.maximumLineHeight = 22
     baseAttributes = [
       .font: baseFont,
-      .foregroundColor: NSColor.labelColor,
+      .foregroundColor: TranscriptColors.foreground,
       .paragraphStyle: paragraph,
     ]
   }
@@ -47,10 +48,14 @@ private struct Renderer {
     switch markup {
     case let heading as Heading:
       let result = renderInlineChildren(heading)
-      let sizes: [CGFloat] = [26, 22, 19, 17, 15, 14]
+      let sizes: [CGFloat] = [22, 19, 20, 18, 16, 14]
+      let heights: [CGFloat] = [28, 25, 28, 26, 24, 22]
+      let style = NSMutableParagraphStyle()
+      style.minimumLineHeight = heights[min(max(heading.level - 1, 0), 5)]
+      style.maximumLineHeight = style.minimumLineHeight
       let size = sizes[min(max(heading.level - 1, 0), sizes.count - 1)]
       result.addAttributes(
-        [.font: NSFont.systemFont(ofSize: size, weight: .bold)],
+        [.font: NSFont.systemFont(ofSize: size, weight: .bold), .paragraphStyle: style],
         range: result.fullRange)
       return result
     case let paragraph as Paragraph:
@@ -59,12 +64,14 @@ private struct Renderer {
       let text = NSMutableAttributedString(
         string: code.code,
         attributes: [
-          .font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular),
-          .foregroundColor: NSColor.labelColor,
-          .backgroundColor: NSColor.controlBackgroundColor,
+          .font: NSFont(name: "Menlo", size: 12)
+            ?? NSFont.monospacedSystemFont(ofSize: 12, weight: .regular),
+          .foregroundColor: TranscriptColors.codeForeground,
+          .backgroundColor: TranscriptColors.codeBackground,
         ])
       let style = NSMutableParagraphStyle()
-      style.lineSpacing = 2
+      style.minimumLineHeight = 18
+      style.maximumLineHeight = 18
       text.addAttribute(.paragraphStyle, value: style, range: text.fullRange)
       return text
     case let list as UnorderedList:
@@ -96,7 +103,8 @@ private struct Renderer {
       let line = NSMutableAttributedString(string: marker, attributes: baseAttributes)
       line.append(body)
       let style = NSMutableParagraphStyle()
-      style.lineSpacing = 3
+      style.minimumLineHeight = 22
+      style.maximumLineHeight = 22
       style.firstLineHeadIndent = 0
       style.headIndent = 22
       style.paragraphSpacing = 4
@@ -148,9 +156,10 @@ private struct Renderer {
       return NSAttributedString(
         string: code.code,
         attributes: [
-          .font: NSFont.monospacedSystemFont(ofSize: 13, weight: .regular),
-          .foregroundColor: NSColor.labelColor,
-          .backgroundColor: NSColor.controlBackgroundColor,
+          .font: NSFont(name: "Menlo", size: 13)
+            ?? NSFont.monospacedSystemFont(ofSize: 13, weight: .regular),
+          .foregroundColor: TranscriptColors.inlineCodeForeground,
+          .backgroundColor: TranscriptColors.inlineCodeBackground,
         ])
     case is SoftBreak:
       return NSAttributedString(string: " ", attributes: baseAttributes)
@@ -200,11 +209,13 @@ private struct Renderer {
       return NSAttributedString(string: "Image or attachment omitted", attributes: baseAttributes)
     }
     guard let destination = markup.source, let image = localImage(destination) else {
-      return NSAttributedString(string: "Image or attachment unavailable", attributes: baseAttributes)
+      return NSAttributedString(
+        string: "Image or attachment unavailable", attributes: baseAttributes)
     }
     let sourceSize = image.size
     guard sourceSize.width > 0, sourceSize.height > 0 else {
-      return NSAttributedString(string: "Image or attachment unavailable", attributes: baseAttributes)
+      return NSAttributedString(
+        string: "Image or attachment unavailable", attributes: baseAttributes)
     }
     let scale = min(1, 560 / sourceSize.width, 440 / sourceSize.height)
     let attachment = NSTextAttachment()
