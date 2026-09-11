@@ -17,7 +17,7 @@ import Testing
     }
     """
   try """
-    {"targets":[\(target),\(target)],"loadImages":false,"switchDelayMs":3000,"version":2}
+    {"targets":[\(target),\(target)],"loadImages":false,"switchDelayMs":3000,"topDelayMs":3000,"version":2}
     """.write(to: manifest, atomically: true, encoding: .utf8)
   let environment = [
     "CHAT_HISTORY_BENCHMARK_CONFIG": manifest.path,

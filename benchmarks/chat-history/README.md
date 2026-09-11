@@ -5,6 +5,14 @@ WebView, Deno Desktop CEF, Flutter, GPUI, SwiftUI, and AppKit. React Native is
 maintained in the sibling `legend-apps` repository and exported into this
 repository's common production-build directory for every default run.
 
+For the detailed interpretation of the latest authoritative run, including
+talk-ready causal analysis and claim boundaries, see
+[PERFORMANCE_ANALYSIS.md](PERFORMANCE_ANALYSIS.md).
+
+## Minimal-project counterpart
+
+The [Hello World suite](../hello-world/README.md) measures the same nine runtimes with a standalone minimal app. Use `bun run benchmark:hello-world` for those builds and results, and `bun run benchmark:compare` to combine the two reports. Hello World compares startup, settled footprint, and bundle size; transcript-specific metrics below apply to the full product only.
+
 ## What is measured
 
 Every implementation must expose the same phase boundaries:
@@ -31,12 +39,26 @@ callback:
 1. LaunchServices launch to the first recorded frame containing the app window;
 2. launch to the first of three stable frames matching the settled initial
    transcript viewport;
-3. selection start to the first of three stable frames matching the settled
+3. a non-animated jump request to the first of three stable frames matching
+   the top of the initial transcript;
+4. selection start to the first of three stable frames matching the settled
    switched transcript viewport;
-4. stabilized aggregate RSS and macOS physical footprint of the app process
-   and descendants after initial readiness;
-5. stabilized RSS and physical footprint after the switch; and
-6. logical bytes in the production `.app` bundle.
+5. stabilized aggregate macOS physical footprint of the app process and
+   descendants after initial readiness;
+6. stabilized physical footprint after the jump to the top;
+7. stabilized physical footprint after the switch;
+8. logical bytes in the production `.app` bundle.
+
+Reports use physical footprint as the primary memory-cost metric on macOS.
+Aggregate RSS is retained in a separate diagnostic table because it includes
+resident shared libraries and memory mappings and can double-count shared
+pages across a multiprocess app.
+
+When video is enabled, each measured timing launch is followed by an identical
+non-recording production launch whose settled memory replaces the timing
+launch's memory fields. ScreenCaptureKit can charge capture surfaces to
+GPU-backed applications, so combining visual timing and memory in one process
+would materially overstate some renderers' normal footprint.
 
 Every app is launched as a new, activated `.app` instance through
 `NSWorkspace.OpenConfiguration`, with the same environment and pinned corpus.
@@ -47,9 +69,9 @@ The harness retains app-declared readiness and parser stages as diagnostics, but
 they do not determine the visual result. A cropped MP4 and JSON frame-selection
 sidecar are saved for every measured iteration so every timing is auditable.
 
-The settled reference is sampled after the app's diagnostic readiness boundary
-and before the automated switch (or after switched-content settlement). The
-harness searches backward for the first three consecutive matching frames.
+Each settled reference is sampled after the app's diagnostic readiness boundary
+and before the next automated phase. The harness searches backward for the
+first three consecutive matching frames.
 Window opening is detected independently by comparing the future window region
 with its pre-launch pixels. This measures a usable virtualized viewport, not
 construction of every offscreen row.
@@ -66,8 +88,14 @@ wall time from starting the native catalog request until the catalog is
 available back in the app. Every run starts a new production process. Two warm-up rounds are
 discarded and ten measured rounds rotate app order deterministically, giving
 every app equal exposure to each position. Reports include p50 and p90 timing,
-all raw observations, and native-versus-post-native stage diagnostics. Memory
-is the median of three samples after a 300 ms settlement period.
+all raw observations, and native-versus-post-native stage diagnostics. Only
+launches that emit every required phase enter the aggregate; an incomplete
+launch is discarded and retried up to twice, then fails the run. Memory is the
+median of three samples beginning 2.5 seconds after the corresponding
+content or viewport readiness boundary and spaced 200 ms apart. This reports
+the 2–3 second settled footprint instead of transient launch or relayout
+graphics allocations. The runner enforces enough time before the jump and
+automatic chat switch to finish each settled-memory sample window.
 Tauri and Deno WebView memory also includes the WebKit GPU, networking, and
 content XPC helpers created by its iteration; macOS reparents those helpers to
 `launchd`, so they do not appear in the normal process-descendant tree.
@@ -142,8 +170,11 @@ bun benchmarks/chat-history/run.ts --app all --warmups 2 --iterations 10
 
 Video recording is the default and requires `ffmpeg`, `ffprobe`, and macOS
 Screen Recording access for `Chat History Benchmark Capture`. Use
-`--no-video` only for internal-event diagnostics; those timings are explicitly
-marked non-visual and are not comparable with the final reports.
+`--no-video` only for internal-event diagnostics. Those reports are explicitly
+marked diagnostic-only and are not comparable with final video-derived
+reports. Framework callbacks generally precede WindowServer presentation, so
+adding artificial delays to make the two boundaries agree would reduce rather
+than improve measurement accuracy.
 
 Machine-readable JSON, a Markdown summary, cropped videos, and frame sidecars
 are written under the ignored `benchmarks/chat-history/results/` directory. Run

@@ -110,6 +110,7 @@ export type BenchmarkTarget = Pick<ChatSummary, "id" | "provider">;
 export type BenchmarkConfig = {
   loadImages: boolean;
   switchDelayMs: number;
+  topDelayMs: number;
   targets: [BenchmarkTarget, BenchmarkTarget];
   version: 2;
 };
@@ -138,6 +139,13 @@ export type BenchmarkContentDigestEvent = {
   name: "contentDigest";
   path: string;
   phase: "initial" | "switch";
+};
+
+export type BenchmarkViewportReadyEvent = {
+  durationMs: number;
+  name: "viewportReady";
+  path: string;
+  phase: "top";
 };
 
 const fnvOffset = 0xcbf29ce484222325n;
@@ -183,7 +191,10 @@ export function normalizedContentDigest(rows: readonly ChatRow[]) {
   return digest.toString(16).padStart(16, "0");
 }
 
-export type BenchmarkEvent = BenchmarkContentDigestEvent | BenchmarkContentReadyEvent;
+export type BenchmarkEvent =
+  | BenchmarkContentDigestEvent
+  | BenchmarkContentReadyEvent
+  | BenchmarkViewportReadyEvent;
 
 export type ChatHistoryApi = {
   implementationName:

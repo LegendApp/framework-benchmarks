@@ -166,11 +166,13 @@ class BenchmarkConfig {
   const BenchmarkConfig({
     required this.loadImages,
     required this.switchDelayMs,
+    required this.topDelayMs,
     required this.targets,
   });
 
   final bool loadImages;
   final int switchDelayMs;
+  final int topDelayMs;
   final List<BenchmarkTarget> targets;
 
   factory BenchmarkConfig.fromJson(Map<String, dynamic> json) {
@@ -189,6 +191,7 @@ class BenchmarkConfig {
     return BenchmarkConfig(
       loadImages: json['loadImages'] as bool? ?? false,
       switchDelayMs: (json['switchDelayMs'] as num).round(),
+      topDelayMs: (json['topDelayMs'] as num).round(),
       targets: targets,
     );
   }
@@ -200,10 +203,11 @@ class BenchmarkTarget {
   final String id;
   final ChatProvider provider;
 
-  factory BenchmarkTarget.fromJson(Map<String, dynamic> json) => BenchmarkTarget(
-    id: json['id'] as String,
-    provider: ChatProviderName.parse(json['provider'] as String),
-  );
+  factory BenchmarkTarget.fromJson(Map<String, dynamic> json) =>
+      BenchmarkTarget(
+        id: json['id'] as String,
+        provider: ChatProviderName.parse(json['provider'] as String),
+      );
 }
 
 enum ChatAppearance { dark, light, system }

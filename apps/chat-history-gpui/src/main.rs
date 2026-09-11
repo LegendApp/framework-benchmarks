@@ -17,7 +17,7 @@ use chat_history_rust::{
 use chrono::{Local, TimeZone};
 use gpui::{
     AnyElement, AnyWindowHandle, App, Application, Bounds, Context, Div, FontStyle, FontWeight,
-    HighlightStyle, InteractiveText, ListAlignment, ListState, Render, StrikethroughStyle,
+    HighlightStyle, InteractiveText, ListAlignment, ListOffset, ListState, Render, StrikethroughStyle,
     StyledText, Task, TitlebarOptions, UnderlineStyle, Window, WindowAppearance, WindowBounds,
     WindowOptions, div, img, list, prelude::*, px, rgb, rgba, size,
 };
@@ -339,11 +339,42 @@ impl ChatHistory {
         }).cloned() else {
             return;
         };
-        let delay_ms = benchmark.switch_delay_ms;
+        let top_delay_ms = benchmark.top_delay_ms;
+        let switch_delay_ms = benchmark.switch_delay_ms;
+        let benchmark = benchmark.clone();
+        let path = document.path.clone();
         let generation = pending.generation;
         self.loading_task = Some(cx.spawn(async move |this, cx| {
             cx.background_executor()
-                .timer(Duration::from_millis(delay_ms))
+                .timer(Duration::from_millis(top_delay_ms))
+                .await;
+            let started = Instant::now();
+            let window = this.update(cx, |view, cx| {
+                if generation == view.generation {
+                    view.list_state.scroll_to(ListOffset {
+                        item_ix: 0,
+                        offset_in_item: px(0.0),
+                    });
+                    cx.notify();
+                    Some(view.window)
+                } else {
+                    None
+                }
+            }).ok().flatten();
+            let Some(window) = window else { return };
+            let _ = window.update(cx, |root, window, cx| {
+                cx.notify(root.entity_id());
+                window.refresh();
+            });
+            cx.background_executor().timer(Duration::from_millis(50)).await;
+            let _ = benchmark.emit(serde_json::json!({
+                "durationMs": started.elapsed().as_secs_f64() * 1000.0,
+                "name": "viewportReady",
+                "path": path,
+                "phase": "top",
+            }));
+            cx.background_executor()
+                .timer(Duration::from_millis(switch_delay_ms))
                 .await;
             let _ = this.update(cx, |view, cx| {
                 if generation == view.generation {

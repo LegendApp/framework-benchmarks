@@ -23,7 +23,7 @@ type Recording = {
 };
 
 export type VideoEvidence = {
-  analysisVersion: 1;
+  analysisVersion: 2;
   captureFps: number;
   firstContentFrame: number;
   firstContentTimestampMs: number;
@@ -32,6 +32,8 @@ export type VideoEvidence = {
     firstContentTimestampMs: number;
     switchContentTimestampMs: number;
     switchStartedTimestampMs: number;
+    topContentTimestampMs: number;
+    topStartedTimestampMs: number;
     windowShownTimestampMs: number;
   };
   launchTimestampMs: number;
@@ -47,6 +49,8 @@ export type VideoEvidence = {
   };
   switchContentFrame: number;
   switchContentTimestampMs: number;
+  topContentFrame: number;
+  topContentTimestampMs: number;
   video: string;
   window: WindowInfo;
   windowOpenFrame: number;
@@ -148,7 +152,7 @@ export async function stopRecording(recording: Recording) {
   await waitForExit(recording.child, 15_000);
 }
 
-function probeVideo(path: string, timestampPath: string) {
+export function probeVideo(path: string, timestampPath: string) {
   const output = execFileSync("ffprobe", [
     "-v", "error",
     "-select_streams", "v:0",
@@ -184,7 +188,7 @@ function even(value: number) {
   return rounded % 2 === 0 ? rounded : rounded - 1;
 }
 
-function videoWindow(windowInfo: WindowInfo, videoWidth: number, videoHeight: number) {
+export function videoWindow(windowInfo: WindowInfo, videoWidth: number, videoHeight: number) {
   const horizontalScale = videoWidth / windowInfo.display.width;
   const verticalScale = videoHeight / windowInfo.display.height;
   const x = Math.max(0, Math.round((windowInfo.window.x - windowInfo.display.x) * horizontalScale));
@@ -197,7 +201,7 @@ function videoWindow(windowInfo: WindowInfo, videoWidth: number, videoHeight: nu
   };
 }
 
-function extractFeatures(
+export function extractFeatures(
   path: string,
   sourceWidth: number,
   sourceHeight: number,
@@ -260,7 +264,7 @@ function extractFeatures(
   });
 }
 
-function nearestFrame(frames: Frame[], timestampMs: number) {
+export function nearestFrame(frames: Frame[], timestampMs: number) {
   let best = 0;
   for (let index = 1; index < frames.length; index += 1) {
     if (Math.abs(frames[index].timestampMs - timestampMs)
@@ -276,7 +280,7 @@ function percentile(values: number[], quantile: number) {
   return sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * quantile) - 1)];
 }
 
-function changedRatio(left: Uint8Array, right: Uint8Array, topFraction = 0) {
+export function changedRatio(left: Uint8Array, right: Uint8Array, topFraction = 0) {
   if (left.length !== right.length) {
     throw new Error("Video frame features have different dimensions");
   }
@@ -297,7 +301,7 @@ function changedRatio(left: Uint8Array, right: Uint8Array, topFraction = 0) {
   return changed / pixels;
 }
 
-function firstStableFrame(
+export function firstStableFrame(
   frames: Frame[],
   startTimestampMs: number,
   endTimestampMs: number,
@@ -318,7 +322,7 @@ function firstStableFrame(
   return -1;
 }
 
-function cropVideo(source: string, destination: string, rect: Rect) {
+export function cropVideo(source: string, destination: string, rect: Rect) {
   mkdirSync(dirname(destination), { recursive: true });
   execFileSync("ffmpeg", [
     "-v", "error",
@@ -342,6 +346,8 @@ export async function analyzeRecording({
   resultsRoot,
   switchContentTimestampMs,
   switchStartedTimestampMs,
+  topContentTimestampMs,
+  topStartedTimestampMs,
   windowInfo,
   windowShownTimestampMs,
 }: {
@@ -353,22 +359,34 @@ export async function analyzeRecording({
   resultsRoot: string;
   switchContentTimestampMs: number;
   switchStartedTimestampMs: number;
+  topContentTimestampMs: number;
+  topStartedTimestampMs: number;
   windowInfo: WindowInfo;
   windowShownTimestampMs: number;
 }): Promise<VideoEvidence> {
+  if (![firstContentTimestampMs, launchTimestampMs, switchContentTimestampMs,
+    switchStartedTimestampMs, topContentTimestampMs, topStartedTimestampMs,
+    windowShownTimestampMs].every(Number.isFinite)) {
+    throw new Error("Video analysis received a non-finite benchmark timestamp");
+  }
   const probe = probeVideo(recordingPath, recordingTimestampPath);
   const rect = videoWindow(windowInfo, probe.width, probe.height);
   const frames = await extractFeatures(
     recordingPath, probe.width, probe.height, probe.timestampsMs, rect);
   const initialReferenceTimestamp = Math.min(
-    switchStartedTimestampMs - 500,
+    topStartedTimestampMs - 500,
     firstContentTimestampMs + 1_000,
+  );
+  const topReferenceTimestamp = Math.min(
+    switchStartedTimestampMs - 500,
+    topContentTimestampMs + 1_000,
   );
   const switchReferenceTimestamp = frames.at(-1)?.timestampMs ?? switchContentTimestampMs;
   const initialReference = frames[nearestFrame(frames, initialReferenceTimestamp)];
+  const topReference = frames[nearestFrame(frames, topReferenceTimestamp)];
   const switchReference = frames[nearestFrame(frames, switchReferenceTimestamp)];
   const baseline = frames[nearestFrame(frames, launchTimestampMs - 100)];
-  if (!initialReference || !switchReference || !baseline) {
+  if (!initialReference || !topReference || !switchReference || !baseline) {
     throw new Error("Screen recording does not span the benchmark reference frames");
   }
   const maximumWindowChange = Math.max(...frames
@@ -389,8 +407,15 @@ export async function analyzeRecording({
   const firstContentFrame = firstStableFrame(
     frames,
     launchTimestampMs,
-    switchStartedTimestampMs - 250,
+    topStartedTimestampMs - 250,
     (frame) => changedRatio(frame.feature, initialReference.feature, 0.07)
+      <= contentMaximumChangedRatio,
+  );
+  const topContentFrame = firstStableFrame(
+    frames,
+    topStartedTimestampMs,
+    switchStartedTimestampMs - 250,
+    (frame) => changedRatio(frame.feature, topReference.feature, 0.07)
       <= contentMaximumChangedRatio,
   );
   const switchContentFrame = firstStableFrame(
@@ -400,9 +425,9 @@ export async function analyzeRecording({
     (frame) => changedRatio(frame.feature, switchReference.feature, 0.07)
       <= contentMaximumChangedRatio,
   );
-  if (windowOpenFrame < 0 || firstContentFrame < 0 || switchContentFrame < 0) {
+  if (windowOpenFrame < 0 || firstContentFrame < 0 || topContentFrame < 0 || switchContentFrame < 0) {
     throw new Error(
-      `Could not find stable visual frames: window=${windowOpenFrame}, initial=${firstContentFrame}, switch=${switchContentFrame}, maximumWindowChange=${maximumWindowChange.toFixed(4)}`,
+      `Could not find stable visual frames: window=${windowOpenFrame}, initial=${firstContentFrame}, top=${topContentFrame}, switch=${switchContentFrame}, maximumWindowChange=${maximumWindowChange.toFixed(4)}`,
     );
   }
   cropVideo(recordingPath, artifactPath, rect);
@@ -410,7 +435,7 @@ export async function analyzeRecording({
     (frame, index) => frame.timestampMs - frames[index].timestampMs,
   );
   const evidence: VideoEvidence = {
-    analysisVersion: 1,
+    analysisVersion: 2,
     captureFps,
     firstContentFrame,
     firstContentTimestampMs: frames[firstContentFrame].timestampMs,
@@ -419,6 +444,8 @@ export async function analyzeRecording({
       firstContentTimestampMs,
       switchContentTimestampMs,
       switchStartedTimestampMs,
+      topContentTimestampMs,
+      topStartedTimestampMs,
       windowShownTimestampMs,
     },
     launchTimestampMs,
@@ -434,6 +461,8 @@ export async function analyzeRecording({
     },
     switchContentFrame,
     switchContentTimestampMs: frames[switchContentFrame].timestampMs,
+    topContentFrame,
+    topContentTimestampMs: frames[topContentFrame].timestampMs,
     video: relative(resultsRoot, artifactPath),
     window: windowInfo,
     windowOpenFrame,

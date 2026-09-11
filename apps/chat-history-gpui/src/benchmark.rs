@@ -19,6 +19,7 @@ pub struct Target {
 struct Manifest {
     load_images: bool,
     switch_delay_ms: u64,
+    top_delay_ms: u64,
     targets: Vec<Target>,
     version: usize,
 }
@@ -27,6 +28,7 @@ struct Manifest {
 pub struct Benchmark {
     pub load_images: bool,
     pub switch_delay_ms: u64,
+    pub top_delay_ms: u64,
     pub targets: Vec<Target>,
     events_path: Option<PathBuf>,
 }
@@ -46,6 +48,7 @@ impl Benchmark {
         Ok(Some(Self {
             load_images: manifest.load_images,
             switch_delay_ms: manifest.switch_delay_ms,
+            top_delay_ms: manifest.top_delay_ms,
             targets: manifest.targets,
             events_path: env::var_os("CHAT_HISTORY_BENCHMARK_EVENTS").map(PathBuf::from),
         }))

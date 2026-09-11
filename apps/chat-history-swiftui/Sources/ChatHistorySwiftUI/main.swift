@@ -20,6 +20,11 @@ final class ChatHistoryStore: ObservableObject {
   private var benchmarkPhase: ChatBenchmarkPhase?
   private var openedAt = 0.0
   private var paintPending = false
+  private var topPaintPending = false
+
+  var benchmarkTopDelayMs: Double? {
+    benchmarkPhase == .initial ? benchmarkConfig?.topDelayMs : nil
+  }
 
   init() {
     benchmarkConfig = try? ChatBenchmark.load()
@@ -78,6 +83,7 @@ final class ChatHistoryStore: ObservableObject {
     selectedId = summary.id
     benchmarkPhase = phase
     paintPending = false
+    topPaintPending = false
     if phase == nil && settings.restoreSelection {
       settings.selectedId = summary.id
       ChatSettingsStore.save(settings)
@@ -136,7 +142,14 @@ final class ChatHistoryStore: ObservableObject {
         document: document,
         phase: phase))
     ChatBenchmark.emitContentDigest(document: document, phase: phase)
-    if phase == .initial, let benchmarkConfig, benchmarkConfig.targets.count == 2,
+  }
+
+  func recordTopPaint(for path: String, startedAt: Double) {
+    guard document?.path == path, benchmarkPhase == .initial, !topPaintPending else { return }
+    topPaintPending = true
+    let durationMs = ProcessInfo.processInfo.systemUptime * 1_000 - startedAt
+    ChatBenchmark.emit(ChatBenchmarkViewportReadyEvent(durationMs: durationMs, path: path))
+    if let benchmarkConfig, benchmarkConfig.targets.count == 2,
       let secondary = summaries.first(where: {
         $0.id == benchmarkConfig.targets[1].id && $0.provider == benchmarkConfig.targets[1].provider
       })
@@ -174,9 +187,12 @@ struct ContentView: View {
       Group {
         if let document = store.document {
           TranscriptView(
-            document: document, firstPaintMs: store.firstPaintMs, settings: store.settings
+            document: document, firstPaintMs: store.firstPaintMs, settings: store.settings,
+            topDelayMs: store.benchmarkTopDelayMs
           ) {
             store.recordFirstPaint(for: document.path)
+          } onTopPaint: { startedAt in
+            store.recordTopPaint(for: document.path, startedAt: startedAt)
           }
         } else if let errorMessage = store.errorMessage {
           EmptyState(errorMessage, color: .red)
@@ -288,7 +304,11 @@ private struct TranscriptView: View {
   let document: ChatDocument
   let firstPaintMs: Double?
   let settings: ChatHistorySettings
+  let topDelayMs: Double?
   let onFirstPaint: () -> Void
+  let onTopPaint: (Double) -> Void
+  @State private var topPaintReported = false
+  @State private var topStartedAt: Double?
 
   var body: some View {
     VStack(spacing: 0) {
@@ -308,6 +328,14 @@ private struct TranscriptView: View {
               if row.id == document.rows.last?.id {
                 onFirstPaint()
               }
+              if row.id == document.rows.first?.id, let topStartedAt, !topPaintReported {
+                topPaintReported = true
+                DispatchQueue.main.async {
+                  DispatchQueue.main.async {
+                    onTopPaint(topStartedAt)
+                  }
+                }
+              }
             }
         }
         .listStyle(.plain)
@@ -321,6 +349,13 @@ private struct TranscriptView: View {
           if let last = document.rows.last {
             proxy.scrollTo(last.id, anchor: .bottom)
           }
+        }
+        .task(id: firstPaintMs) {
+          guard firstPaintMs != nil, let topDelayMs, let first = document.rows.first else { return }
+          try? await Task.sleep(for: .milliseconds(Int64(topDelayMs)))
+          guard !Task.isCancelled else { return }
+          topStartedAt = ProcessInfo.processInfo.systemUptime * 1_000
+          proxy.scrollTo(first.id, anchor: .top)
         }
       }
     }

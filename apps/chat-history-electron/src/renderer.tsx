@@ -1,5 +1,5 @@
-import { LegendList, useRecyclingState } from "@legendapp/list/react";
-import { StrictMode, useCallback, useEffect, useRef, useState } from "react";
+import { LegendList, type LegendListRef, useRecyclingState } from "@legendapp/list/react";
+import { StrictMode, useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { createRoot } from "react-dom/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -208,10 +208,12 @@ const chatRowType = (row: ChatRow) => row.kind;
 
 function Transcript({
   document,
+  listRef,
   loadImages,
   onLoad,
 }: {
   document: ChatDocument;
+  listRef: RefObject<LegendListRef | null>;
   loadImages: boolean;
   onLoad: () => void;
 }) {
@@ -228,6 +230,7 @@ function Transcript({
       initialScrollAtEnd
       keyExtractor={chatRowKey}
       onLoad={onLoad}
+      ref={listRef}
       recycleItems
       renderItem={renderItem}
       style={transcriptStyle}
@@ -256,7 +259,8 @@ function usesWebKitLayoutPolling() {
     || window.chatHistory.implementationName === "Deno WebView";
 }
 
-function ReadyTranscript({ discoveryMs, onBenchmarkEvent, openedAt, phase, result, settings }: {
+function ReadyTranscript({ benchmarkConfig, discoveryMs, onBenchmarkEvent, openedAt, phase, result, settings }: {
+  benchmarkConfig?: BenchmarkConfig;
   discoveryMs?: number;
   onBenchmarkEvent?: (event: BenchmarkEvent) => Promise<void>;
   openedAt: number;
@@ -266,6 +270,7 @@ function ReadyTranscript({ discoveryMs, onBenchmarkEvent, openedAt, phase, resul
 }) {
   const [firstPaintMs, setFirstPaintMs] = useState<number>();
   const reported = useRef(false);
+  const listRef = useRef<LegendListRef>(null);
   const handleLoad = useCallback(() => {
     if (reported.current) {
       return;
@@ -297,9 +302,6 @@ function ReadyTranscript({ discoveryMs, onBenchmarkEvent, openedAt, phase, resul
     });
   }, [discoveryMs, onBenchmarkEvent, openedAt, phase, result.document]);
   useEffect(() => {
-    if (!usesWebKitLayoutPolling()) {
-      return;
-    }
     let timeout = 0;
     const waitForLaidOutRow = () => {
       const row = document.querySelector<HTMLElement>(".transcript .row");
@@ -312,11 +314,27 @@ function ReadyTranscript({ discoveryMs, onBenchmarkEvent, openedAt, phase, resul
     timeout = window.setTimeout(waitForLaidOutRow, 0);
     return () => window.clearTimeout(timeout);
   }, [handleLoad]);
+  useEffect(() => {
+    if (phase !== "initial" || !benchmarkConfig || firstPaintMs === undefined) {
+      return;
+    }
+    const timeout = window.setTimeout(() => {
+      const startedAt = performance.now();
+      listRef.current?.scrollToIndex({ animated: false, index: 0 });
+      void waitForVisibleContent(!usesWebKitLayoutPolling()).then(() => onBenchmarkEvent?.({
+        durationMs: performance.now() - startedAt,
+        name: "viewportReady",
+        path: result.document.path,
+        phase: "top",
+      }));
+    }, benchmarkConfig.topDelayMs);
+    return () => window.clearTimeout(timeout);
+  }, [benchmarkConfig, firstPaintMs, onBenchmarkEvent, phase, result.document.path]);
   return (
     <div className="transcript-shell">
       {settings.showPerformanceMetrics ? <Timing firstPaintMs={firstPaintMs} result={result} /> : null}
       <div className="transcript">
-        <Transcript document={result.document} loadImages={settings.loadImages} onLoad={handleLoad} />
+        <Transcript document={result.document} listRef={listRef} loadImages={settings.loadImages} onLoad={handleLoad} />
       </div>
     </div>
   );
@@ -508,7 +526,7 @@ function App() {
 
   async function handleBenchmarkEvent(event: BenchmarkEvent) {
     await window.chatHistory.emitBenchmarkEvent?.(event);
-    if (event.name === "contentReady" && event.phase === "initial" && benchmarkConfig) {
+    if (event.name === "viewportReady" && event.phase === "top" && benchmarkConfig) {
       const secondary = summaries.find((summary) => summary.id === benchmarkConfig.targets[1].id);
       if (!secondary) {
         return;
@@ -537,6 +555,7 @@ function App() {
         {!catalogError && selection.status === "error" ? <div className="empty error">{selection.error}</div> : null}
         {!catalogError && selection.status === "ready" ? (
           <ReadyTranscript
+            benchmarkConfig={benchmarkConfig}
             discoveryMs={selection.discoveryMs}
             onBenchmarkEvent={selection.phase ? handleBenchmarkEvent : undefined}
             openedAt={selection.openedAt}

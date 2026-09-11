@@ -8,8 +8,23 @@ public struct ChatBenchmarkTarget: Codable, Sendable {
 public struct ChatBenchmarkConfig: Codable, Sendable {
   public let loadImages: Bool
   public let switchDelayMs: Double
+  public let topDelayMs: Double
   public let targets: [ChatBenchmarkTarget]
   public let version: Int
+}
+
+public struct ChatBenchmarkViewportReadyEvent: Encodable, Sendable {
+  public let durationMs: Double
+  public let name = "viewportReady"
+  public let path: String
+  public let phase = "top"
+  public let timestampMs: Double
+
+  public init(durationMs: Double, path: String) {
+    self.durationMs = durationMs
+    self.path = path
+    self.timestampMs = Date().timeIntervalSince1970 * 1_000
+  }
 }
 
 public enum ChatBenchmarkPhase: String, Codable, Sendable {

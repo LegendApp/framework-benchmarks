@@ -253,6 +253,10 @@ private final class ChatSplitViewController: NSSplitViewController, NSToolbarDel
       let secondary = sidebar.summary(id: benchmarkConfig.targets[1].id)
     {
       Task {
+        try? await Task.sleep(for: .milliseconds(Int64(benchmarkConfig.topDelayMs)))
+        let topDurationMs = content.scrollToTop()
+        ChatBenchmark.emit(
+          ChatBenchmarkViewportReadyEvent(durationMs: topDurationMs, path: document.path))
         try? await Task.sleep(for: .milliseconds(Int64(benchmarkConfig.switchDelayMs)))
         open(secondary, phase: .switch)
       }
@@ -632,6 +636,14 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
   }
 
   func numberOfRows(in tableView: NSTableView) -> Int { document?.rows.count ?? 0 }
+
+  func scrollToTop() -> Double {
+    let startedAt = ProcessInfo.processInfo.systemUptime * 1_000
+    if tableView.numberOfRows > 0 { tableView.scrollRowToVisible(0) }
+    tableView.layoutSubtreeIfNeeded()
+    view.window?.displayIfNeeded()
+    return ProcessInfo.processInfo.systemUptime * 1_000 - startedAt
+  }
 
   func tableView(_ tableView: NSTableView, viewFor column: NSTableColumn?, row: Int) -> NSView? {
     guard let item = document?.rows[row] else { return nil }

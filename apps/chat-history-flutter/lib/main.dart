@@ -5,8 +5,8 @@ import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'benchmark.dart';
@@ -78,6 +78,8 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
   final ChatParserWorker _parserWorker = ChatParserWorker();
   final SettingsStore _settingsStore = SettingsStore();
   final String _home = Platform.environment['HOME'] ?? '';
+  final GlobalKey<_TranscriptState> _transcriptKey =
+      GlobalKey<_TranscriptState>();
 
   ChatBenchmark? _benchmark;
   double? _benchmarkDiscoveryMs;
@@ -124,16 +126,31 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
       );
       final home = _home;
       final discoveryStopwatch = Stopwatch()..start();
-      final result = await compute(_loadCatalog, (home: home, limit: 0x7fffffff));
+      final result = await compute(_loadCatalog, (
+        home: home,
+        limit: 0x7fffffff,
+      ));
       discoveryStopwatch.stop();
-      final targets = benchmark.config.targets.map((target) => result.summaries.where(
-        (summary) => summary.id == target.id && summary.provider == target.provider,
-      ).firstOrNull).toList(growable: false);
+      final targets = benchmark.config.targets
+          .map(
+            (target) => result.summaries
+                .where(
+                  (summary) =>
+                      summary.id == target.id &&
+                      summary.provider == target.provider,
+                )
+                .firstOrNull,
+          )
+          .toList(growable: false);
       if (targets.any((target) => target == null)) {
-        throw StateError('A pinned benchmark chat was not found during native history discovery');
+        throw StateError(
+          'A pinned benchmark chat was not found during native history discovery',
+        );
       }
       final resolvedTargets = targets.cast<ChatSummary>();
-      final visible = result.summaries.take(benchmarkSettings.recentChatLimit).toList();
+      final visible = result.summaries
+          .take(benchmarkSettings.recentChatLimit)
+          .toList();
       for (final target in resolvedTargets) {
         if (!visible.any((summary) => summary.id == target.id)) {
           visible.add(target);
@@ -146,7 +163,11 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
         _summaries = visible;
         _catalogMs = result.nativeTotalMs;
       });
-      await _select(resolvedTargets.first, settings: benchmarkSettings, phase: 'initial');
+      await _select(
+        resolvedTargets.first,
+        settings: benchmarkSettings,
+        phase: 'initial',
+      );
       return;
     }
     setState(() => _settings = loadedSettings);
@@ -296,13 +317,29 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
     );
     if (phase == 'initial') {
       await Future<void>.delayed(
-        Duration(milliseconds: benchmark.config.switchDelayMs),
+        Duration(milliseconds: benchmark.config.topDelayMs),
       );
       if (mounted && generation == _selectionGeneration) {
+        final topDurationMs = await _transcriptKey.currentState?.jumpToTop();
+        if (topDurationMs == null) return;
+        await benchmark.emit(<String, dynamic>{
+          'durationMs': topDurationMs,
+          'name': 'viewportReady',
+          'path': document.path,
+          'phase': 'top',
+        });
+        await Future<void>.delayed(
+          Duration(milliseconds: benchmark.config.switchDelayMs),
+        );
+      }
+      if (mounted && generation == _selectionGeneration) {
         final target = benchmark.config.targets[1];
-        final summary = _summaries.where(
-          (item) => item.id == target.id && item.provider == target.provider,
-        ).firstOrNull;
+        final summary = _summaries
+            .where(
+              (item) =>
+                  item.id == target.id && item.provider == target.provider,
+            )
+            .firstOrNull;
         if (summary != null) {
           await _select(summary, settings: _settings, phase: 'switch');
         }
@@ -422,6 +459,7 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
                 selection: _selection,
                 settings: _settings,
                 summaries: _summaries,
+                transcriptKey: _transcriptKey,
               ),
             ),
           ],
@@ -620,6 +658,7 @@ class _Content extends StatelessWidget {
     required this.selection,
     required this.settings,
     required this.summaries,
+    required this.transcriptKey,
   });
 
   final String? catalogError;
@@ -628,6 +667,7 @@ class _Content extends StatelessWidget {
   final _Selection? selection;
   final ChatHistorySettings settings;
   final List<ChatSummary> summaries;
+  final GlobalKey<_TranscriptState> transcriptKey;
 
   @override
   Widget build(BuildContext context) {
@@ -698,6 +738,7 @@ class _Content extends StatelessWidget {
       return _CenteredStatus(current.error!, error: true);
     }
     return _Transcript(
+      key: transcriptKey,
       document: current.document!,
       firstPaintMs: current.firstPaintMs,
       settings: settings,
@@ -726,8 +767,9 @@ class _CenteredStatus extends StatelessWidget {
   }
 }
 
-class _Transcript extends StatelessWidget {
+class _Transcript extends StatefulWidget {
   const _Transcript({
+    super.key,
     required this.document,
     required this.firstPaintMs,
     required this.settings,
@@ -738,26 +780,63 @@ class _Transcript extends StatelessWidget {
   final ChatHistorySettings settings;
 
   @override
+  State<_Transcript> createState() => _TranscriptState();
+}
+
+class _TranscriptState extends State<_Transcript> {
+  late ItemPositionsListener _positions = ItemPositionsListener.create();
+  late ItemScrollController _scrollController = ItemScrollController();
+
+  @override
+  void didUpdateWidget(covariant _Transcript oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.document.path != widget.document.path) {
+      _positions = ItemPositionsListener.create();
+      _scrollController = ItemScrollController();
+    }
+  }
+
+  Future<double> jumpToTop() async {
+    final startedAt = Stopwatch()..start();
+    final target = widget.document.rows.length - 1;
+    _scrollController.jumpTo(index: target);
+    for (var attempt = 0; attempt < 120; attempt += 1) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (_positions.itemPositions.value.any(
+        (position) =>
+            position.index == target && position.itemLeadingEdge.abs() < 0.01,
+      )) {
+        await WidgetsBinding.instance.endOfFrame;
+        return startedAt.elapsedMicroseconds / 1000;
+      }
+    }
+    throw StateError('Flutter indexed list did not reach the first chat row');
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
-        if (settings.showPerformanceMetrics)
-          _Timing(document: document, firstPaintMs: firstPaintMs),
+        if (widget.settings.showPerformanceMetrics)
+          _Timing(document: widget.document, firstPaintMs: widget.firstPaintMs),
         Expanded(
           child: SelectionArea(
-            child: ListView.builder(
-              key: ValueKey<String>(document.path),
-              scrollCacheExtent: const ScrollCacheExtent.pixels(500),
-              reverse: true,
-              itemCount: document.rows.length,
+            child: ScrollablePositionedList.builder(
+              initialScrollIndex: 0,
+              itemPositionsListener: _positions,
+              itemScrollController: _scrollController,
+              key: ValueKey<String>(widget.document.path),
+              itemCount: widget.document.rows.length,
               itemBuilder: (context, index) {
-                final row = document.rows[document.rows.length - 1 - index];
+                final row = widget
+                    .document
+                    .rows[widget.document.rows.length - 1 - index];
                 return Center(
                   key: ValueKey<String>(row.id),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 860),
                     child: _TranscriptRow(
-                      loadImages: settings.loadImages,
+                      loadImages: widget.settings.loadImages,
                       row: row,
                     ),
                   ),

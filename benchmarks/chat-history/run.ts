@@ -19,6 +19,7 @@ import type {
   BenchmarkConfig,
   BenchmarkContentReadyEvent,
   BenchmarkFixtureManifest,
+  BenchmarkViewportReadyEvent,
 } from "../../apps/chat-history-electron/src/model";
 import {
   analyzeRecording,
@@ -58,7 +59,8 @@ type LoggedContentDigestEvent = {
   phase: "initial" | "switch";
   timestampMs: number;
 };
-type LoggedEvent = LoggedContentDigestEvent | LoggedContentReadyEvent | WindowShownEvent;
+type LoggedViewportReadyEvent = BenchmarkViewportReadyEvent & { timestampMs: number };
+type LoggedEvent = LoggedContentDigestEvent | LoggedContentReadyEvent | LoggedViewportReadyEvent | WindowShownEvent;
 type MemorySample = {
   physicalFootprintBytes: number;
   processCount: number;
@@ -74,11 +76,14 @@ type IterationResult = {
   firstContentMs: number;
   internalFirstContentMs: number;
   internalSwitchContentMs: number;
+  internalTopJumpMs: number;
   internalWindowOpenMs: number;
   initialContentDurationMs: number;
   initialContentDigest: string;
   initialMemory: MemorySample;
   initialStages: BenchmarkContentReadyEvent["timing"];
+  topJumpMs: number;
+  topMemory: MemorySample;
   switchContentMs: number;
   switchContentDigest: string;
   switchStages: BenchmarkContentReadyEvent["timing"];
@@ -108,6 +113,12 @@ const captureExecutable = resolve(captureApp, "Contents/MacOS/ChatHistoryCapture
 const captureInfo = resolve(import.meta.dir, "CaptureInfo.plist");
 const captureSource = resolve(import.meta.dir, "capture-screen.swift");
 const recordVideo = !process.argv.includes("--no-video");
+const memorySampleCount = 3;
+const memorySettleMs = 2_500;
+const memorySampleIntervalMs = 200;
+const minimumSettledPhaseDelayMs = memorySettleMs
+  + (memorySampleCount - 1) * memorySampleIntervalMs
+  + 1_000;
 const apps: Record<AppName, { bundle: string; executable: string }> = {
   appkit: {
     bundle: resolve(buildRoot, "Chat History — AppKit.app"),
@@ -277,12 +288,12 @@ function memoryForProcessTree(rootPid: number, webKitBaseline?: Set<number>): Me
 }
 
 async function stabilizedMemory(rootPid: number, webKitBaseline?: Set<number>) {
-  await Bun.sleep(300);
+  await Bun.sleep(memorySettleMs);
   const samples: MemorySample[] = [];
-  for (let index = 0; index < 3; index += 1) {
+  for (let index = 0; index < memorySampleCount; index += 1) {
     samples.push(memoryForProcessTree(rootPid, webKitBaseline));
-    if (index < 2) {
-      await Bun.sleep(100);
+    if (index < memorySampleCount - 1) {
+      await Bun.sleep(memorySampleIntervalMs);
     }
   }
   return {
@@ -375,6 +386,7 @@ async function runIteration(
   app: AppName,
   config: BenchmarkConfig,
   videoArtifactPath?: string,
+  shouldRecord = recordVideo,
 ): Promise<IterationResult> {
   const definition = apps[app];
   const temporaryDirectory = mkdtempSync(join(tmpdir(), `chat-history-${app}-`));
@@ -400,7 +412,7 @@ async function runIteration(
   let appPid: number | undefined;
   let recordingStopped = false;
   try {
-    recording = recordVideo ? await startRecording(recordingPath, captureExecutable) : undefined;
+    recording = shouldRecord ? await startRecording(recordingPath, captureExecutable) : undefined;
     if (recording) {
       await Bun.sleep(150);
     }
@@ -442,6 +454,14 @@ async function runIteration(
       ) as LoggedContentDigestEvent
     ).contentDigest;
     const initialMemory = await stabilizedMemory(appPid, webKitBaseline);
+    const topEvent = await waitForEvent(
+      eventsPath,
+      (event) => event.name === "viewportReady" && event.phase === "top",
+    ) as LoggedViewportReadyEvent;
+    if (!Number.isFinite(topEvent.timestampMs) || !Number.isFinite(topEvent.durationMs)) {
+      throw new Error(`${app} reported an invalid top-viewport timestamp or duration`);
+    }
+    const topMemory = await stabilizedMemory(appPid, webKitBaseline);
     const switchEvent = await waitForEvent(
       eventsPath,
       (event) => event.name === "contentReady" && event.phase === "switch",
@@ -464,8 +484,10 @@ async function runIteration(
     }
     const internalFirstContentMs = initialEvent.timestampMs - launchedAt;
     const internalSwitchContentMs = switchEvent.durationMs;
+    const internalTopJumpMs = topEvent.durationMs;
     const internalWindowOpenMs = windowEvent.timestampMs - launchedAt;
     const switchStartedTimestampMs = switchEvent.timestampMs - switchEvent.durationMs;
+    const topStartedTimestampMs = topEvent.timestampMs - topEvent.durationMs;
     const videoEvidence = recording && videoArtifactPath && capturedWindow
       ? await analyzeRecording({
         artifactPath: videoArtifactPath,
@@ -474,6 +496,8 @@ async function runIteration(
         recordingPath,
         recordingTimestampPath: recording.timestampPath,
         resultsRoot,
+        topContentTimestampMs: topEvent.timestampMs,
+        topStartedTimestampMs,
         switchContentTimestampMs: switchEvent.timestampMs,
         switchStartedTimestampMs,
         windowInfo: capturedWindow,
@@ -491,11 +515,16 @@ async function runIteration(
         : internalFirstContentMs,
       internalFirstContentMs,
       internalSwitchContentMs,
+      internalTopJumpMs,
       internalWindowOpenMs,
       initialContentDurationMs: initialEvent.durationMs,
       initialContentDigest,
       initialMemory,
       initialStages: initialEvent.timing,
+      topJumpMs: videoEvidence
+        ? videoEvidence.topContentTimestampMs - topStartedTimestampMs
+        : internalTopJumpMs,
+      topMemory,
       switchContentMs: videoEvidence
         ? videoEvidence.switchContentTimestampMs - switchStartedTimestampMs
         : internalSwitchContentMs,
@@ -517,6 +546,26 @@ async function runIteration(
     rmSync(eventsPath, { force: true });
     rmSync(temporaryDirectory, { force: true, recursive: true });
   }
+}
+
+async function runIterationWithRetries(
+  app: AppName,
+  config: BenchmarkConfig,
+  videoArtifactPath?: string,
+  shouldRecord = recordVideo,
+) {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      return await runIteration(app, config, videoArtifactPath, shouldRecord);
+    } catch (error) {
+      lastError = error;
+      if (attempt < 3) {
+        console.warn(`${app}: discarded failed launch ${attempt}/3; retrying`);
+      }
+    }
+  }
+  throw lastError;
 }
 
 function median(values: number[]) {
@@ -543,7 +592,7 @@ function aggregateResult(
     parseMs: aggregate(iterations.map((result) => result[key].parseMs)),
     scanMs: aggregate(iterations.map((result) => result[key].scanMs)),
   });
-  const memory = (key: "initialMemory" | "switchedMemory") => ({
+  const memory = (key: "initialMemory" | "topMemory" | "switchedMemory") => ({
     physicalFootprintBytes: aggregate(
       iterations.map((result) => result[key].physicalFootprintBytes)),
     processCount: aggregate(iterations.map((result) => result[key].processCount)),
@@ -556,6 +605,7 @@ function aggregateResult(
       iterations.map((result) => result.internalFirstContentMs)),
     internalSwitchContentMs: aggregate(
       iterations.map((result) => result.internalSwitchContentMs)),
+    internalTopJumpMs: aggregate(iterations.map((result) => result.internalTopJumpMs)),
     internalWindowOpenMs: aggregate(
       iterations.map((result) => result.internalWindowOpenMs)),
     initialContentDurationMs: aggregate(
@@ -563,6 +613,8 @@ function aggregateResult(
     initialContentDigest: iterations[0].initialContentDigest,
     initialMemory: memory("initialMemory"),
     initialStages: stage("initialStages"),
+    topJumpMs: aggregate(iterations.map((result) => result.topJumpMs)),
+    topMemory: memory("topMemory"),
     switchContentMs: aggregate(iterations.map((result) => result.switchContentMs)),
     switchContentDigest: iterations[0].switchContentDigest,
     switchStages: stage("switchStages"),
@@ -626,23 +678,39 @@ function formatMillisecondsPair(p50: number | null, p90: number | null) {
     : `${p50.toFixed(1)} / ${p90.toFixed(1)} ms`;
 }
 
+function formatReadinessComparison(video: number, internal: number) {
+  const difference = video - internal;
+  const sign = difference >= 0 ? "+" : "";
+  return `${video.toFixed(1)} / ${internal.toFixed(1)} / ${sign}${difference.toFixed(1)} ms`;
+}
+
 function markdown(results: AppResult[]) {
   const lines = [
     recordVideo
-      ? "Video-derived p50 / p90 for time columns; memory columns are p50 RSS / physical footprint."
-      : "Internal-event p50 / p90 for time columns; memory columns are p50 RSS / physical footprint.",
+      ? "Video-derived p50 / p90 for time columns; memory columns are p50 macOS physical footprint."
+      : "Diagnostic only — internal-event timings are not comparable with final video-derived reports. Memory columns are p50 macOS physical footprint.",
     "",
-    "| App | Window open | Discovery | First content total | Switch content | Initial memory | Switched memory | Build size |",
-    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    "| App | Window open | Discovery | First content total | Jump to top | Switch content | Initial footprint | Top footprint | Switched footprint | Build size |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
   ];
   for (const result of results) {
-    lines.push(`| ${result.app} | ${formatMillisecondsPair(result.median.windowOpenMs, result.p90.windowOpenMs)} | ${formatMillisecondsPair(result.median.discoveryMs, result.p90.discoveryMs)} | ${formatMillisecondsPair(result.median.firstContentMs, result.p90.firstContentMs)} | ${formatMillisecondsPair(result.median.switchContentMs, result.p90.switchContentMs)} | ${formatMegabytes(result.median.initialMemory.residentSetBytes)} / ${formatMegabytes(result.median.initialMemory.physicalFootprintBytes)} | ${formatMegabytes(result.median.switchedMemory.residentSetBytes)} / ${formatMegabytes(result.median.switchedMemory.physicalFootprintBytes)} | ${formatMegabytes(result.buildSizeBytes)} |`);
+    lines.push(`| ${result.app} | ${formatMillisecondsPair(result.median.windowOpenMs, result.p90.windowOpenMs)} | ${formatMillisecondsPair(result.median.discoveryMs, result.p90.discoveryMs)} | ${formatMillisecondsPair(result.median.firstContentMs, result.p90.firstContentMs)} | ${formatMillisecondsPair(result.median.topJumpMs, result.p90.topJumpMs)} | ${formatMillisecondsPair(result.median.switchContentMs, result.p90.switchContentMs)} | ${formatMegabytes(result.median.initialMemory.physicalFootprintBytes)} | ${formatMegabytes(result.median.topMemory.physicalFootprintBytes)} | ${formatMegabytes(result.median.switchedMemory.physicalFootprintBytes)} | ${formatMegabytes(result.buildSizeBytes)} |`);
   }
   if (results.length > 0) {
     lines.push(
       "",
       `Normalized parser parity: verified (${results[0].median.initialContentDigest} initial, ${results[0].median.switchContentDigest} switched).`,
     );
+  }
+  lines.push(
+    "",
+    "p50 aggregate RSS diagnostic. RSS includes resident shared libraries and memory mappings and can double-count shared pages across a multiprocess app; physical footprint above is the primary macOS memory-cost metric.",
+    "",
+    "| App | Initial RSS | Top RSS | Switched RSS |",
+    "| --- | ---: | ---: | ---: |",
+  );
+  for (const result of results) {
+    lines.push(`| ${result.app} | ${formatMegabytes(result.median.initialMemory.residentSetBytes)} | ${formatMegabytes(result.median.topMemory.residentSetBytes)} | ${formatMegabytes(result.median.switchedMemory.residentSetBytes)} |`);
   }
   lines.push(
     "",
@@ -657,13 +725,13 @@ function markdown(results: AppResult[]) {
   if (recordVideo) {
     lines.push(
       "",
-      "p50 external video timing versus app-declared readiness. Differences expose premature or conservative internal boundaries.",
+      "p50 external video timing versus app-declared readiness. Each cell is video / internal / delta, where delta is video minus internal. Internal callbacks measure framework work submission or layout completion, not guaranteed WindowServer presentation; video is the user-visible authority.",
       "",
-      "| App | First content video | First content internal | Switch video | Switch internal |",
+      "| App | Window open | First content | Jump to top | Switch content |",
       "| --- | ---: | ---: | ---: | ---: |",
     );
     for (const result of results) {
-      lines.push(`| ${result.app} | ${result.median.firstContentMs.toFixed(1)} ms | ${result.median.internalFirstContentMs.toFixed(1)} ms | ${result.median.switchContentMs.toFixed(1)} ms | ${result.median.internalSwitchContentMs.toFixed(1)} ms |`);
+      lines.push(`| ${result.app} | ${formatReadinessComparison(result.median.windowOpenMs, result.median.internalWindowOpenMs)} | ${formatReadinessComparison(result.median.firstContentMs, result.median.internalFirstContentMs)} | ${formatReadinessComparison(result.median.topJumpMs, result.median.internalTopJumpMs)} | ${formatReadinessComparison(result.median.switchContentMs, result.median.internalSwitchContentMs)} |`);
     }
   }
   if (results.some((result) => result.iterations.some((iteration) => iteration.videoEvidence))) {
@@ -696,7 +764,8 @@ async function main() {
   await verifyFixtures(fixtureManifest);
   const config: BenchmarkConfig = {
     loadImages: fixtureManifest.loadImages,
-    switchDelayMs: fixtureManifest.switchDelayMs,
+    switchDelayMs: Math.max(fixtureManifest.switchDelayMs, minimumSettledPhaseDelayMs),
+    topDelayMs: Math.max(fixtureManifest.switchDelayMs, minimumSettledPhaseDelayMs),
     targets: fixtureManifest.fixtures.map(({ id, provider }) => ({ id, provider })) as BenchmarkConfig["targets"],
     version: 2,
   };
@@ -717,7 +786,10 @@ async function main() {
   for (let round = 0; round < warmups; round += 1) {
     for (const app of rotatedApps(round)) {
       console.log(`${app}: warm-up ${round + 1}/${warmups}`);
-      await runIteration(app, config);
+      await runIterationWithRetries(app, config);
+      if (recordVideo) {
+        await runIterationWithRetries(app, config, undefined, false);
+      }
     }
   }
   const measuredByApp = new Map<AppName, IterationResult[]>(
@@ -729,7 +801,15 @@ async function main() {
       const artifactPath = recordVideo
         ? join(videoDirectory, `${app}-${String(round + 1).padStart(2, "0")}.mp4`)
         : undefined;
-      measuredByApp.get(app)?.push(await runIteration(app, config, artifactPath));
+      const timingResult = await runIterationWithRetries(app, config, artifactPath);
+      if (recordVideo) {
+        console.log(`${app}: settled-memory ${round + 1}/${iterations}`);
+        const memoryResult = await runIterationWithRetries(app, config, undefined, false);
+        timingResult.initialMemory = memoryResult.initialMemory;
+        timingResult.topMemory = memoryResult.topMemory;
+        timingResult.switchedMemory = memoryResult.switchedMemory;
+      }
+      measuredByApp.get(app)?.push(timingResult);
     }
   }
   for (const phase of ["initialContentDigest", "switchContentDigest"] as const) {
@@ -778,11 +858,14 @@ async function main() {
         ? "Process launch to the first of three recorded frames matching the settled initial viewport."
         : "Process launch to app-declared completed initial layout (--no-video diagnostic mode).",
       internalReadiness: "App-declared window and content readiness retained for stage diagnosis; not used as visual timing authority when video is enabled.",
-      memory: "Median of three stabilized aggregate RSS and physical-footprint samples for the app process tree and Tauri WebKit XPC helpers.",
+      memory: `Median of ${memorySampleCount} settled aggregate samples beginning ${memorySettleMs} ms after each content or viewport readiness boundary, spaced ${memorySampleIntervalMs} ms apart, for the app process tree and attributable WebKit XPC helpers. macOS physical footprint is the primary memory-cost metric; RSS is retained as a secondary resident-mapping diagnostic.`,
       stages: "Native file/parser time and remaining bridge plus viewport-layout time within each content-open cycle.",
       switchContentMs: recordVideo
         ? "Selection start to the first of three recorded frames matching the settled switched viewport."
         : "Selection start to app-declared completed switched layout (--no-video diagnostic mode).",
+      topJumpMs: recordVideo
+        ? "Non-animated jump request to the first of three recorded frames matching the settled top viewport."
+        : "Non-animated jump request to app-declared completed top layout (--no-video diagnostic mode).",
       windowOpenMs: recordVideo
         ? "Process launch to the first of three recorded frames in which the app window replaces the pre-launch pixels."
         : "Process launch to the app's visible-window lifecycle callback (--no-video diagnostic mode).",
@@ -791,9 +874,16 @@ async function main() {
     protocol: {
       cache: "Fixture verification reads and hashes every byte before measurements, producing a controlled warm filesystem cache.",
       discovery: "Every app receives only the two stable provider/id pairs, scans the native Codex and Claude history stores itself, and resolves both transcript paths inside the measured startup path.",
-      memorySamples: 3,
-      memorySettleMs: 300,
+      memorySampleIntervalMs,
+      memoryCaptureIsolation: recordVideo
+        ? "Settled memory is sampled in a companion production launch without ScreenCaptureKit, which can charge capture surfaces to GPU-backed apps. Video-derived timing comes from the immediately preceding launch."
+        : "Screen capture is disabled for this diagnostic run.",
+      memorySamples: memorySampleCount,
+      memorySettleMs,
       order: "Deterministic round-robin rotation across apps for every warm-up and measured round.",
+      retries: "A launch that fails to emit a required phase is discarded and retried up to twice; successful iterations alone enter the aggregates.",
+      switchDelayMs: config.switchDelayMs,
+      topDelayMs: config.topDelayMs,
       visualAuthority: recordVideo
         ? "Timestamped target-60-fps ScreenCaptureKit application-surface capture with a cropped audit video and frame-evidence sidecar for every measured iteration."
         : "Disabled with --no-video; results use internal lifecycle events.",
