@@ -5,9 +5,9 @@ WebView, Deno Desktop CEF, Flutter, GPUI, SwiftUI, and AppKit. React Native is
 maintained in the sibling `legend-apps` repository and exported into this
 repository's common production-build directory for every default run.
 
-For the detailed interpretation of the latest authoritative run, including
-talk-ready causal analysis and claim boundaries, see
-[PERFORMANCE_ANALYSIS.md](PERFORMANCE_ANALYSIS.md).
+For the latest production timing comparison, see [responsive AppKit results and SwiftUI diagnosis](RESPONSIVE_LAYOUT_RESULTS.md). The earlier detector correction and causal experiments are in [CAUSAL_ANALYSIS.md](CAUSAL_ANALYSIS.md). The earlier eight-app run and memory measurements are in [RESULTS.md](RESULTS.md).
+[PERFORMANCE_ANALYSIS.md](PERFORMANCE_ANALYSIS.md) preserves the historical
+September 4 analysis and its earlier implementation/corpus.
 
 ## Minimal-project counterpart
 
@@ -56,9 +56,20 @@ pages across a multiprocess app.
 
 When video is enabled, each measured timing launch is followed by an identical
 non-recording production launch whose settled memory replaces the timing
-launch's memory fields. ScreenCaptureKit can charge capture surfaces to
+launch's memory fields. The recorded launch performs no footprint sampling;
+only the companion launch invokes the memory sampler. ScreenCaptureKit can charge capture surfaces to
 GPU-backed applications, so combining visual timing and memory in one process
 would materially overstate some renderers' normal footprint.
+
+By default the runner requires an unlocked console session. An explicit
+`--allow-locked-session` run is supported and records the lock state with each
+observation. A shareable display can belong to a locked session; Tauri was
+observed suspending its hidden JavaScript page during unrecorded launches,
+while recording kept that page running. That finding does not establish the
+same failure in every renderer. Locked-session results describe that condition
+and should not be presented as verified foreground measurements. All phase,
+content-parity, and video-evidence checks still apply. Use `--launch-attempts 1`
+to report the first failed launch without retrying it.
 
 Every app is launched as a new, activated `.app` instance through
 `NSWorkspace.OpenConfiguration`, with the same environment and pinned corpus.
@@ -99,6 +110,9 @@ automatic chat switch to finish each settled-memory sample window.
 Tauri and Deno WebView memory also includes the WebKit GPU, networking, and
 content XPC helpers created by its iteration; macOS reparents those helpers to
 `launchd`, so they do not appear in the normal process-descendant tree.
+
+Completed observations are journaled to a per-run `.observations.jsonl` file so
+partial evidence survives an interrupted run.
 
 Every measured content selection also emits a canonical 64-bit FNV-1a digest
 of the normalized display rows. Apps report visual readiness first, then
@@ -166,6 +180,7 @@ Useful focused runs:
 bun benchmarks/chat-history/run.ts --app electron --warmups 0 --iterations 1
 bun benchmarks/chat-history/run.ts --app react-native --warmups 0 --iterations 1
 bun benchmarks/chat-history/run.ts --app all --warmups 2 --iterations 10
+bun benchmarks/chat-history/run.ts --app appkit,swiftui --warmups 2 --iterations 10
 ```
 
 Video recording is the default and requires `ffmpeg`, `ffprobe`, and macOS
@@ -199,8 +214,11 @@ Each framework uses its idiomatic host implementation:
   normalized rows transferred back through isolate messaging.
 - GPUI: Rust filesystem and parser running on GPUI's background executor, with
   normalized rows moved directly into a GPU-native variable-height list.
-- SwiftUI and AppKit: memory-mapped Swift byte scanning with no whole-file
-  `String` or per-line `Data` copies, parsed in the application process.
+- SwiftUI and AppKit: the same selective C++ parser and lazy native document
+  core as React Native, exposed through an Objective-C++ ownership adapter.
+  Swift row IDs and metadata are available immediately; body and preview text
+  are decoded and cached on demand. The original Swift parser is retained as a
+  conformance reference. See the [native core provenance and adapter notes](../../packages/chat-history-swift/Sources/ChatHistoryNative/README.md).
 
 This mode measures the actual architecture a production app would use.
 
@@ -321,7 +339,7 @@ overlay as JSON in Application Support.
 ## Running SwiftUI
 
 SwiftUI and AppKit share the native `ChatHistoryCore` Swift package for session
-discovery, mapped file loading, JSONL parsing, normalization, and timing.
+discovery, a shared C++ lazy document core, row adapters, and timing.
 
 ```sh
 bun run chat-history:swiftui
@@ -344,3 +362,5 @@ bun run chat-history:appkit
 The AppKit target uses `NSSplitViewController` and reusable `NSTableView` cells
 for both the session catalog and transcript. It calls the same Swift core
 directly and therefore also reports zero bridge time.
+
+Content detector v3 scores the same transcript region in every app (24–98% of window width, 14–98% of height), excluding sidebar and header animations. Evidence retains legacy full-window scores and all source frame timestamps; saved video preserves frame count. Window timing is still detected separately. Run detector regression tests with `bun test benchmarks/chat-history/video.test.ts`.

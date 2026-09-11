@@ -1,5 +1,10 @@
 # Chat History Performance Analysis
 
+> **Timing correction:** The previous full-window content detector included sidebar scrollbar fading. Its first-content, jump, and switch scores are superseded for causal comparison by the transcript-region investigation in [CAUSAL_ANALYSIS.md](CAUSAL_ANALYSIS.md). In particular, the 905 ms AppKit versus 427 ms RN startup comparison is misleading. Window and separately sampled memory figures are not changed by this detector correction.
+
+
+> Historical September 4 analysis. AppKit and SwiftUI now use the shared lazy C++ document core. The local corpus also changed after this run; these numbers do not describe the updated implementation. See [RESULTS.md](RESULTS.md) for the rerun.
+
 This is the talk-ready interpretation of the September 4, 2026 production
 benchmark. The [raw report](results/2026-09-04T18-50-07.560Z.md) and
 [machine-readable observations](results/2026-09-04T18-50-07.560Z.json) remain
