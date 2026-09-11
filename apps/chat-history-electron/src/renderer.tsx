@@ -555,6 +555,7 @@ function App() {
         {!catalogError && selection.status === "error" ? <div className="empty error">{selection.error}</div> : null}
         {!catalogError && selection.status === "ready" ? (
           <ReadyTranscript
+            key={`${selection.id}:${selection.openedAt}`}
             benchmarkConfig={benchmarkConfig}
             discoveryMs={selection.discoveryMs}
             onBenchmarkEvent={selection.phase ? handleBenchmarkEvent : undefined}
