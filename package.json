@@ -25,7 +25,20 @@
     "benchmark:build": "bun benchmarks/chat-history/build.ts",
     "benchmark:fixtures": "bun benchmarks/chat-history/select-fixtures.ts",
     "benchmark:run": "bun benchmarks/chat-history/run.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "hello-world:appkit": "bun benchmarks/hello-world/build.ts --app appkit --launch",
+    "hello-world:electron": "bun benchmarks/hello-world/build.ts --app electron --launch",
+    "hello-world:flutter": "bun benchmarks/hello-world/build.ts --app flutter --launch",
+    "hello-world:gpui": "bun benchmarks/hello-world/build.ts --app gpui --launch",
+    "hello-world:react-native": "bun benchmarks/hello-world/build.ts --app react-native --launch",
+    "hello-world:swiftui": "bun benchmarks/hello-world/build.ts --app swiftui --launch",
+    "hello-world:tauri": "bun benchmarks/hello-world/build.ts --app tauri --launch",
+    "hello-world:deno:cef": "bun benchmarks/hello-world/build.ts --app deno-cef --launch",
+    "hello-world:deno:webview": "bun benchmarks/hello-world/build.ts --app deno-webview --launch",
+    "benchmark:hello-world": "bun benchmarks/hello-world/benchmark.ts",
+    "benchmark:hello-world:build": "bun benchmarks/hello-world/build.ts",
+    "benchmark:hello-world:run": "bun benchmarks/hello-world/run.ts",
+    "benchmark:compare": "bun benchmarks/hello-world/compare.ts"
   },
   "devDependencies": {
     "@types/bun": "^1.3.5",

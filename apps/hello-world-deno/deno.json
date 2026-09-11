@@ -1,0 +1,16 @@
+{
+  "version": "0.0.1",
+  "compilerOptions": {
+    "lib": [
+      "deno.ns",
+      "dom",
+      "esnext"
+    ]
+  },
+  "desktop": {
+    "app": {
+      "name": "Hello World Deno",
+      "identifier": "so.legend.helloworld.deno"
+    }
+  }
+}

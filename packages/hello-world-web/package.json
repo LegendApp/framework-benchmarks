@@ -1,0 +1,13 @@
+{
+  "name": "@legend-apps/hello-world-web",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "react": "catalog:",
+    "react-dom": "19.1.4"
+  },
+  "devDependencies": {
+    "@types/react-dom": "19.1.9"
+  }
+}

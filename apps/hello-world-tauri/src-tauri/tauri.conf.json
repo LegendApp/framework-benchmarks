@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Hello World \u2014 Tauri",
+  "version": "0.0.1",
+  "identifier": "so.legend.helloworld.tauri",
+  "build": {
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Hello World \u2014 Tauri",
+        "width": 1280,
+        "height": 720
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "icon": [
+      "icons/icon.png"
+    ]
+  }
+}

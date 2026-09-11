@@ -1,0 +1,26 @@
+require 'pathname'
+rn_path = File.dirname(`node --print "require.resolve('react-native-macos/package.json')"`.strip)
+require "#{rn_path}/scripts/react_native_pods.rb"
+rn_relative_path = Pathname.new(rn_path).relative_path_from(Pathname.new(__dir__)).to_s
+ENV['RCT_NEW_ARCH_ENABLED'] = '1'
+prepare_react_native_project!
+
+target 'HelloWorld-macOS' do
+  platform :macos, '14.0'
+  use_react_native!(
+    :path => rn_relative_path,
+    :fabric_enabled => true,
+    :app_path => File.expand_path('..', __dir__)
+  )
+  post_install do |installer|
+    react_native_post_install(installer, rn_relative_path)
+    # RN macOS 0.81's fmt release requires C++17 with this Xcode, as in the product target.
+    installer.pods_project.targets.each do |target|
+      if target.name == 'fmt'
+        target.build_configurations.each do |config|
+          config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'gnu++17'
+        end
+      end
+    end
+  end
+end

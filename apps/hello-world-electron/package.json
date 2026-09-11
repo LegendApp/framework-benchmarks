@@ -1,0 +1,13 @@
+{
+  "name": "@legend-apps/hello-world-electron",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "start": "bun ../../benchmarks/hello-world/build.ts --app electron --launch"
+  },
+  "devDependencies": {
+    "electron": "44.0.0"
+  }
+}

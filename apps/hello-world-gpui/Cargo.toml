@@ -1,0 +1,9 @@
+[package]
+name = "hello-world-gpui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+gpui = "=0.2.2"
+
+[workspace]

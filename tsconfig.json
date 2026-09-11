@@ -22,6 +22,7 @@
     "apps/chat-history-deno/src/main_cef.ts",
     "apps/chat-history-deno/src/main_webview.ts",
     "apps/chat-history-deno/src/runtime.ts",
-    "packages/*/vendor"
+    "packages/*/vendor",
+    "apps/hello-world-deno/src/main.ts"
   ]
 }

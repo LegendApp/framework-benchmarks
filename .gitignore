@@ -15,3 +15,13 @@ apps/chat-history-tauri/src-tauri/gen/schemas/
 apps/chat-history-tauri/src-tauri/target/
 benchmarks/chat-history/fixtures.local.json
 benchmarks/chat-history/results/
+
+# Minimal framework baselines
+apps/hello-world-*/dist/
+apps/hello-world-*/build/
+apps/hello-world-*/target/
+apps/hello-world-tauri/src-tauri/target/
+apps/hello-world-tauri/src-tauri/gen/
+apps/hello-world-react-native/macos/Pods/
+benchmarks/hello-world/results/
+apps/hello-world-react-native/macos/build/

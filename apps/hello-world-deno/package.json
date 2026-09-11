@@ -1,0 +1,10 @@
+{
+  "name": "@legend-apps/hello-world-deno",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start:webview": "bun ../../benchmarks/hello-world/build.ts --app deno-webview --launch",
+    "start:cef": "bun ../../benchmarks/hello-world/build.ts --app deno-cef --launch"
+  }
+}

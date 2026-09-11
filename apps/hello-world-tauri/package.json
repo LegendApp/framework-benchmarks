@@ -1,0 +1,12 @@
+{
+  "name": "@legend-apps/hello-world-tauri",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun ../../benchmarks/hello-world/build.ts --app tauri --launch"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.11.4"
+  }
+}
