@@ -523,6 +523,35 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
   private let metricsLabel = NSTextField(labelWithString: "")
   private let scroll = NSScrollView()
   private let tableView = NSTableView()
+  private var measuredColumnWidth: CGFloat = 0
+
+  override func viewDidLayout() {
+    super.viewDidLayout()
+    updateTextMeasurementWidth()
+  }
+
+  func tableViewColumnDidResize(_ notification: Notification) {
+    updateTextMeasurementWidth()
+  }
+
+  private func updateTextMeasurementWidth() {
+    guard let width = tableView.tableColumns.first?.width, width > 0,
+      abs(width - measuredColumnWidth) > 0.5
+    else { return }
+    measuredColumnWidth = width
+    let visibleRows = tableView.rows(in: tableView.visibleRect)
+    if visibleRows.location != NSNotFound {
+      for row in visibleRows.location..<NSMaxRange(visibleRows) {
+        (tableView.view(atColumn: 0, row: row, makeIfNecessary: false) as? TranscriptCell)?
+          .updateMeasurementWidth(width)
+      }
+    }
+    // Invalidate cached heights without instantiating offscreen cells. New/reused
+    // cells receive the current column width in viewFor before their first measurement.
+    if tableView.numberOfRows > 0 {
+      tableView.noteHeightOfRows(withIndexesChanged: IndexSet(integersIn: 0..<tableView.numberOfRows))
+    }
+  }
 
   override func loadView() {
     let root = NSView()
@@ -657,6 +686,7 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
         ?? RichMarkdownRenderer.render(
           item.markdown, imagePolicy: settings.loadImages ? .loadLocal : .omit)
     if let markdown { renderedMarkdown[item.id] = markdown }
+    cell.updateMeasurementWidth(column?.width ?? tableView.bounds.width)
     cell.configure(
       with: item,
       markdown: markdown,
@@ -710,6 +740,30 @@ private final class TranscriptCell: NSTableCellView {
   private let stack = NSStackView()
   private var leadingConstraint: NSLayoutConstraint!
   private var toggle: (() -> Void)?
+  private var measurementWidth: CGFloat = 0
+  private var wrappingLabels: [NSTextField] = []
+
+  override func setFrameSize(_ newSize: NSSize) {
+    super.setFrameSize(newSize)
+    // AppKit can retain an offscreen cell through a resize without asking viewFor
+    // for it again. Refresh its measurement input when its actual frame changes.
+    if newSize.width > 0 { updateMeasurementWidth(newSize.width) }
+  }
+
+  func updateMeasurementWidth(_ width: CGFloat) {
+    measurementWidth = width
+    for label in wrappingLabels {
+      let preferredWidth = availableTextWidth
+      if abs(label.preferredMaxLayoutWidth - preferredWidth) > 0.5 {
+        label.preferredMaxLayoutWidth = preferredWidth
+        label.invalidateIntrinsicContentSize()
+      }
+    }
+  }
+
+  private var availableTextWidth: CGFloat {
+    max(1, min(820, measurementWidth - leadingConstraint.constant - 22))
+  }
 
   init(identifier: NSUserInterfaceItemIdentifier) {
     super.init(frame: .zero)
@@ -767,6 +821,7 @@ private final class TranscriptCell: NSTableCellView {
 
   private func reset() {
     toggle = nil
+    wrappingLabels.removeAll(keepingCapacity: true)
     leadingConstraint.constant = 22
     for view in stack.arrangedSubviews {
       stack.removeArrangedSubview(view)
@@ -787,6 +842,8 @@ private final class TranscriptCell: NSTableCellView {
       label.wantsLayer = true
       label.layer?.cornerRadius = 12
     }
+    label.preferredMaxLayoutWidth = availableTextWidth
+    wrappingLabels.append(label)
     label.widthAnchor.constraint(lessThanOrEqualToConstant: 820).isActive = true
     return label
   }
@@ -852,6 +909,8 @@ private final class TranscriptCell: NSTableCellView {
     label.backgroundColor = .controlBackgroundColor
     label.wantsLayer = true
     label.layer?.cornerRadius = 7
+    label.preferredMaxLayoutWidth = availableTextWidth
+    wrappingLabels.append(label)
     label.widthAnchor.constraint(lessThanOrEqualToConstant: 820).isActive = true
     return label
   }
