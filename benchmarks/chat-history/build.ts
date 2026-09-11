@@ -129,8 +129,9 @@ function selectedTargets(): BuildTarget[] {
   if (app === "deno-cef" || app === "deno-webview") {
     return ["deno"];
   }
-  if (allTargets.includes(app as BuildTarget)) {
-    return [app as BuildTarget];
+  const requested = [...new Set(app.split(","))] as BuildTarget[];
+  if (requested.every((target) => allTargets.includes(target))) {
+    return requested;
   }
   throw new Error(`Unknown build target: ${app}`);
 }

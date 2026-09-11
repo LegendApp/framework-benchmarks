@@ -6,6 +6,28 @@ private struct LaunchResult: Codable {
   let pid: Int32
 }
 
+// A shareable display can still belong to a locked session. Some WebKit pages
+// suspend there; expose the state so diagnostic runs can record this condition.
+private struct DesktopSession: Codable {
+  let locked: Bool
+  let onConsole: Bool
+  let lastLockedTimestampMs: Double?
+}
+let session = CGSessionCopyCurrentDictionary() as? [String: Any] ?? [:]
+private let desktopSession = DesktopSession(
+  locked: session["CGSSessionScreenIsLocked"] as? Bool ?? false,
+  onConsole: session["kCGSSessionOnConsoleKey"] as? Bool ?? false,
+  lastLockedTimestampMs: (session["CGSSessionScreenLockedTime"] as? Double).map { $0 * 1_000 })
+if CommandLine.arguments.dropFirst().first == "--check-session" {
+  FileHandle.standardOutput.write(try JSONEncoder().encode(desktopSession))
+  exit(0)
+}
+let allowLockedSession = ProcessInfo.processInfo.environment["CHAT_HISTORY_BENCHMARK_ALLOW_LOCKED"] == "1"
+guard desktopSession.onConsole && (!desktopSession.locked || allowLockedSession) else {
+  FileHandle.standardError.write(Data("Benchmark requires an unlocked console session. Unlock the Mac before rerunning.\n".utf8))
+  exit(6)
+}
+
 guard CommandLine.arguments.count >= 2 else {
   FileHandle.standardError.write(Data("Usage: launch-app <bundle.app> [arguments...]\n".utf8))
   exit(2)

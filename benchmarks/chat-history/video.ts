@@ -12,6 +12,8 @@ export type WindowInfo = {
 
 type Frame = {
   feature: Uint8Array;
+  width: number;
+  height: number;
   timestampMs: number;
 };
 
@@ -23,7 +25,9 @@ type Recording = {
 };
 
 export type VideoEvidence = {
-  analysisVersion: 2;
+  analysisVersion: 3;
+  sourceFrameTimestampsMs: number[];
+  legacyWindowContent: { firstContentTimestampMs: number | null; topContentTimestampMs: number | null; switchContentTimestampMs: number | null };
   captureFps: number;
   firstContentFrame: number;
   firstContentTimestampMs: number;
@@ -40,6 +44,7 @@ export type VideoEvidence = {
   match: {
     changedPixelThreshold: number;
     contentMaximumChangedRatio: number;
+    contentRegion: typeof transcriptRegion;
     stableFrames: number;
     windowMinimumChangedRatio: number;
   };
@@ -56,6 +61,24 @@ export type VideoEvidence = {
   windowOpenFrame: number;
   windowOpenTimestampMs: number;
 };
+
+// The same transcript interior is measured in every app. Window chrome,
+// catalog/sidebar animation, metrics, and overlay scrollers are not content.
+export const transcriptRegion = { left: 0.24, top: 0.14, right: 0.98, bottom: 0.98 } as const;
+
+export function regionFeature(feature: Uint8Array, width: number, height: number) {
+  if (width * height * 3 !== feature.length) throw new Error("Invalid feature dimensions");
+  const left = Math.floor(width * transcriptRegion.left);
+  const right = Math.floor(width * transcriptRegion.right);
+  const top = Math.floor(height * transcriptRegion.top);
+  const bottom = Math.floor(height * transcriptRegion.bottom);
+  const result = new Uint8Array((right - left) * (bottom - top) * 3);
+  for (let row = top; row < bottom; row += 1) {
+    result.set(feature.subarray((row * width + left) * 3, (row * width + right) * 3),
+      (row - top) * (right - left) * 3);
+  }
+  return result;
+}
 
 const captureFps = 60;
 const analysisWidth = 320;
@@ -247,7 +270,7 @@ export function extractFeatures(
         }
         const timestampMs = timestampsMs[frames.length];
         if (timestampMs !== undefined) {
-          frames.push({ feature, timestampMs });
+          frames.push({ feature, width: crop.width, height: crop.height, timestampMs });
         }
       }
     });
@@ -329,6 +352,7 @@ export function cropVideo(source: string, destination: string, rect: Rect) {
     "-i", source,
     "-vf", `crop=${rect.width}:${rect.height}:${rect.x}:${rect.y},setpts=PTS-STARTPTS`,
     "-an",
+    "-fps_mode", "passthrough",
     "-c:v", "h264_videotoolbox",
     "-q:v", "65",
     "-movflags", "+faststart",
@@ -404,25 +428,52 @@ export async function analyzeRecording({
     initialReferenceTimestamp,
     (frame) => changedRatio(frame.feature, baseline.feature) >= windowChangeThreshold,
   );
-  const firstContentFrame = firstStableFrame(
+  const legacyFirstContentFrame = firstStableFrame(
     frames,
     launchTimestampMs,
     topStartedTimestampMs - 250,
     (frame) => changedRatio(frame.feature, initialReference.feature, 0.07)
       <= contentMaximumChangedRatio,
   );
-  const topContentFrame = firstStableFrame(
+  const legacyTopContentFrame = firstStableFrame(
     frames,
     topStartedTimestampMs,
     switchStartedTimestampMs - 250,
     (frame) => changedRatio(frame.feature, topReference.feature, 0.07)
       <= contentMaximumChangedRatio,
   );
-  const switchContentFrame = firstStableFrame(
+  const legacySwitchContentFrame = firstStableFrame(
     frames,
     switchStartedTimestampMs,
     switchReferenceTimestamp,
     (frame) => changedRatio(frame.feature, switchReference.feature, 0.07)
+      <= contentMaximumChangedRatio,
+  );
+  const contentFrames = frames.map((frame) => ({
+    ...frame, feature: regionFeature(frame.feature, frame.width, frame.height),
+  }));
+  const contentInitialReference = contentFrames[nearestFrame(frames, initialReferenceTimestamp)];
+  const contentTopReference = contentFrames[nearestFrame(frames, topReferenceTimestamp)];
+  const contentSwitchReference = contentFrames[nearestFrame(frames, switchReferenceTimestamp)];
+  const firstContentFrame = firstStableFrame(
+    contentFrames,
+    launchTimestampMs,
+    topStartedTimestampMs - 250,
+    (frame) => changedRatio(frame.feature, contentInitialReference.feature)
+      <= contentMaximumChangedRatio,
+  );
+  const topContentFrame = firstStableFrame(
+    contentFrames,
+    topStartedTimestampMs,
+    switchStartedTimestampMs - 250,
+    (frame) => changedRatio(frame.feature, contentTopReference.feature)
+      <= contentMaximumChangedRatio,
+  );
+  const switchContentFrame = firstStableFrame(
+    contentFrames,
+    switchStartedTimestampMs,
+    switchReferenceTimestamp,
+    (frame) => changedRatio(frame.feature, contentSwitchReference.feature)
       <= contentMaximumChangedRatio,
   );
   if (windowOpenFrame < 0 || firstContentFrame < 0 || topContentFrame < 0 || switchContentFrame < 0) {
@@ -435,7 +486,13 @@ export async function analyzeRecording({
     (frame, index) => frame.timestampMs - frames[index].timestampMs,
   );
   const evidence: VideoEvidence = {
-    analysisVersion: 2,
+    analysisVersion: 3,
+    sourceFrameTimestampsMs: frames.map((frame) => frame.timestampMs),
+    legacyWindowContent: {
+      firstContentTimestampMs: frames[legacyFirstContentFrame]?.timestampMs ?? null,
+      topContentTimestampMs: frames[legacyTopContentFrame]?.timestampMs ?? null,
+      switchContentTimestampMs: frames[legacySwitchContentFrame]?.timestampMs ?? null,
+    },
     captureFps,
     firstContentFrame,
     firstContentTimestampMs: frames[firstContentFrame].timestampMs,
@@ -452,6 +509,7 @@ export async function analyzeRecording({
     match: {
       changedPixelThreshold,
       contentMaximumChangedRatio,
+      contentRegion: transcriptRegion,
       stableFrames,
       windowMinimumChangedRatio: windowChangeThreshold,
     },

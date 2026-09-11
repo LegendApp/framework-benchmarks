@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import {
+  appendFileSync,
   copyFileSync,
   createReadStream,
   existsSync,
@@ -68,6 +69,7 @@ type MemorySample = {
 };
 type ProcessRow = { command: string; pid: number; ppid: number; rssKb: number };
 type IterationResult = {
+  desktopSession?: { locked: boolean; onConsole: boolean; lastLockedTimestampMs?: number };
   diagnostics?: {
     initial?: DiagnosticEvent[];
     switch?: DiagnosticEvent[];
@@ -113,6 +115,7 @@ const captureExecutable = resolve(captureApp, "Contents/MacOS/ChatHistoryCapture
 const captureInfo = resolve(import.meta.dir, "CaptureInfo.plist");
 const captureSource = resolve(import.meta.dir, "capture-screen.swift");
 const recordVideo = !process.argv.includes("--no-video");
+const allowLockedSession = process.argv.includes("--allow-locked-session");
 const memorySampleCount = 3;
 const memorySettleMs = 2_500;
 const memorySampleIntervalMs = 200;
@@ -187,8 +190,9 @@ function selectedApps(): AppName[] {
       "appkit",
     ];
   }
-  if (value in apps) {
-    return [value as AppName];
+  const requested = [...new Set(value.split(","))] as AppName[];
+  if (requested.every((app) => Object.hasOwn(apps, app))) {
+    return requested;
   }
   throw new Error(`Unknown app ${value}`);
 }
@@ -327,13 +331,34 @@ function loggedEvents(path: string): LoggedEvent[] {
   });
 }
 
+class BenchmarkSessionError extends Error {}
+
+function assertDesktopSession(launchTimestampMs?: number) {
+  const session = JSON.parse(execFileSync(launchAppExecutable, ["--check-session"], {
+    encoding: "utf8",
+  })) as { locked: boolean; onConsole: boolean; lastLockedTimestampMs?: number };
+  if (!session.onConsole || (!allowLockedSession && (session.locked
+    || (launchTimestampMs !== undefined && session.lastLockedTimestampMs !== undefined
+      && session.lastLockedTimestampMs >= launchTimestampMs)))) {
+    throw new BenchmarkSessionError(
+      "Benchmark requires an unlocked console session. Unlock the Mac and rerun; use --allow-locked-session only to explicitly measure and report that condition.",
+    );
+  }
+  return session;
+}
+
 async function waitForEvent(
   path: string,
   predicate: (event: LoggedEvent) => boolean,
   timeoutMs = 120_000,
 ) {
   const startedAt = Date.now();
+  let nextSessionCheck = startedAt + 10_000;
   while (Date.now() - startedAt < timeoutMs) {
+    if (Date.now() >= nextSessionCheck) {
+      assertDesktopSession(startedAt);
+      nextSessionCheck = Date.now() + 1_000;
+    }
     const event = loggedEvents(path).find(predicate);
     if (event) {
       return event;
@@ -388,6 +413,7 @@ async function runIteration(
   videoArtifactPath?: string,
   shouldRecord = recordVideo,
 ): Promise<IterationResult> {
+  const desktopSession = assertDesktopSession();
   const definition = apps[app];
   const temporaryDirectory = mkdtempSync(join(tmpdir(), `chat-history-${app}-`));
   const recordingPath = join(temporaryDirectory, "screen.mp4");
@@ -424,6 +450,7 @@ async function runIteration(
         encoding: "utf8",
         env: {
           ...process.env,
+          CHAT_HISTORY_BENCHMARK_ALLOW_LOCKED: allowLockedSession ? "1" : "0",
           CHAT_HISTORY_BENCHMARK_CONFIG: runtimeManifestPath,
           CHAT_HISTORY_BENCHMARK_EVENTS: eventsPath,
         },
@@ -453,7 +480,10 @@ async function runIteration(
         (event) => event.name === "contentDigest" && event.phase === "initial",
       ) as LoggedContentDigestEvent
     ).contentDigest;
-    const initialMemory = await stabilizedMemory(appPid, webKitBaseline);
+    // Timing and memory use separate launches. footprint can suspend sampled
+    // processes, so never collect it during a video-derived interaction.
+    const deferredMemory: MemorySample = { physicalFootprintBytes: 0, processCount: 0, residentSetBytes: 0 };
+    const initialMemory = recording ? deferredMemory : await stabilizedMemory(appPid, webKitBaseline);
     const topEvent = await waitForEvent(
       eventsPath,
       (event) => event.name === "viewportReady" && event.phase === "top",
@@ -461,7 +491,7 @@ async function runIteration(
     if (!Number.isFinite(topEvent.timestampMs) || !Number.isFinite(topEvent.durationMs)) {
       throw new Error(`${app} reported an invalid top-viewport timestamp or duration`);
     }
-    const topMemory = await stabilizedMemory(appPid, webKitBaseline);
+    const topMemory = recording ? deferredMemory : await stabilizedMemory(appPid, webKitBaseline);
     const switchEvent = await waitForEvent(
       eventsPath,
       (event) => event.name === "contentReady" && event.phase === "switch",
@@ -475,13 +505,14 @@ async function runIteration(
         (event) => event.name === "contentDigest" && event.phase === "switch",
       ) as LoggedContentDigestEvent
     ).contentDigest;
-    const switchedMemory = await stabilizedMemory(appPid, webKitBaseline);
+    const switchedMemory = recording ? deferredMemory : await stabilizedMemory(appPid, webKitBaseline);
     if (recording) {
       // Keep recording after app readiness so self-sizing native lists can reach their final frame.
-      await Bun.sleep(750);
+      await Bun.sleep(memorySettleMs + 750);
       await stopRecording(recording);
       recordingStopped = true;
     }
+    assertDesktopSession(launchedAt);
     const internalFirstContentMs = initialEvent.timestampMs - launchedAt;
     const internalSwitchContentMs = switchEvent.durationMs;
     const internalTopJumpMs = topEvent.durationMs;
@@ -509,6 +540,7 @@ async function runIteration(
         initial: initialEvent.diagnostics,
         switch: switchEvent.diagnostics,
       },
+      desktopSession,
       discoveryMs: initialEvent.discoveryMs,
       firstContentMs: videoEvidence
         ? videoEvidence.firstContentTimestampMs - launchedAt
@@ -555,13 +587,18 @@ async function runIterationWithRetries(
   shouldRecord = recordVideo,
 ) {
   let lastError: unknown;
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
+  const attempts = Math.max(1, Number(option("--launch-attempts") ?? 3));
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
       return await runIteration(app, config, videoArtifactPath, shouldRecord);
     } catch (error) {
+      if (error instanceof BenchmarkSessionError) {
+        throw error;
+      }
+      assertDesktopSession();
       lastError = error;
-      if (attempt < 3) {
-        console.warn(`${app}: discarded failed launch ${attempt}/3; retrying`);
+      if (attempt < attempts) {
+        console.warn(`${app}: discarded failed launch ${attempt}/${attempts}; retrying`);
       }
     }
   }
@@ -750,6 +787,7 @@ function markdown(results: AppResult[]) {
 
 async function main() {
   buildBenchmarkHelpers();
+  assertDesktopSession();
   if (recordVideo) {
     for (const executable of ["ffmpeg", "ffprobe"]) {
       if (command("which", [executable]) === "unknown") {
@@ -774,6 +812,8 @@ async function main() {
   const requestedApps = selectedApps();
   const timestamp = new Date().toISOString().replaceAll(":", "-");
   const videoDirectory = join(resultsRoot, `${timestamp}-videos`);
+  mkdirSync(resultsRoot, { recursive: true });
+  const observationsPath = join(resultsRoot, `${timestamp}.observations.jsonl`);
   for (const app of requestedApps) {
     const definition = apps[app];
     if (!existsSync(definition.executable)) {
@@ -810,6 +850,7 @@ async function main() {
         timingResult.switchedMemory = memoryResult.switchedMemory;
       }
       measuredByApp.get(app)?.push(timingResult);
+      appendFileSync(observationsPath, `${JSON.stringify({ app, round, result: timingResult })}\n`);
     }
   }
   for (const phase of ["initialContentDigest", "switchContentDigest"] as const) {
@@ -855,16 +896,16 @@ async function main() {
       buildSizeBytes: "Logical bytes of every file in the production .app bundle.",
       discoveryMs: "App-side wall time from starting native Codex and Claude history traversal until the discovered catalog is available to the app. This interval is contained within firstContentMs.",
       firstContentMs: recordVideo
-        ? "Process launch to the first of three recorded frames matching the settled initial viewport."
+        ? "Process launch to the first of three recorded frames matching the settled initial transcript region (excluding sidebar/header)."
         : "Process launch to app-declared completed initial layout (--no-video diagnostic mode).",
       internalReadiness: "App-declared window and content readiness retained for stage diagnosis; not used as visual timing authority when video is enabled.",
       memory: `Median of ${memorySampleCount} settled aggregate samples beginning ${memorySettleMs} ms after each content or viewport readiness boundary, spaced ${memorySampleIntervalMs} ms apart, for the app process tree and attributable WebKit XPC helpers. macOS physical footprint is the primary memory-cost metric; RSS is retained as a secondary resident-mapping diagnostic.`,
       stages: "Native file/parser time and remaining bridge plus viewport-layout time within each content-open cycle.",
       switchContentMs: recordVideo
-        ? "Selection start to the first of three recorded frames matching the settled switched viewport."
+        ? "Selection start to the first of three recorded frames matching the settled switched transcript region (excluding sidebar/header)."
         : "Selection start to app-declared completed switched layout (--no-video diagnostic mode).",
       topJumpMs: recordVideo
-        ? "Non-animated jump request to the first of three recorded frames matching the settled top viewport."
+        ? "Non-animated jump request to the first of three recorded frames matching the settled top transcript region (excluding sidebar/header)."
         : "Non-animated jump request to app-declared completed top layout (--no-video diagnostic mode).",
       windowOpenMs: recordVideo
         ? "Process launch to the first of three recorded frames in which the app window replaces the pre-launch pixels."
@@ -872,16 +913,19 @@ async function main() {
     },
     iterations,
     protocol: {
+      desktopSession: allowLockedSession
+        ? "Explicit locked-session run permitted; each observation records console lock state. Phase completion and video checks remain required. Results describe this session condition, not verified foreground performance."
+        : "Requires an unlocked console session before every launch and after each observation; session failures abort without retry.",
       cache: "Fixture verification reads and hashes every byte before measurements, producing a controlled warm filesystem cache.",
       discovery: "Every app receives only the two stable provider/id pairs, scans the native Codex and Claude history stores itself, and resolves both transcript paths inside the measured startup path.",
       memorySampleIntervalMs,
       memoryCaptureIsolation: recordVideo
-        ? "Settled memory is sampled in a companion production launch without ScreenCaptureKit, which can charge capture surfaces to GPU-backed apps. Video-derived timing comes from the immediately preceding launch."
+        ? "Settled memory is sampled in a companion production launch without ScreenCaptureKit, which can charge capture surfaces to GPU-backed apps. Video-derived timing comes from the immediately preceding launch, which performs no footprint sampling."
         : "Screen capture is disabled for this diagnostic run.",
       memorySamples: memorySampleCount,
       memorySettleMs,
       order: "Deterministic round-robin rotation across apps for every warm-up and measured round.",
-      retries: "A launch that fails to emit a required phase is discarded and retried up to twice; successful iterations alone enter the aggregates.",
+      retries: `At most ${Math.max(1, Number(option("--launch-attempts") ?? 3))} attempts per launch; only complete observations enter aggregates.`,
       switchDelayMs: config.switchDelayMs,
       topDelayMs: config.topDelayMs,
       visualAuthority: recordVideo
