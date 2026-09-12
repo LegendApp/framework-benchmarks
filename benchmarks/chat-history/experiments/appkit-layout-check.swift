@@ -34,18 +34,18 @@ private func runLayoutQA() {
       table.layoutSubtreeIfNeeded()
       check(abs(controller.view.bounds.width - width) < 1, "Container did not resize")
       let visibleCells = (0..<table.numberOfRows).filter { NSLocationInRange($0, table.rows(in: table.visibleRect)) }.compactMap { table.view(atColumn: 0, row: $0, makeIfNecessary: false) }
-      let labels = visibleCells.flatMap(descendants).compactMap { $0 as? NSStackView }.flatMap { $0.arrangedSubviews }.compactMap { $0 as? NSTextField }.filter { $0.preferredMaxLayoutWidth > 0 }
+      let labels = visibleCells.flatMap(descendants).compactMap { $0 as? TranscriptTextView }
       check(!labels.isEmpty, "No labels width \(width) row \(index)")
       for label in labels {
         let stack = label.superview!
-        check(abs(label.preferredMaxLayoutWidth - stack.bounds.width) < 1, "Preferred width \(label.preferredMaxLayoutWidth) stack \(stack.bounds.width) at container \(width)")
+        check(abs(label.measurementWidth - stack.bounds.width) < 1, "Preferred width \(label.measurementWidth) stack \(stack.bounds.width) at container \(width)")
         check(label.alignmentRect(forFrame: label.frame).width <= stack.bounds.width + 1, "Text alignment rectangle exceeds its container")
         check(label.bounds.height.isFinite && label.bounds.height > 0, "Height invalid")
         check(label.frame.height + 1 >= label.intrinsicContentSize.height, "Row height clips text after resize")
       }
       let visible = table.rows(in: table.visibleRect)
       check(NSLocationInRange(index, visible), "Scroll target is not visible")
-      observations.append(["containerWidth": width, "actualWidth": controller.view.bounds.width, "targetRow": index, "measuredLabels": labels.count, "preferredWidths": labels.map { $0.preferredMaxLayoutWidth }])
+      observations.append(["containerWidth": width, "actualWidth": controller.view.bounds.width, "targetRow": index, "measuredLabels": labels.count, "preferredWidths": labels.map { $0.measurementWidth }])
     }
   }
   print(String(data: try! JSONSerialization.data(withJSONObject: observations, options: [.prettyPrinted, .sortedKeys]), encoding: .utf8)!)

@@ -829,6 +829,7 @@ private final class TranscriptCell: NSTableCellView {
   private var topConstraint: NSLayoutConstraint!
   private var bottomConstraint: NSLayoutConstraint!
   private var wrappingLabels: [NSTextField] = []
+  private var markdownViews: [TranscriptTextView] = []
 
   override func setFrameSize(_ newSize: NSSize) {
     super.setFrameSize(newSize)
@@ -840,6 +841,7 @@ private final class TranscriptCell: NSTableCellView {
   func updateMeasurementWidth(_ width: CGFloat) {
     measurementWidth = width
     updateInsets()
+    for view in markdownViews { view.measurementWidth = availableTextWidth }
     for label in wrappingLabels {
       let preferredWidth = availableTextWidth
       if abs(label.preferredMaxLayoutWidth - preferredWidth) > 0.5 {
@@ -962,6 +964,7 @@ private final class TranscriptCell: NSTableCellView {
     toggle = nil
     stack.spacing = 8
     wrappingLabels.removeAll(keepingCapacity: true)
+    markdownViews.removeAll(keepingCapacity: true)
     leadingConstraint.constant = 22
     for view in stack.arrangedSubviews {
       stack.removeArrangedSubview(view)
@@ -969,16 +972,13 @@ private final class TranscriptCell: NSTableCellView {
     }
   }
 
-  private func markdownLabel(_ markdown: NSAttributedString, user: Bool) -> NSTextField {
-    let label = NSTextField(wrappingLabelWithString: "")
-    label.isSelectable = true
-    label.allowsEditingTextAttributes = true
-    label.maximumNumberOfLines = 0
-    label.lineBreakMode = .byWordWrapping
-    label.attributedStringValue = markdown
-    label.preferredMaxLayoutWidth = availableTextWidth
-    wrappingLabels.append(label)
-    return label
+  private func markdownLabel(_ markdown: NSAttributedString, user: Bool) -> TranscriptTextView {
+    let view = TranscriptTextView()
+    view.expandsToWidth = !user
+    view.measurementWidth = availableTextWidth
+    view.setContent(markdown)
+    markdownViews.append(view)
+    return view
   }
 
   private func addImage(_ source: String) {

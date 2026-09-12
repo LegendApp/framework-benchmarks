@@ -60,3 +60,7 @@ LEGEND_APPS_REPO=/absolute/path/to/legend-apps bun run benchmark
 # or
 bun run benchmark --react-native-repo /absolute/path/to/legend-apps
 ```
+
+For the measured causes of the native/RN differences, see the [platform timing investigation](benchmarks/chat-history/PLATFORM_TIMING_REPORT.md).
+
+Built-in TextKit update: [native renderer changes, current three-app results, and videos](benchmarks/chat-history/TEXTKIT_RESULTS.md).

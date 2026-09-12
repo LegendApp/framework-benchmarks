@@ -497,54 +497,35 @@ private struct TranscriptRow: View {
 
 @MainActor
 private final class TranscriptMarkdownCache {
-  private var rendered: [String: (String, AttributedString)] = [:]
-  func render(row: ChatRow, loadImages: Bool) -> AttributedString {
+  private var rendered: [String: (String, NSAttributedString)] = [:]
+  func render(row: ChatRow, loadImages: Bool) -> NSAttributedString {
     let key = "\(row.id):\(loadImages)"
     let source = row.markdown
     if let value = rendered[key], value.0 == source { return value.1 }
     let native = RichMarkdownRenderer.render(
       row.markdown, imagePolicy: loadImages ? .loadLocal : .omit)
-    var value = AttributedString(native)
-    if #available(macOS 26, *) {
-      // Text does not honor bridged NSParagraphStyle line heights. Use its
-      // native paragraph attribute, including separate code/heading heights.
-      value.swiftUI.lineHeight = .exact(points: 22)
-      native.enumerateAttribute(.paragraphStyle, in: NSRange(location: 0, length: native.length)) {
-        style, range, _ in
-        guard let style = style as? NSParagraphStyle, style.minimumLineHeight > 0,
-          let range = Range(range, in: value)
-        else { return }
-        value[range].swiftUI.lineHeight = .exact(points: style.minimumLineHeight)
-      }
-    }
+    let value = native
     rendered[key] = (source, value)
     return value
   }
 }
 
-private struct RichMarkdownText: View {
-  let rendered: AttributedString
+private struct RichMarkdownText: NSViewRepresentable {
+  let rendered: NSAttributedString
   let expand: Bool
-  var body: some View {
-    ExplicitTextSpacing {
-      Text(rendered).textSelection(.enabled)
-        .frame(maxWidth: expand ? .infinity : nil, alignment: .leading)
-    }
-  }
-}
 
-// Rows own their spacing explicitly; querying Text's default spacing otherwise
-// triggers extra text measurement. Forward its real size and placement unchanged.
-private struct ExplicitTextSpacing: Layout {
-  func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-    subviews[0].sizeThatFits(proposal)
+  func makeNSView(context: Context) -> TranscriptTextView { TranscriptTextView() }
+  func updateNSView(_ view: TranscriptTextView, context: Context) {
+    view.expandsToWidth = expand
+    view.setContent(rendered)
   }
-  func spacing(subviews: Subviews, cache: inout ()) -> ViewSpacing { ViewSpacing() }
-  func placeSubviews(
-    in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()
-  ) {
-    subviews[0].place(
-      at: bounds.origin, anchor: .topLeading, proposal: ProposedViewSize(bounds.size))
+  func sizeThatFits(_ proposal: ProposedViewSize, nsView: TranscriptTextView, context: Context) -> CGSize? {
+    nsView.expandsToWidth = expand
+    nsView.setContent(rendered)
+    // SwiftUI probes the ideal width before proposing the bounded message width.
+    // A zero ideal size makes a short message look horizontally flexible.
+    let width = proposal.width.flatMap { $0.isFinite ? max(1, $0) : nil } ?? 1_000_000
+    return nsView.size(fittingWidth: width)
   }
 }
 

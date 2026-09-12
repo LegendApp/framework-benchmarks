@@ -370,3 +370,7 @@ for both the session catalog and transcript. It calls the same Swift core
 directly and therefore also reports zero bridge time.
 
 Content detector v3 scores the same transcript region in every app (24–98% of window width, 14–98% of height), excluding sidebar and header animations. Evidence retains legacy full-window scores and all source frame timestamps; saved video preserves frame count. Window timing is still detected separately. Run detector regression tests with `bun test benchmarks/chat-history/video.test.ts`.
+
+For the measured causes of the native/RN differences, see the [platform timing investigation](PLATFORM_TIMING_REPORT.md).
+
+Built-in TextKit update: [native renderer changes, current three-app results, and videos](TEXTKIT_RESULTS.md).
