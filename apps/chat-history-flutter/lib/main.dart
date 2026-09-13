@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -13,22 +12,15 @@ import 'benchmark.dart';
 import 'catalog.dart';
 import 'model.dart';
 import 'parser_worker.dart';
+import 'row_loader.dart';
+import 'markdown_style.dart';
+
+import 'dart:ui' show ImageFilter;
+
 import 'settings.dart';
 
 CatalogResult _loadCatalog(({String home, int limit}) request) {
   return getRecentChats(request.limit, request.home);
-}
-
-void _computeContentDigest((List<ChatRow>, SendPort) request) {
-  request.$2.send(normalizedContentDigest(request.$1));
-}
-
-Future<String> _contentDigestInBackground(List<ChatRow> rows) async {
-  final result = ReceivePort();
-  await Isolate.spawn(_computeContentDigest, (rows, result.sendPort));
-  final digest = await result.first as String;
-  result.close();
-  return digest;
 }
 
 void main() {
@@ -77,7 +69,12 @@ class _Selection {
 class _ChatHistoryAppState extends State<ChatHistoryApp> {
   final ChatParserWorker _parserWorker = ChatParserWorker();
   final SettingsStore _settingsStore = SettingsStore();
-  final String _home = Platform.environment['HOME'] ?? '';
+  final String _home =
+      (Platform.environment.containsKey('CHAT_HISTORY_BENCHMARK_CONFIG')
+          ? Platform.environment['CHAT_HISTORY_BENCHMARK_HOME']
+          : null) ??
+      Platform.environment['HOME'] ??
+      '';
   final GlobalKey<_TranscriptState> _transcriptKey =
       GlobalKey<_TranscriptState>();
 
@@ -121,6 +118,7 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
     }
     if (benchmark != null) {
       final benchmarkSettings = ChatHistorySettings(
+        appearance: benchmark.config.appearance,
         loadImages: benchmark.config.loadImages,
         restoreSelection: false,
       );
@@ -287,6 +285,8 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
         openedAt == null) {
       return;
     }
+    await _transcriptKey.currentState?.settleTail();
+    if (!mounted || generation != _selectionGeneration) return;
     final durationMs = openedAt.elapsedMicroseconds / 1000;
     setState(() => _selection = selection.copyWith(firstPaintMs: durationMs));
     final phase = selection.phase;
@@ -306,14 +306,16 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
       'timing': document.timing.toJson(),
     });
     unawaited(
-      _contentDigestInBackground(document.rows).then(
-        (digest) => benchmark.emit(<String, dynamic>{
-          'contentDigest': digest,
-          'name': 'contentDigest',
-          'path': document.path,
-          'phase': phase,
-        }),
-      ),
+      _parserWorker
+          .getContentDigest(document.documentId!)
+          .then(
+            (digest) => benchmark.emit(<String, dynamic>{
+              'contentDigest': digest,
+              'name': 'contentDigest',
+              'path': document.path,
+              'phase': phase,
+            }),
+          ),
     );
     if (phase == 'initial') {
       await Future<void>.delayed(
@@ -440,6 +442,7 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
       darkTheme: _theme(Brightness.dark),
       themeMode: _themeMode,
       home: Scaffold(
+        backgroundColor: Colors.transparent,
         body: Row(
           children: <Widget>[
             SizedBox(
@@ -450,9 +453,9 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
                 summaries: _summaries,
               ),
             ),
-            const VerticalDivider(width: 1),
             Expanded(
               child: _Content(
+                worker: _parserWorker,
                 catalogError: _catalogError,
                 catalogMs: _catalogMs,
                 onOpenSettings: _showSettings,
@@ -473,12 +476,27 @@ ThemeData _theme(Brightness brightness) {
   final isDark = brightness == Brightness.dark;
   return ThemeData(
     brightness: brightness,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xff0878d1),
-      brightness: brightness,
-    ),
-    dividerColor: isDark ? const Color(0xff3a3a3c) : const Color(0xffd2d2d7),
-    scaffoldBackgroundColor: isDark ? const Color(0xff1c1c1e) : Colors.white,
+    colorScheme:
+        ColorScheme.fromSeed(
+          seedColor: const Color(0xff0878d1),
+          brightness: brightness,
+        ).copyWith(
+          surface: isDark ? const Color(0xff242526) : Colors.white,
+          surfaceContainerHighest: isDark
+              ? const Color(0xff2d2e30)
+              : const Color(0xfff3f4f6),
+          surfaceContainerHigh: isDark
+              ? const Color(0xff111213)
+              : const Color(0xff111827),
+          onSurface: isDark ? const Color(0xfff5f5f5) : const Color(0xff111827),
+          onSurfaceVariant: isDark
+              ? const Color(0xffa3a3a3)
+              : const Color(0xff6b7280),
+        ),
+    dividerColor: isDark ? const Color(0xff3e4042) : const Color(0xffd1d5db),
+    scaffoldBackgroundColor: isDark
+        ? const Color(0xff191a1b)
+        : const Color(0xfff5f6f8),
     fontFamily: '.AppleSystemUIFont',
     useMaterial3: true,
   );
@@ -542,35 +560,45 @@ class _Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return ColoredBox(
-      color: isDark ? const Color(0xff252528) : const Color(0xffececef),
-      child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        children: <Widget>[
-          for (final provider in <ChatProvider>[
-            ChatProvider.codex,
-            ChatProvider.claude,
-          ]) ...<Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 14, 8, 8),
-              child: Text(
-                provider == ChatProvider.codex ? 'Codex' : 'Claude',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
+    return Container(
+      margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: ColoredBox(
+        color: (isDark ? const Color(0xff242526) : Colors.white).withValues(
+          alpha: 0.7,
+        ),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(8, 44, 8, 0),
+          children: <Widget>[
+            for (final provider in <ChatProvider>[
+              ChatProvider.codex,
+              ChatProvider.claude,
+            ]) ...<Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 14, 8, 8),
+                child: Text(
+                  provider == ChatProvider.codex ? 'Codex' : 'Claude',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
-            for (final summary in summaries.where(
-              (summary) => summary.provider == provider,
-            ))
-              _SidebarRow(
-                onTap: () => onSelect(summary),
-                selected: selectedId == summary.id,
-                summary: summary,
-              ),
+              for (final summary in summaries.where(
+                (summary) => summary.provider == provider,
+              ))
+                _SidebarRow(
+                  onTap: () => onSelect(summary),
+                  selected: selectedId == summary.id,
+                  summary: summary,
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -590,7 +618,7 @@ class _SidebarRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 2),
+      padding: EdgeInsets.zero,
       child: Material(
         color: selected ? const Color(0xff5e9fec) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
@@ -652,6 +680,7 @@ String _relativeDate(int timestamp) {
 
 class _Content extends StatelessWidget {
   const _Content({
+    required this.worker,
     required this.catalogError,
     required this.catalogMs,
     required this.onOpenSettings,
@@ -661,6 +690,7 @@ class _Content extends StatelessWidget {
     required this.transcriptKey,
   });
 
+  final ChatParserWorker worker;
   final String? catalogError;
   final double? catalogMs;
   final VoidCallback onOpenSettings;
@@ -675,42 +705,118 @@ class _Content extends StatelessWidget {
         .where((summary) => summary.id == selection?.id)
         .firstOrNull
         ?.title;
-    return Column(
+    return Stack(
+      fit: StackFit.expand,
       children: <Widget>[
-        SizedBox(
-          height: 46,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 18, right: 10),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    selectedTitle ?? 'Legend Chat History',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+        Positioned.fill(
+          child: ColoredBox(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: _body(context),
+          ),
+        ),
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+              child: Container(
+                height: 52,
+                color: Theme.of(context).colorScheme.surface
+                    .withValues(alpha: 0.8),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 18, right: 10),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          selectedTitle ?? 'Legend Chat History',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      if (settings.showPerformanceMetrics)
+                        Text(
+                          catalogMs == null
+                              ? 'Loading catalog…'
+                              : 'catalog ${catalogMs!.toStringAsFixed(2)} ms',
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                        ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        tooltip: 'Settings',
+                        onPressed: onOpenSettings,
+                        icon: const Icon(Icons.settings_outlined, size: 19),
+                      ),
+                    ],
                   ),
                 ),
-                Text(
-                  catalogMs == null
-                      ? 'Loading catalog…'
-                      : 'catalog ${catalogMs!.toStringAsFixed(2)} ms',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                IconButton(
-                  tooltip: 'Settings',
-                  onPressed: onOpenSettings,
-                  icon: const Icon(Icons.settings_outlined, size: 19),
-                ),
-              ],
+              ),
             ),
           ),
         ),
-        const Divider(height: 1),
-        Expanded(child: _body(context)),
+        Positioned(
+          left: 20,
+          right: 20,
+          bottom: 20,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 860),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(26),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                  child: Container(
+                    height: 60,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface
+                          .withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(26),
+                      border: Border.all(color: Theme.of(context).dividerColor),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            "Send a test message that doesn't actually do anything",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: const BoxDecoration(
+                            color: Color(0x4d60a5fa),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.arrow_upward,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -738,6 +844,7 @@ class _Content extends StatelessWidget {
       return _CenteredStatus(current.error!, error: true);
     }
     return _Transcript(
+      worker: worker,
       key: transcriptKey,
       document: current.document!,
       firstPaintMs: current.firstPaintMs,
@@ -769,12 +876,14 @@ class _CenteredStatus extends StatelessWidget {
 
 class _Transcript extends StatefulWidget {
   const _Transcript({
+    required this.worker,
     super.key,
     required this.document,
     required this.firstPaintMs,
     required this.settings,
   });
 
+  final ChatParserWorker worker;
   final ChatDocument document;
   final double? firstPaintMs;
   final ChatHistorySettings settings;
@@ -784,6 +893,44 @@ class _Transcript extends StatefulWidget {
 }
 
 class _TranscriptState extends State<_Transcript> {
+  late RowLoader _loader = RowLoader(widget.document, widget.worker);
+  Future<void> _waitRows() async {
+    for (var attempt = 0; attempt < 1800; attempt++) {
+      await Future<void>.delayed(const Duration(milliseconds: 16));
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return;
+      if (_loader.error != null) {
+        throw StateError('Viewport row load failed: ${_loader.error}');
+      }
+      if (_loader.outstanding == 0) return;
+    }
+    throw StateError('Viewport rows did not finish loading');
+  }
+
+  Future<void> settleTail() async {
+    if (widget.document.rows.isEmpty) return;
+    final target = widget.document.rows.length - 1;
+    for (var attempt = 0; attempt < 120; attempt++) {
+      await _waitRows();
+      if (!mounted) return;
+      final position = _positions.itemPositions.value
+          .where((item) => item.index == target)
+          .firstOrNull;
+      if (position != null) {
+        if ((position.itemTrailingEdge - 1).abs() < 0.005) {
+          await _waitRows();
+          return;
+        }
+        _scrollController.jumpTo(
+          index: target,
+          alignment: 1 - (position.itemTrailingEdge - position.itemLeadingEdge),
+        );
+      }
+      await WidgetsBinding.instance.endOfFrame;
+    }
+    throw StateError('Flutter list did not settle at the transcript tail');
+  }
+
   late ItemPositionsListener _positions = ItemPositionsListener.create();
   late ItemScrollController _scrollController = ItemScrollController();
 
@@ -791,6 +938,7 @@ class _TranscriptState extends State<_Transcript> {
   void didUpdateWidget(covariant _Transcript oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.document.path != widget.document.path) {
+      _loader = RowLoader(widget.document, widget.worker);
       _positions = ItemPositionsListener.create();
       _scrollController = ItemScrollController();
     }
@@ -798,7 +946,7 @@ class _TranscriptState extends State<_Transcript> {
 
   Future<double> jumpToTop() async {
     final startedAt = Stopwatch()..start();
-    final target = widget.document.rows.length - 1;
+    const target = 0;
     _scrollController.jumpTo(index: target);
     for (var attempt = 0; attempt < 120; attempt += 1) {
       await WidgetsBinding.instance.endOfFrame;
@@ -806,7 +954,7 @@ class _TranscriptState extends State<_Transcript> {
         (position) =>
             position.index == target && position.itemLeadingEdge.abs() < 0.01,
       )) {
-        await WidgetsBinding.instance.endOfFrame;
+        await _waitRows();
         return startedAt.elapsedMicroseconds / 1000;
       }
     }
@@ -822,23 +970,37 @@ class _TranscriptState extends State<_Transcript> {
         Expanded(
           child: SelectionArea(
             child: ScrollablePositionedList.builder(
-              initialScrollIndex: 0,
+              initialScrollIndex: widget.document.rows.isEmpty
+                  ? 0
+                  : widget.document.rows.length - 1,
               itemPositionsListener: _positions,
               itemScrollController: _scrollController,
               key: ValueKey<String>(widget.document.path),
               itemCount: widget.document.rows.length,
               itemBuilder: (context, index) {
-                final row = widget
-                    .document
-                    .rows[widget.document.rows.length - 1 - index];
-                return Center(
+                final row = widget.document.rows[index];
+                return Padding(
                   key: ValueKey<String>(row.id),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 860),
-                    child: _TranscriptRow(
-                      loadImages: widget.settings.loadImages,
-                      row: row,
-                    ),
+                  padding: EdgeInsets.only(
+                    top: index == 0 ? 64 : 0,
+                    bottom: index == widget.document.rows.length - 1 ? 112 : 0,
+                  ),
+                  child: FutureBuilder<ChatRow>(
+                    future: _loader.get(index),
+                    builder: (context, snapshot) => snapshot.hasError
+                        ? Text('Could not load row: ${snapshot.error}')
+                        : snapshot.hasData
+                        ? _TranscriptRow(
+                            loadImages: widget.settings.loadImages,
+                            row: snapshot.data!,
+                            loadPreview: () async =>
+                                (await widget.worker.getRows(
+                                  widget.document.documentId!,
+                                  [index],
+                                  includeToolPreview: true,
+                                )).first.toolPreview,
+                          )
+                        : const SizedBox(height: 180),
                   ),
                 );
               },
@@ -884,7 +1046,7 @@ class _Timing extends StatelessWidget {
                 .map(
                   (value) => Text(
                     value,
-                    style: const TextStyle(fontFamily: 'SF Mono', fontSize: 11),
+                    style: const TextStyle(fontFamily: 'Menlo', fontSize: 11),
                   ),
                 )
                 .toList(growable: false),
@@ -896,7 +1058,12 @@ class _Timing extends StatelessWidget {
 }
 
 class _TranscriptRow extends StatelessWidget {
-  const _TranscriptRow({required this.loadImages, required this.row});
+  const _TranscriptRow({
+    required this.loadImages,
+    required this.row,
+    this.loadPreview,
+  });
+  final Future<String> Function()? loadPreview;
 
   final bool loadImages;
   final ChatRow row;
@@ -905,7 +1072,7 @@ class _TranscriptRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (row.kind) {
       ChatRowKind.files => _FileChangesRow(row: row),
-      ChatRowKind.tool => _ToolRow(row: row),
+      ChatRowKind.tool => _ToolRow(row: row, loadPreview: loadPreview),
       ChatRowKind.assistant ||
       ChatRowKind.user => _MessageRow(loadImages: loadImages, row: row),
     };
@@ -933,6 +1100,7 @@ class _MessageRow extends StatelessWidget {
         if (row.markdown.isNotEmpty)
           MarkdownBody(
             data: row.markdown,
+            builders: {'pre': CodePaneBuilder()},
             imageBuilder: (uri, title, alt) => loadImages
                 ? _MessageImage(source: uri.toString())
                 : const _Attachment('Image or attachment omitted'),
@@ -941,57 +1109,54 @@ class _MessageRow extends StatelessWidget {
                 unawaited(launchUrl(Uri.parse(href)));
               }
             },
-            styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
-                .copyWith(
-                  p: const TextStyle(height: 1.55),
-                  code: TextStyle(
-                    backgroundColor: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest,
-                    fontFamily: 'SF Mono',
-                    fontSize: 13,
-                  ),
-                  codeblockDecoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                ),
+            styleSheet: transcriptMarkdownStyle(Theme.of(context)),
           ),
         if (row.hasImagePlaceholder ||
             (!loadImages && row.imageSources.isNotEmpty))
           const _Attachment('Image or attachment omitted'),
       ],
     );
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-      child: Row(
-        mainAxisAlignment: isUser
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        children: <Widget>[
-          Flexible(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: isUser ? 705 : 790),
-              child: isUser
-                  ? DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
+    return LayoutBuilder(
+      builder: (context, constraints) => Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: isUser ? 8 : 12,
+        ),
+        child: Row(
+          mainAxisAlignment: isUser
+              ? MainAxisAlignment.end
+              : MainAxisAlignment.start,
+          children: <Widget>[
+            Flexible(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth:
+                      (constraints.maxWidth - 40) * (isUser ? 0.82 : 0.92),
+                ),
+                child: isUser
+                    ? DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(16),
                         ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          child: content,
+                        ),
+                      )
+                    : SizedBox(
+                        width: (constraints.maxWidth - 40) * 0.92,
                         child: content,
                       ),
-                    )
-                  : content,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1059,47 +1224,75 @@ class _Attachment extends StatelessWidget {
   }
 }
 
-class _ToolRow extends StatelessWidget {
-  const _ToolRow({required this.row});
-
+class _ToolRow extends StatefulWidget {
+  const _ToolRow({required this.row, this.loadPreview});
   final ChatRow row;
-
+  final Future<String> Function()? loadPreview;
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
-      child: ExpansionTile(
-        key: PageStorageKey<String>(row.id),
-        dense: true,
-        shape: const Border(),
-        title: Text(
-          row.toolName,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
+  State<_ToolRow> createState() => _ToolRowState();
+}
+
+class _ToolRowState extends State<_ToolRow> {
+  bool _expanded = false;
+  Future<String>? _preview;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+    child: Container(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Theme.of(context).dividerColor),
         ),
-        children: row.toolPreview.isEmpty
-            ? const <Widget>[]
-            : <Widget>[
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                  child: SelectableText(
-                    row.toolPreview,
-                    style: const TextStyle(fontFamily: 'SF Mono', fontSize: 12),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => setState(() {
+              _expanded = !_expanded;
+              if (_expanded) {
+                _preview ??=
+                    widget.loadPreview?.call() ??
+                    Future.value(widget.row.toolPreview);
+              }
+            }),
+            child: Row(
+              children: [
+                Text(
+                  widget.row.toolName,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 20 / 14,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
+                const SizedBox(width: 8),
+                Text(
+                  _expanded ? '⌄' : '›',
+                  style: const TextStyle(fontSize: 18, height: 20 / 18),
+                ),
               ],
+            ),
+          ),
+          if (_expanded)
+            FutureBuilder<String>(
+              future: _preview,
+              builder: (context, snapshot) => Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: SelectableText(
+                  snapshot.data ??
+                      (snapshot.hasError ? 'Could not load preview' : ''),
+                  style: const TextStyle(fontSize: 14, height: 24 / 14),
+                ),
+              ),
+            ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _FileChangesRow extends StatefulWidget {
@@ -1121,7 +1314,7 @@ class _FileChangesRowState extends State<_FileChangesRow> {
     final additions = files.fold<int>(0, (sum, file) => sum + file.additions);
     final deletions = files.fold<int>(0, (sum, file) => sum + file.deletions);
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: BoxDecoration(
         border: Border.all(color: Theme.of(context).dividerColor),
         borderRadius: BorderRadius.circular(12),
@@ -1130,7 +1323,7 @@ class _FileChangesRowState extends State<_FileChangesRow> {
       child: Column(
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: <Widget>[
                 Container(
@@ -1176,7 +1369,7 @@ class _FileChangesRowState extends State<_FileChangesRow> {
           const Divider(height: 1),
           for (final file in visible)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: <Widget>[
                   Expanded(

@@ -1,36 +1,12 @@
 import { parentPort } from "node:worker_threads";
-import type { ChatDocument, ChatProvider } from "./model";
-import { openChatFile } from "./parser";
-
-type ParseRequest = {
-  id: number;
-  path: string;
-  provider: ChatProvider;
-};
-
-type ParseResponse = {
-  error?: string;
-  id: number;
-  result?: ChatDocument;
-};
-
+import { DocumentRegistry, type DocumentRequest } from "./document-registry";
+const registry = new DocumentRegistry();
+if (!parentPort) throw new Error("The document registry must run in a worker");
 const port = parentPort;
-if (!port) {
-  throw new Error("The transcript parser must run in a worker thread");
-}
-
-port.on("message", async (request: ParseRequest) => {
-  let response: ParseResponse;
+port.on("message", async (request: DocumentRequest & { id: number }) => {
   try {
-    response = {
-      id: request.id,
-      result: await openChatFile(request.provider, request.path),
-    };
+    port.postMessage({ id: request.id, result: await registry.request(request) });
   } catch (error) {
-    response = {
-      error: error instanceof Error ? error.stack ?? error.message : String(error),
-      id: request.id,
-    };
+    port.postMessage({ id: request.id, error: String(error) });
   }
-  port.postMessage(response);
 });

@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+
+import 'json_range.dart';
 
 import 'model.dart';
 
@@ -16,10 +19,10 @@ class _WorkingRow {
   bool hasImagePlaceholder = false;
   final List<String> imageSources = <String>[];
   final ChatRowKind kind;
-  String markdown = '';
+  DeferredText markdown = textSource('');
   int startedAtMs;
   String toolName = '';
-  String toolPreview = '';
+  DeferredText toolPreview = textSource('');
   String toolStatus = '';
 }
 
@@ -49,16 +52,29 @@ class _ParseResult {
 }
 
 JsonObject? _objectValue(Object? value) {
-  return value is Map<String, dynamic> ? value : null;
+  return value is JsonRange
+      ? value.object()
+      : value is Map<String, dynamic>
+      ? value
+      : null;
 }
 
 List<dynamic>? _arrayValue(Object? value) {
-  return value is List<dynamic> ? value : null;
+  return value is JsonRange
+      ? value.array()
+      : value is List<dynamic>
+      ? value
+      : null;
 }
 
-String _stringValue(Object? value) => value is String ? value : '';
+String _stringValue(Object? value) => value is JsonRange
+    ? value.string()
+    : value is String
+    ? value
+    : '';
 
-bool _booleanValue(Object? value) => value == true;
+bool _booleanValue(Object? value) =>
+    value is JsonRange ? value.source[value.start] == 116 : value == true;
 
 int _timestampValue(Object? value) {
   final timestamp = DateTime.tryParse(_stringValue(value));
@@ -67,13 +83,18 @@ int _timestampValue(Object? value) {
 
 double _elapsedMs(Stopwatch stopwatch) => stopwatch.elapsedMicroseconds / 1000;
 
-String _joinText(Iterable<String> parts) =>
-    parts.where((part) => part.isNotEmpty).join('\n\n');
+DeferredText _joinText(Iterable<DeferredText> parts) {
+  final values = parts.toList();
+  return DeferredText(
+    values.any((part) => part.isNotEmpty),
+    () => values.where((part) => part.isNotEmpty).join('\n\n'),
+  );
+}
 
 void _appendMessage(
   List<_WorkingRow> rows,
   ChatRowKind kind,
-  List<String> markdownParts,
+  List<DeferredText> markdownParts,
   List<String> imageSources,
   bool hasImagePlaceholder,
   int timestampMs,
@@ -94,7 +115,7 @@ int _appendTool(
   Map<String, int> toolRows,
   String callId,
   String name,
-  String preview,
+  DeferredText preview,
   int timestampMs,
 ) {
   final row = _WorkingRow(ChatRowKind.tool, timestampMs)
@@ -114,13 +135,13 @@ void _applyToolResult(
   List<_WorkingRow> rows,
   Map<String, int> toolRows,
   String callId,
-  String preview,
+  DeferredText preview,
   bool failed,
   int timestampMs,
 ) {
   final index =
       toolRows[callId] ??
-      _appendTool(rows, toolRows, callId, 'Tool', '', timestampMs);
+      _appendTool(rows, toolRows, callId, 'Tool', textSource(''), timestampMs);
   final row = rows[index]..toolStatus = failed ? 'failed' : 'completed';
   if (timestampMs > row.endedAtMs) {
     row.endedAtMs = timestampMs;
@@ -287,7 +308,10 @@ String _workPreview(List<_WorkingRow> rows) {
       flushActivities();
       if (row.markdown.isNotEmpty) {
         output.add(
-          row.markdown.substring(0, row.markdown.length.clamp(0, 4 * 1024)),
+          row.markdown.toString().substring(
+            0,
+            row.markdown.toString().length.clamp(0, 4 * 1024),
+          ),
         );
       }
       if (row.hasImagePlaceholder) {
@@ -307,12 +331,12 @@ ChatRow _finalizeRow(_WorkingRow row, int index) {
     id: 'row:$index',
     imageSources: row.imageSources,
     kind: row.kind,
-    markdown: _visibleAssistantMarkdown(
-      _visibleUserMarkdown(row.markdown, row),
+    markdownSource: () => _visibleAssistantMarkdown(
+      _visibleUserMarkdown(row.markdown.toString(), row),
       row.kind,
     ),
     toolName: row.toolName,
-    toolPreview: row.toolPreview,
+    toolPreviewSource: row.toolPreview.decode,
     toolStatus: row.toolStatus,
   );
 }
@@ -339,7 +363,7 @@ List<ChatRow> _displayRows(List<_WorkingRow> rows) {
       final grouped = rows.sublist(sourceIndex, lastTool + 1);
       final work = _WorkingRow(ChatRowKind.tool, 0)
         ..toolName = _workLabel(grouped)
-        ..toolPreview = _workPreview(grouped)
+        ..toolPreview = DeferredText(true, () => _workPreview(grouped))
         ..toolStatus =
             grouped.any(
               (item) =>
@@ -363,7 +387,7 @@ List<ChatRow> _displayRows(List<_WorkingRow> rows) {
   return result;
 }
 
-_ParseResult _parseCodex(Iterable<String> lines) {
+_ParseResult _parseCodex(Iterable<dynamic> lines) {
   final rows = <_WorkingRow>[];
   final toolRows = <String, int>{};
   var warningCount = 0;
@@ -384,7 +408,7 @@ _ParseResult _parseCodex(Iterable<String> lines) {
   for (final line in lines) {
     JsonObject? root;
     try {
-      root = _objectValue(jsonDecode(line));
+      root = _objectValue(line is String ? jsonDecode(line) : line);
     } on FormatException {
       warningCount += 1;
       continue;
@@ -415,7 +439,7 @@ _ParseResult _parseCodex(Iterable<String> lines) {
       if (eventType == 'user_message') {
         sawEventUserMessage = true;
         appendFiles();
-        final message = _stringValue(payload['message']);
+        final message = textSource(payload['message']);
         if (message.isEmpty) {
           warningCount += 1;
         }
@@ -436,7 +460,7 @@ _ParseResult _parseCodex(Iterable<String> lines) {
         _appendMessage(
           rows,
           ChatRowKind.user,
-          <String>[message],
+          <DeferredText>[message],
           <String>[...localImages, ...remoteImages],
           hasImagePlaceholder,
           timestampMs,
@@ -461,13 +485,15 @@ _ParseResult _parseCodex(Iterable<String> lines) {
             final type = _stringValue(change['type']);
             var additions = 0;
             var deletions = 0;
-            if (type == 'update' && change['unified_diff'] is String) {
-              final counts = _countDiffLines(change['unified_diff'] as String);
+            if (type == 'update' && isStringValue(change['unified_diff'])) {
+              final counts = _countDiffLines(
+                _stringValue(change['unified_diff']),
+              );
               additions = counts.additions;
               deletions = counts.deletions;
             } else if ((type == 'add' || type == 'delete') &&
-                change['content'] is String) {
-              final count = _countLines(change['content'] as String);
+                isStringValue(change['content'])) {
+              final count = _countLines(_stringValue(change['content']));
               additions = type == 'add' ? count : 0;
               deletions = type == 'delete' ? count : 0;
             } else {
@@ -512,17 +538,17 @@ _ParseResult _parseCodex(Iterable<String> lines) {
         continue;
       }
       final content = payload['content'];
-      final text = <String>[];
+      final text = <DeferredText>[];
       var hasImage = false;
-      if (content is String) {
-        text.add(content);
-      } else if (content is List<dynamic>) {
-        for (final rawBlock in content) {
+      if (isStringValue(content)) {
+        text.add(textSource(content));
+      } else if (_arrayValue(content) != null) {
+        for (final rawBlock in _arrayValue(content)!) {
           final block = _objectValue(rawBlock);
           final blockType = _stringValue(block?['type']);
           if (block != null &&
               const ['input_text', 'output_text', 'text'].contains(blockType)) {
-            text.add(_stringValue(block['text']));
+            text.add(textSource(block['text']));
           } else if (const ['input_image', 'image'].contains(blockType)) {
             hasImage = true;
           } else if (blockType.isNotEmpty) {
@@ -550,7 +576,7 @@ _ParseResult _parseCodex(Iterable<String> lines) {
         toolRows,
         _stringValue(payload['call_id']),
         _stringValue(payload['name']),
-        _stringValue(
+        textSource(
           payload[payloadType == 'custom_tool_call' ? 'input' : 'arguments'],
         ),
         timestampMs,
@@ -563,7 +589,7 @@ _ParseResult _parseCodex(Iterable<String> lines) {
         rows,
         toolRows,
         _stringValue(payload['call_id']),
-        _stringValue(payload['output']),
+        textSource(payload['output']),
         false,
         timestampMs,
       );
@@ -576,7 +602,7 @@ _ParseResult _parseCodex(Iterable<String> lines) {
             toolRows,
             callId,
             'Image generation',
-            '',
+            textSource(''),
             timestampMs,
           );
       final row = rows[index];
@@ -612,11 +638,11 @@ int _parseClaudeMessage(
   final rowKind = record.type == 'user'
       ? ChatRowKind.user
       : ChatRowKind.assistant;
-  if (messageContent is String) {
+  if (isStringValue(messageContent)) {
     _appendMessage(
       rows,
       rowKind,
-      <String>[messageContent],
+      <DeferredText>[textSource(messageContent)],
       const <String>[],
       false,
       record.timestampMs,
@@ -627,11 +653,11 @@ int _parseClaudeMessage(
   if (content == null) {
     return 1;
   }
-  final text = <String>[];
+  final text = <DeferredText>[];
   var hasImage = false;
   var warningCount = 0;
   final deferredTools = <void Function()>[];
-  for (final rawBlock in content) {
+  for (final rawBlock in _arrayValue(content)!) {
     final block = _objectValue(rawBlock);
     if (block == null) {
       warningCount += 1;
@@ -639,31 +665,38 @@ int _parseClaudeMessage(
     }
     final blockType = _stringValue(block['type']);
     if (blockType == 'text') {
-      text.add(_stringValue(block['text']));
+      text.add(textSource(block['text']));
     } else if (blockType == 'image' || blockType == 'document') {
       hasImage = true;
     } else if (blockType == 'tool_use') {
       final callId = _stringValue(block['id']);
       final name = _stringValue(block['name']);
       deferredTools.add(
-        () => _appendTool(rows, toolRows, callId, name, '', record.timestampMs),
+        () => _appendTool(
+          rows,
+          toolRows,
+          callId,
+          name,
+          textSource(''),
+          record.timestampMs,
+        ),
       );
     } else if (blockType == 'tool_result') {
       final callId = _stringValue(block['tool_use_id']);
       final resultContent = block['content'];
-      final previews = <String>[];
+      final previews = <DeferredText>[];
       var resultImage = false;
-      if (resultContent is String) {
-        previews.add(resultContent);
-      } else if (resultContent is List<dynamic>) {
-        for (final rawResult in resultContent) {
-          if (rawResult is String) {
-            previews.add(rawResult);
+      if (isStringValue(resultContent)) {
+        previews.add(textSource(resultContent));
+      } else if (_arrayValue(resultContent) != null) {
+        for (final rawResult in _arrayValue(resultContent)!) {
+          if (isStringValue(rawResult)) {
+            previews.add(textSource(rawResult));
           } else {
             final result = _objectValue(rawResult);
             final resultType = _stringValue(result?['type']);
             if (resultType == 'text') {
-              previews.add(_stringValue(result?['text']));
+              previews.add(textSource(result?['text']));
             } else if (resultType == 'image') {
               resultImage = true;
             } else {
@@ -704,7 +737,7 @@ int _parseClaudeMessage(
   return warningCount;
 }
 
-_ParseResult _parseClaude(Iterable<String> lines) {
+_ParseResult _parseClaude(Iterable<dynamic> lines) {
   final records = <_ClaudeRecord>[];
   final recordById = <String, _ClaudeRecord>{};
   var warningCount = 0;
@@ -712,7 +745,7 @@ _ParseResult _parseClaude(Iterable<String> lines) {
   for (final line in lines) {
     JsonObject? root;
     try {
-      root = _objectValue(jsonDecode(line));
+      root = _objectValue(line is String ? jsonDecode(line) : line);
     } on FormatException {
       warningCount += 1;
       continue;
@@ -809,34 +842,41 @@ ChatDocument openChatFile(ChatProvider provider, String path) {
   );
 }
 
-class _DecodedLines extends Iterable<String> {
+class _DecodedLines extends Iterable<dynamic> {
   const _DecodedLines(this.source, this.ranges);
 
   final List<int> ranges;
-  final List<int> source;
+  final Uint8List source;
 
   @override
-  Iterator<String> get iterator => _DecodedLineIterator(source, ranges);
+  Iterator<dynamic> get iterator => _DecodedLineIterator(source, ranges);
 }
 
-class _DecodedLineIterator implements Iterator<String> {
+class _DecodedLineIterator implements Iterator<dynamic> {
   _DecodedLineIterator(this.source, this.ranges);
 
   final List<int> ranges;
-  final List<int> source;
+  final Uint8List source;
   var _rangeIndex = 0;
-  var _value = '';
+  dynamic _value;
 
   @override
-  String get current => _value;
+  dynamic get current => _value;
 
   @override
   bool moveNext() {
     if (_rangeIndex >= ranges.length) {
       return false;
     }
-    _value = const Utf8Decoder(allowMalformed: true)
-        .convert(source, ranges[_rangeIndex], ranges[_rangeIndex + 1]);
+    try {
+      _value = JsonRange.parse(
+        source,
+        ranges[_rangeIndex],
+        ranges[_rangeIndex + 1],
+      );
+    } on FormatException {
+      _value = '!invalid';
+    }
     _rangeIndex += 2;
     return true;
   }

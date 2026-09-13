@@ -12,7 +12,7 @@ function isWithin(root: string, path: string) {
 export async function validateChatPath(
   provider: ChatProvider,
   sourcePath: string,
-  home = homedir(),
+  home = (process.env.CHAT_HISTORY_BENCHMARK_CONFIG && process.env.CHAT_HISTORY_BENCHMARK_HOME) || homedir(),
 ) {
   if (provider !== "codex" && provider !== "claude") {
     throw new Error("Unsupported chat provider");

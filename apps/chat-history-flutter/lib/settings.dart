@@ -21,7 +21,7 @@ class SettingsStore {
       restoreSelection: await _preferences.getBool('restoreSelection') ?? true,
       selectedId: await _preferences.getString('selectedId'),
       showPerformanceMetrics:
-          await _preferences.getBool('showPerformanceMetrics') ?? true,
+          await _preferences.getBool('showPerformanceMetrics') ?? false,
     );
   }
 

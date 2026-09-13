@@ -16,7 +16,7 @@ export const defaultChatHistorySettings: ChatHistorySettings = {
   loadImages: true,
   recentChatLimit: 20,
   restoreSelection: true,
-  showPerformanceMetrics: true,
+  showPerformanceMetrics: false,
 };
 
 export function normalizeChatHistorySettings(value: unknown): ChatHistorySettings {
@@ -60,6 +60,7 @@ export type ChatFileChange = {
 };
 
 export type ChatRow = {
+  deferred?: boolean;
   fileChanges: ChatFileChange[];
   hasImagePlaceholder: boolean;
   id: string;
@@ -79,6 +80,7 @@ export type NativeTiming = {
 };
 
 export type ChatDocument = {
+  documentId?: string;
   path: string;
   provider: ChatProvider;
   recordCount: number;
@@ -108,6 +110,7 @@ export type BenchmarkFixture = ChatSummary & {
 export type BenchmarkTarget = Pick<ChatSummary, "id" | "provider">;
 
 export type BenchmarkConfig = {
+  appearance?: ChatAppearance;
   loadImages: boolean;
   switchDelayMs: number;
   topDelayMs: number;
@@ -206,6 +209,8 @@ export type ChatHistoryApi = {
   getBenchmarkConfig?(): Promise<BenchmarkConfig | undefined>;
   getRecentChats(limit?: number): Promise<CatalogResult>;
   openChat(provider: ChatProvider, path: string): Promise<OpenChatResult>;
+  getRows(documentId: string, indices: number[], includeToolPreview?: boolean): Promise<ChatRow[]>;
+  getContentDigest(documentId: string): Promise<string>;
   getSettings?(): Promise<ChatHistorySettings>;
   resolveMarkdownImageSource?(source: string): string;
   resolveImageSource?(source: string): string;

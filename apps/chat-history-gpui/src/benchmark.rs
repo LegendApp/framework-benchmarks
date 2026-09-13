@@ -17,6 +17,7 @@ pub struct Target {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Manifest {
+    appearance: Option<String>,
     load_images: bool,
     switch_delay_ms: u64,
     top_delay_ms: u64,
@@ -26,6 +27,7 @@ struct Manifest {
 
 #[derive(Clone)]
 pub struct Benchmark {
+    pub appearance: Option<String>,
     pub load_images: bool,
     pub switch_delay_ms: u64,
     pub top_delay_ms: u64,
@@ -46,6 +48,7 @@ impl Benchmark {
             return Err("Unsupported chat history benchmark manifest".into());
         }
         Ok(Some(Self {
+            appearance: manifest.appearance,
             load_images: manifest.load_images,
             switch_delay_ms: manifest.switch_delay_ms,
             top_delay_ms: manifest.top_delay_ms,

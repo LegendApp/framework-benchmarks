@@ -28,6 +28,8 @@ contextBridge.exposeInMainWorld("chatHistory", {
       document,
     };
   },
+  getRows(documentId, indices, includeToolPreview = false) { return ipcRenderer.invoke("chat-history:get-rows", documentId, indices, includeToolPreview); },
+  getContentDigest(documentId) { return ipcRenderer.invoke("chat-history:get-digest", documentId); },
   resolveImageSource(source) {
     return imageSource(source);
   },

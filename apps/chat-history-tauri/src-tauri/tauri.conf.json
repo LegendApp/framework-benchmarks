@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Chat History — Tauri",
+  "productName": "Chat History \u2014 Tauri",
   "version": "0.0.1",
   "identifier": "so.legend.chathistory.tauri",
   "build": {
@@ -9,23 +9,36 @@
   "app": {
     "windows": [
       {
-        "title": "Legend Chat History — Tauri",
+        "title": "Legend Chat History \u2014 Tauri",
         "width": 1280,
         "height": 720,
         "minWidth": 640,
-        "minHeight": 460
+        "minHeight": 460,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "transparent": true,
+        "windowEffects": {
+          "effects": [
+            "sidebar"
+          ],
+          "state": "active"
+        }
       }
     ],
     "security": {
       "assetProtocol": {
         "enable": true,
         "scope": {
-          "allow": ["$HOME/**/*", "/tmp/**/*"],
+          "allow": [
+            "$HOME/**/*",
+            "/tmp/**/*"
+          ],
           "requireLiteralLeadingDot": false
         }
       },
       "csp": null
-    }
+    },
+    "macOSPrivateApi": true
   },
   "bundle": {
     "active": true

@@ -176,17 +176,17 @@ fn is_codex_subagent(path: &Path) -> bool {
     let Ok(mut file) = fs::File::open(path) else {
         return false;
     };
-    let mut source = String::new();
+    let mut source = Vec::new();
     if file
         .by_ref()
         .take(64 * 1024)
-        .read_to_string(&mut source)
+        .read_to_end(&mut source)
         .is_err()
     {
         return false;
     }
-    let first = source.lines().next().unwrap_or("");
-    serde_json::from_str::<Value>(first)
+    let first = source.split(|byte| *byte == b'\n').next().unwrap_or(&[]);
+    serde_json::from_slice::<Value>(first)
         .ok()
         .and_then(|root| root.pointer("/payload/source/subagent").cloned())
         .is_some()
@@ -290,6 +290,11 @@ pub fn get_recent_chat_catalog(limit: usize, home: &Path) -> CatalogResult {
 }
 
 pub fn user_home() -> Result<PathBuf, String> {
+    if env::var_os("CHAT_HISTORY_BENCHMARK_CONFIG").is_some() {
+        if let Some(root) = env::var_os("CHAT_HISTORY_BENCHMARK_HOME") {
+            return Ok(PathBuf::from(root));
+        }
+    }
     env::var_os("HOME")
         .map(PathBuf::from)
         .ok_or_else(|| "HOME is unavailable".into())
@@ -299,9 +304,12 @@ pub fn user_home() -> Result<PathBuf, String> {
 mod tests {
     use super::*;
 
+    static NEXT_HOME: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
     fn temporary_home() -> PathBuf {
         let root = env::temp_dir().join(format!(
-            "legend-tauri-catalog-{}-{}",
+            "legend-tauri-catalog-{}-{}-{}",
+            NEXT_HOME.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -326,6 +334,20 @@ mod tests {
         let result = get_recent_chat_catalog(0, &root);
         fs::remove_dir_all(root).unwrap();
         assert!(result.summaries.is_empty());
+    }
+
+    #[test]
+    fn subagent_first_line_survives_a_later_split_utf8_character() {
+        let root = temporary_home();
+        fs::create_dir_all(&root).unwrap();
+        let path = root.join("subagent.jsonl");
+        let mut source = br#"{"payload":{"source":{"subagent":{}}}}"#.to_vec();
+        source.push(b'\n');
+        source.resize(64 * 1024 - 1, b'x');
+        source.extend_from_slice("é".as_bytes());
+        fs::write(&path, source).unwrap();
+        assert!(is_codex_subagent(&path));
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

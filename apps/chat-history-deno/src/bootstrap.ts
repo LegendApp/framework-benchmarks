@@ -6,16 +6,20 @@ import type {
   ChatHistoryApi,
   ChatHistorySettings,
   ChatProvider,
+  ChatRow,
 } from "../../chat-history-electron/src/model";
 import { mountChatHistory } from "../../chat-history-electron/src/renderer";
 
 type DenoBindings = {
+  fitInitialContent(width: number, height: number): Promise<[number, number]>;
   emitBenchmarkEvent(event: BenchmarkEvent): Promise<void>;
   getBenchmarkConfig(): Promise<BenchmarkConfig | undefined>;
   getImplementationName(): Promise<ChatHistoryApi["implementationName"]>;
   getRecentChats(limit: number): Promise<CatalogResult>;
   getSettings(): Promise<ChatHistorySettings>;
   openChat(provider: ChatProvider, path: string): Promise<ChatDocument>;
+  getRows(documentId: string, indices: number[], includeToolPreview?: boolean): Promise<ChatRow[]>;
+  getContentDigest(documentId: string): Promise<string>;
   openExternal(url: string): Promise<void>;
   saveSettings(settings: ChatHistorySettings): Promise<void>;
   setWindowTitle(title: string): Promise<void>;
@@ -27,9 +31,7 @@ function localFileSource(source: string) {
   if (/^[a-z][a-z\d+.-]*:/i.test(source) && !source.startsWith("file://")) {
     return source;
   }
-  const path = source.startsWith("file://")
-    ? decodeURIComponent(new URL(source).pathname)
-    : source;
+  const path = source.startsWith("file://") ? decodeURIComponent(new URL(source).pathname) : source;
   return `/__local_file?path=${encodeURIComponent(path)}`;
 }
 
@@ -48,6 +50,12 @@ window.chatHistory = {
   },
   getSettings() {
     return bindings.getSettings();
+  },
+  getRows(documentId, indices, includeToolPreview = false) {
+    return bindings.getRows(documentId, indices, includeToolPreview);
+  },
+  getContentDigest(documentId) {
+    return bindings.getContentDigest(documentId);
   },
   async openChat(provider: ChatProvider, path: string) {
     const startedAt = performance.now();
@@ -69,9 +77,7 @@ window.chatHistory = {
 };
 
 document.addEventListener("click", (event) => {
-  const link = event.target instanceof Element
-    ? event.target.closest("a")
-    : null;
+  const link = event.target instanceof Element ? event.target.closest("a") : null;
   const url = link?.getAttribute("href");
   if (url && /^(?:https?|mailto):/i.test(url)) {
     event.preventDefault();
@@ -90,4 +96,10 @@ if (windowTitle) {
   syncWindowTitle();
 }
 
+const [contentWidth, contentHeight] = await bindings.fitInitialContent(window.innerWidth, window.innerHeight);
+const layoutDeadline = performance.now() + 3_000;
+while (window.innerWidth !== contentWidth || window.innerHeight !== contentHeight) {
+  if (performance.now() > layoutDeadline) throw new Error("Window client bounds did not settle");
+  await new Promise((resolve) => setTimeout(resolve, 16));
+}
 mountChatHistory();

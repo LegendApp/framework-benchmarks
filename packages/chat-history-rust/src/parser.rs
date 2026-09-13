@@ -5,8 +5,12 @@ use std::{
     time::Instant,
 };
 
+use crate::{
+    DeferredText,
+    json_range::{Map, Value},
+};
 use chrono::DateTime;
-use serde_json::{Map, Value};
+use std::{ops::Range, sync::Arc};
 
 use crate::model::{ChatDocument, ChatFileChange, ChatRow, NativeTiming};
 
@@ -35,6 +39,16 @@ fn text(value: Option<&Value>) -> &str {
     value.and_then(Value::as_str).unwrap_or("")
 }
 
+fn deferred_text(value: Option<&Value>) -> DeferredText {
+    match value.filter(|value| value.is_string()) {
+        Some(value) => {
+            let value = value.clone();
+            DeferredText::new(value.text_nonempty(), move || value.decode_string())
+        }
+        None => DeferredText::default(),
+    }
+}
+
 fn timestamp(value: Option<&Value>) -> f64 {
     DateTime::parse_from_rfc3339(text(value))
         .map(|date| date.timestamp_millis() as f64)
@@ -53,19 +67,22 @@ fn empty_row(kind: &str, timestamp_ms: f64) -> WorkingRow {
     }
 }
 
-fn join_text(parts: &[String]) -> String {
-    parts
-        .iter()
-        .filter(|part| !part.is_empty())
-        .cloned()
-        .collect::<Vec<_>>()
-        .join("\n\n")
+fn join_text(parts: &[DeferredText]) -> DeferredText {
+    let parts = parts.to_vec();
+    DeferredText::new(parts.iter().any(|part| !part.is_empty()), move || {
+        parts
+            .iter()
+            .filter(|part| !part.is_empty())
+            .map(|part| part.decode_uncached())
+            .collect::<Vec<_>>()
+            .join("\n\n")
+    })
 }
 
 fn append_message(
     rows: &mut Vec<WorkingRow>,
     kind: &str,
-    parts: Vec<String>,
+    parts: Vec<DeferredText>,
     image_sources: Vec<String>,
     has_image_placeholder: bool,
     timestamp_ms: f64,
@@ -85,7 +102,7 @@ fn append_tool(
     tool_rows: &mut HashMap<String, usize>,
     call_id: String,
     name: String,
-    preview: String,
+    preview: DeferredText,
     timestamp_ms: f64,
 ) -> usize {
     let mut row = empty_row("tool", timestamp_ms);
@@ -105,7 +122,7 @@ fn apply_tool_result(
     rows: &mut Vec<WorkingRow>,
     tool_rows: &mut HashMap<String, usize>,
     call_id: String,
-    preview: String,
+    preview: DeferredText,
     failed: bool,
     timestamp_ms: f64,
 ) {
@@ -115,7 +132,7 @@ fn apply_tool_result(
             tool_rows,
             call_id,
             "Tool".into(),
-            String::new(),
+            DeferredText::default(),
             timestamp_ms,
         )
     });
@@ -281,7 +298,14 @@ fn work_preview(rows: &[WorkingRow]) -> String {
         } else {
             flush(&mut output, &mut activities);
             if !row.row.markdown.is_empty() {
-                output.push(row.row.markdown.chars().take(4096).collect());
+                output.push(
+                    row.row
+                        .markdown
+                        .decode_uncached()
+                        .chars()
+                        .take(4096)
+                        .collect(),
+                );
             }
             if row.row.has_image_placeholder {
                 output.push("Image or attachment omitted".into());
@@ -294,10 +318,13 @@ fn work_preview(rows: &[WorkingRow]) -> String {
 
 fn finalize(mut row: WorkingRow, index: usize) -> ChatRow {
     row.row.id = format!("row:{index}");
-    row.row.markdown = visible_assistant_markdown(
-        &row.row.kind,
-        visible_user_markdown(&row, row.row.markdown.clone()),
-    );
+    let original = row.clone();
+    row.row.markdown = DeferredText::new(!original.row.markdown.is_empty(), move || {
+        visible_assistant_markdown(
+            &original.row.kind,
+            visible_user_markdown(&original, original.row.markdown.decode_uncached()),
+        )
+    });
     row.row
 }
 
@@ -322,7 +349,8 @@ fn display_rows(rows: Vec<WorkingRow>) -> Vec<ChatRow> {
             let grouped = &rows[index..=last_tool];
             let mut work = empty_row("tool", 0.0);
             work.row.tool_name = work_label(grouped);
-            work.row.tool_preview = work_preview(grouped);
+            let preview_rows = grouped.to_vec();
+            work.row.tool_preview = DeferredText::new(true, move || work_preview(&preview_rows));
             work.row.tool_status = if grouped
                 .iter()
                 .any(|row| row.row.kind == "tool" && row.row.tool_status == "failed")
@@ -369,19 +397,20 @@ fn count_content_lines(content: &str) -> usize {
 fn parse_message_content(
     payload: &Map<String, Value>,
     warnings: &mut usize,
-) -> (Vec<String>, bool) {
+) -> (Vec<DeferredText>, bool) {
     let mut parts = Vec::new();
     let mut has_image = false;
     match payload.get("content") {
-        Some(Value::String(value)) => parts.push(value.clone()),
-        Some(Value::Array(content)) => {
+        Some(value) if value.is_string() => parts.push(deferred_text(Some(value))),
+        Some(value) if value.as_array().is_some() => {
+            let content = value.as_array().unwrap();
             for raw_block in content {
                 let Some(block) = raw_block.as_object() else {
                     continue;
                 };
                 match text(block.get("type")) {
                     "input_text" | "output_text" | "text" => {
-                        parts.push(text(block.get("text")).into())
+                        parts.push(deferred_text(block.get("text")))
                     }
                     "input_image" | "image" => has_image = true,
                     "" => {}
@@ -395,7 +424,7 @@ fn parse_message_content(
     (parts, has_image)
 }
 
-fn parse_codex(lines: &[&str]) -> (Vec<ChatRow>, usize) {
+fn parse_codex(source: &Arc<String>, lines: &[Range<usize>]) -> (Vec<ChatRow>, usize) {
     let mut rows = Vec::new();
     let mut tool_rows = HashMap::new();
     let mut warnings = 0;
@@ -412,7 +441,11 @@ fn parse_codex(lines: &[&str]) -> (Vec<ChatRow>, usize) {
     };
 
     for line in lines {
-        let Ok(Value::Object(root)) = serde_json::from_str::<Value>(line) else {
+        let Some(root_value) = Value::parse(source.clone(), line.clone()) else {
+            warnings += 1;
+            continue;
+        };
+        let Some(root) = root_value.as_object() else {
             warnings += 1;
             continue;
         };
@@ -442,7 +475,7 @@ fn parse_codex(lines: &[&str]) -> (Vec<ChatRow>, usize) {
                         saw_event_user = true;
                         append_files(&mut rows, &mut pending_files);
                         pending_turn.clear();
-                        let message = text(payload.get("message"));
+                        let message = deferred_text(payload.get("message"));
                         if message.is_empty() {
                             warnings += 1;
                         }
@@ -472,7 +505,7 @@ fn parse_codex(lines: &[&str]) -> (Vec<ChatRow>, usize) {
                         append_message(
                             &mut rows,
                             "user",
-                            vec![message.into()],
+                            vec![message],
                             images,
                             placeholder,
                             timestamp_ms,
@@ -563,7 +596,7 @@ fn parse_codex(lines: &[&str]) -> (Vec<ChatRow>, usize) {
                     &mut tool_rows,
                     text(payload.get("call_id")).into(),
                     text(payload.get("name")).into(),
-                    text(payload.get(preview_key)).into(),
+                    deferred_text(payload.get(preview_key)),
                     timestamp_ms,
                 );
             }
@@ -571,7 +604,7 @@ fn parse_codex(lines: &[&str]) -> (Vec<ChatRow>, usize) {
                 &mut rows,
                 &mut tool_rows,
                 text(payload.get("call_id")).into(),
-                text(payload.get("output")).into(),
+                deferred_text(payload.get("output")),
                 false,
                 timestamp_ms,
             ),
@@ -583,12 +616,12 @@ fn parse_codex(lines: &[&str]) -> (Vec<ChatRow>, usize) {
                         &mut tool_rows,
                         call_id,
                         "Image generation".into(),
-                        String::new(),
+                        DeferredText::default(),
                         timestamp_ms,
                     )
                 });
                 let row = &mut rows[index];
-                let has_result = !text(payload.get("result")).is_empty();
+                let has_result = !deferred_text(payload.get("result")).is_empty();
                 row.row.tool_status = if text(payload.get("status")) == "failed" {
                     "failed"
                 } else if has_result {
@@ -619,11 +652,11 @@ fn parse_claude_message(
     let Some(content) = message.get("content") else {
         return 1;
     };
-    if let Some(value) = content.as_str() {
+    if content.is_string() {
         append_message(
             rows,
             &record.record_type,
-            vec![value.into()],
+            vec![deferred_text(Some(content))],
             Vec::new(),
             false,
             record.timestamp_ms,
@@ -638,7 +671,7 @@ fn parse_claude_message(
     let mut warnings = 0;
     enum Deferred {
         Call(String, String),
-        Result(String, String, bool, bool),
+        Result(String, DeferredText, bool, bool),
     }
     let mut deferred = Vec::new();
     for raw_block in content {
@@ -647,7 +680,7 @@ fn parse_claude_message(
             continue;
         };
         match text(block.get("type")) {
-            "text" => parts.push(text(block.get("text")).into()),
+            "text" => parts.push(deferred_text(block.get("text"))),
             "image" | "document" => has_image = true,
             "tool_use" => deferred.push(Deferred::Call(
                 text(block.get("id")).into(),
@@ -657,14 +690,15 @@ fn parse_claude_message(
                 let mut previews = Vec::new();
                 let mut result_image = false;
                 match block.get("content") {
-                    Some(Value::String(value)) => previews.push(value.clone()),
-                    Some(Value::Array(values)) => {
+                    Some(value) if value.is_string() => previews.push(deferred_text(Some(value))),
+                    Some(value) if value.as_array().is_some() => {
+                        let values = value.as_array().unwrap();
                         for value in values {
-                            if let Some(value) = value.as_str() {
-                                previews.push(value.into());
+                            if value.is_string() {
+                                previews.push(deferred_text(Some(value)));
                             } else if let Some(value) = value.as_object() {
                                 match text(value.get("type")) {
-                                    "text" => previews.push(text(value.get("text")).into()),
+                                    "text" => previews.push(deferred_text(value.get("text"))),
                                     "image" => result_image = true,
                                     _ => warnings += 1,
                                 }
@@ -700,7 +734,7 @@ fn parse_claude_message(
                     tool_rows,
                     id,
                     name,
-                    String::new(),
+                    DeferredText::default(),
                     record.timestamp_ms,
                 );
             }
@@ -722,13 +756,17 @@ fn parse_claude_message(
     warnings
 }
 
-fn parse_claude(lines: &[&str]) -> (Vec<ChatRow>, usize) {
+fn parse_claude(source: &Arc<String>, lines: &[Range<usize>]) -> (Vec<ChatRow>, usize) {
     let mut records = Vec::new();
     let mut record_by_id = HashMap::new();
     let mut warnings = 0;
     let mut leaf_id = String::new();
     for line in lines {
-        let Ok(Value::Object(root)) = serde_json::from_str::<Value>(line) else {
+        let Some(root_value) = Value::parse(source.clone(), line.clone()) else {
+            warnings += 1;
+            continue;
+        };
+        let Some(root) = root_value.as_object() else {
             warnings += 1;
             continue;
         };
@@ -738,7 +776,7 @@ fn parse_claude(lines: &[&str]) -> (Vec<ChatRow>, usize) {
             record_type: text(root.get("type")).into(),
             sidechain: root.get("isSidechain").and_then(Value::as_bool) == Some(true),
             timestamp_ms: timestamp(root.get("timestamp")),
-            root,
+            root: root.clone(),
         };
         if !record.uuid.is_empty() && !record.sidechain {
             record_by_id.insert(record.uuid.clone(), record.parent_uuid.clone());
@@ -773,16 +811,29 @@ pub fn parse_chat_text(
     provider: &str,
     source: &str,
 ) -> Result<(Vec<ChatRow>, usize, usize, f64, f64), String> {
+    parse_source(provider, Arc::new(source.to_string()))
+}
+
+fn parse_source(
+    provider: &str,
+    source: Arc<String>,
+) -> Result<(Vec<ChatRow>, usize, usize, f64, f64), String> {
     let scan_started = Instant::now();
+    let mut offset = 0;
     let lines = source
-        .lines()
-        .filter(|line| !line.is_empty())
+        .split_inclusive('\n')
+        .filter_map(|line| {
+            let start = offset;
+            offset += line.len();
+            let line = line.trim_end_matches(['\r', '\n']);
+            (!line.is_empty()).then_some(start..start + line.len())
+        })
         .collect::<Vec<_>>();
     let scan_ms = scan_started.elapsed().as_secs_f64() * 1000.0;
     let parse_started = Instant::now();
     let (rows, warnings) = match provider {
-        "codex" => parse_codex(&lines),
-        "claude" => parse_claude(&lines),
+        "codex" => parse_codex(&source, &lines),
+        "claude" => parse_claude(&source, &lines),
         _ => return Err("Unsupported chat provider".into()),
     };
     let parse_ms = parse_started.elapsed().as_secs_f64() * 1000.0;
@@ -798,7 +849,7 @@ pub fn open_chat_file(provider: &str, path: &Path) -> Result<ChatDocument, Strin
         String::from_utf8(bytes).map_err(|error| format!("Transcript is not UTF-8: {error}"))?;
     let load_ms = load_started.elapsed().as_secs_f64() * 1000.0;
     let (rows, warning_count, record_count, scan_ms, parse_ms) =
-        parse_chat_text(provider, &source)?;
+        parse_source(provider, Arc::new(source))?;
     Ok(ChatDocument {
         path: path.to_string_lossy().into_owned(),
         provider: provider.into(),

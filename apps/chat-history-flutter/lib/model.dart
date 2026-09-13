@@ -57,10 +57,13 @@ class ChatRow {
     required this.id,
     required this.imageSources,
     required this.kind,
-    required this.markdown,
+    this.rawMarkdown = '',
+    this.markdownSource,
     required this.toolName,
-    required this.toolPreview,
+    this.rawToolPreview = '',
+    this.toolPreviewSource,
     required this.toolStatus,
+    this.deferred = false,
   });
 
   final List<ChatFileChange> fileChanges;
@@ -68,9 +71,14 @@ class ChatRow {
   final String id;
   final List<String> imageSources;
   final ChatRowKind kind;
-  final String markdown;
+  final String rawMarkdown;
+  final String Function()? markdownSource;
+  String get markdown => markdownSource?.call() ?? rawMarkdown;
+  final bool deferred;
   final String toolName;
-  final String toolPreview;
+  final String rawToolPreview;
+  final String Function()? toolPreviewSource;
+  String get toolPreview => toolPreviewSource?.call() ?? rawToolPreview;
   final String toolStatus;
 }
 
@@ -97,6 +105,7 @@ class NativeTiming {
 
 class ChatDocument {
   const ChatDocument({
+    this.documentId,
     required this.path,
     required this.provider,
     required this.recordCount,
@@ -106,6 +115,7 @@ class ChatDocument {
     required this.warningCount,
   });
 
+  final String? documentId;
   final String path;
   final ChatProvider provider;
   final int recordCount;
@@ -164,12 +174,14 @@ class CatalogResult {
 
 class BenchmarkConfig {
   const BenchmarkConfig({
+    this.appearance = ChatAppearance.system,
     required this.loadImages,
     required this.switchDelayMs,
     required this.topDelayMs,
     required this.targets,
   });
 
+  final ChatAppearance appearance;
   final bool loadImages;
   final int switchDelayMs;
   final int topDelayMs;
@@ -189,6 +201,11 @@ class BenchmarkConfig {
       throw const FormatException('Benchmark requires exactly two targets');
     }
     return BenchmarkConfig(
+      appearance:
+          ChatAppearance.values
+              .where((value) => value.name == json['appearance'])
+              .firstOrNull ??
+          ChatAppearance.system,
       loadImages: json['loadImages'] as bool? ?? false,
       switchDelayMs: (json['switchDelayMs'] as num).round(),
       topDelayMs: (json['topDelayMs'] as num).round(),
@@ -219,7 +236,7 @@ class ChatHistorySettings {
     this.recentChatLimit = 20,
     this.restoreSelection = true,
     this.selectedId,
-    this.showPerformanceMetrics = true,
+    this.showPerformanceMetrics = false,
   });
 
   final ChatAppearance appearance;

@@ -64,3 +64,15 @@ test("discovers indexed sessions while excluding subagents", async () => {
     await rm(home, { force: true, recursive: true });
   }
 });
+
+test("subagent filtering ignores a UTF-8 character split after the first line", async () => {
+  const home = await mkdtemp(join(tmpdir(), "legend-catalog-boundary-"));
+  try {
+    const root = join(home, ".codex/sessions");
+    await mkdir(root, { recursive: true });
+    const header = Buffer.from('{"payload":{"source":{"subagent":{}}}}\n');
+    const source = Buffer.concat([header, Buffer.alloc(65535 - header.length, 120), Buffer.from("é")]);
+    await writeFile(join(root, "rollout-2026-01-01-22222222-2222-2222-2222-222222222222.jsonl"), source);
+    expect((await getRecentChats(20, home)).summaries).toEqual([]);
+  } finally { await rm(home, { recursive: true, force: true }); }
+});

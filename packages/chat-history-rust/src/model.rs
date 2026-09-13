@@ -1,3 +1,4 @@
+use crate::DeferredText;
 use serde::Serialize;
 
 #[derive(Clone, Serialize)]
@@ -26,9 +27,9 @@ pub struct ChatRow {
     pub id: String,
     pub image_sources: Vec<String>,
     pub kind: String,
-    pub markdown: String,
+    pub markdown: DeferredText,
     pub tool_name: String,
-    pub tool_preview: String,
+    pub tool_preview: DeferredText,
     pub tool_status: String,
 }
 
@@ -69,9 +70,9 @@ pub fn normalized_content_digest(rows: &[ChatRow]) -> String {
     field(&mut hash, &rows.len().to_string());
     for row in rows {
         field(&mut hash, &row.kind);
-        field(&mut hash, &row.markdown);
+        field(&mut hash, &row.markdown.decode_uncached());
         field(&mut hash, &row.tool_name);
-        field(&mut hash, &row.tool_preview);
+        field(&mut hash, &row.tool_preview.decode_uncached());
         field(&mut hash, &row.tool_status);
         field(&mut hash, if row.has_image_placeholder { "1" } else { "0" });
         field(&mut hash, &row.image_sources.len().to_string());

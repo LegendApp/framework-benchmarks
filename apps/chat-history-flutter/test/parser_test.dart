@@ -1,4 +1,8 @@
 import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:chat_history_flutter/json_range.dart';
 
 import 'package:chat_history_flutter/catalog.dart';
 import 'package:chat_history_flutter/model.dart';
@@ -13,6 +17,40 @@ String fixture(String name) {
 }
 
 void main() {
+  test('validates ignored JSON values and decodes selected strings', () {
+    for (final source in [r'{"skip":[1,]}', r'{"skip":"\q"}', r'{"skip":01}']) {
+      final bytes = Uint8List.fromList(utf8.encode(source));
+      expect(
+        () => JsonRange.parse(bytes, 0, bytes.length),
+        throwsFormatException,
+      );
+    }
+    final bytes = Uint8List.fromList(
+      utf8.encode(r'{"text":"a\nb","skip":[null,true]}'),
+    );
+    final value = JsonRange.parse(bytes, 0, bytes.length);
+    expect((value.object()!['text'] as JsonRange).string(), 'a\nb');
+  });
+
+  test('subagent filtering survives a later UTF-8 boundary', () {
+    final home = Directory.systemTemp.createTempSync(
+      'legend-catalog-boundary-',
+    );
+    addTearDown(() => home.deleteSync(recursive: true));
+    final root = Directory('${home.path}/.codex/sessions')
+      ..createSync(recursive: true);
+    final header = utf8.encode('{"payload":{"source":{"subagent":{}}}}\n');
+    final source = [
+      ...header,
+      ...List.filled(65535 - header.length, 120),
+      ...utf8.encode('é'),
+    ];
+    File(
+      '${root.path}/rollout-2026-01-01-22222222-2222-2222-2222-222222222222.jsonl',
+    ).writeAsBytesSync(source);
+    expect(getRecentChats(20, home.path).summaries, isEmpty);
+  });
+
   test('returns an empty catalog when neither provider is installed', () {
     final home = Directory.systemTemp.createTempSync(
       'legend-flutter-empty-catalog-',
@@ -95,11 +133,33 @@ void main() {
       ChatProvider.codex,
       fixture('codex.jsonl'),
     );
+    expect(
+      codex.rows.every(
+        (row) =>
+            row.deferred && row.markdown.isEmpty && row.toolPreview.isEmpty,
+      ),
+      isTrue,
+    );
+    final visible = await worker.getRows(codex.documentId!, [0, 1]);
+    expect(visible[0].markdown, 'Hello ☺\nworld\n');
+    expect(visible[1].toolPreview, isEmpty);
+    final expanded = await worker.getRows(codex.documentId!, [
+      1,
+    ], includeToolPreview: true);
+    expect(expanded.first.toolPreview, 'Read files, created an image');
+    expect(
+      await worker.getContentDigest(codex.documentId!),
+      'ea203684aeae72fb',
+    );
     final claude = await worker.parse(
       ChatProvider.claude,
       fixture('claude.jsonl'),
     );
 
+    await expectLater(
+      worker.getRows(codex.documentId!, [0]),
+      throwsFormatException,
+    );
     expect(codex.rows.length, 4);
     expect(claude.rows.length, 3);
   });

@@ -137,9 +137,9 @@ async function isCodexSubagent(path: string) {
     handle = await open(path, "r");
     const buffer = Buffer.allocUnsafe(64 * 1_024);
     const { bytesRead } = await handle.read(buffer, 0, buffer.byteLength, 0);
-    const source = buffer.toString("utf8", 0, bytesRead);
-    const lineEnd = source.indexOf("\n");
-    const firstLine = lineEnd >= 0 ? source.slice(0, lineEnd) : source;
+    const prefix = buffer.subarray(0, bytesRead);
+    const lineEnd = prefix.indexOf(10);
+    const firstLine = prefix.toString("utf8", 0, lineEnd < 0 ? bytesRead : lineEnd);
     const root = JSON.parse(firstLine) as { payload?: { source?: { subagent?: unknown } } };
     return root.payload?.source?.subagent !== undefined;
   } catch {
@@ -149,7 +149,7 @@ async function isCodexSubagent(path: string) {
   }
 }
 
-export async function getRecentChats(limit = 20, home = homedir()): Promise<CatalogResult> {
+export async function getRecentChats(limit = 20, home = (process.env.CHAT_HISTORY_BENCHMARK_CONFIG && process.env.CHAT_HISTORY_BENCHMARK_HOME) || homedir()): Promise<CatalogResult> {
   const startedAt = performance.now();
   const boundedLimit = Math.max(0, Math.floor(limit));
   if (boundedLimit === 0) {

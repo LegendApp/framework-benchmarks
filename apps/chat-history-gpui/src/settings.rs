@@ -21,7 +21,7 @@ impl Default for Settings {
             recent_chat_limit: 20,
             restore_selection: true,
             selected_id: None,
-            show_performance_metrics: true,
+            show_performance_metrics: false,
         }
     }
 }

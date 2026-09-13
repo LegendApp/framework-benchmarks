@@ -32,17 +32,24 @@ class ChatParserWorker {
     }
   }
 
-  Future<ChatDocument> parse(ChatProvider provider, String path) async {
+  Future<T> _request<T>(Object request) async {
     final responsePort = ReceivePort();
-    (await _ready.future).send((responsePort.sendPort, provider, path));
-    final response = await responsePort.first;
+    (await _ready.future).send((responsePort.sendPort, request));
+    final response =
+        await responsePort.first as ({Object? value, String? error});
     responsePort.close();
-    final result = response as ({ChatDocument? document, String? error});
-    if (result.document case final document?) {
-      return document;
-    }
-    throw FormatException(result.error ?? 'Transcript parsing failed');
+    if (response.error != null) throw FormatException(response.error!);
+    return response.value as T;
   }
+
+  Future<ChatDocument> parse(ChatProvider provider, String path) =>
+      _request(('open', provider, path));
+  Future<List<ChatRow>> getRows(
+    String id,
+    List<int> indices, {
+    bool includeToolPreview = false,
+  }) => _request(('rows', id, indices, includeToolPreview));
+  Future<String> getContentDigest(String id) => _request(('digest', id));
 
   void dispose() {
     _disposed = true;
@@ -52,16 +59,78 @@ class ChatParserWorker {
   static void _run(SendPort readyPort) {
     final requests = ReceivePort();
     readyPort.send(requests.sendPort);
+    ChatDocument? active;
+    var generation = 0;
     requests.listen((message) {
-      final request = message as (SendPort, ChatProvider, String);
+      final (SendPort reply, Object request) = message;
       try {
-        request.$1.send((
-          document: openChatFile(request.$2, request.$3),
-          error: null,
-        ));
+        Object value;
+        switch (request) {
+          case ('open', ChatProvider provider, String path):
+            active = null;
+            generation++;
+            final document = openChatFile(provider, path);
+            active = document;
+            value = ChatDocument(
+              documentId: '$generation',
+              path: document.path,
+              provider: document.provider,
+              recordCount: document.recordCount,
+              rows: document.rows.map(_descriptor).toList(),
+              sourceBytes: document.sourceBytes,
+              timing: document.timing,
+              warningCount: document.warningCount,
+            );
+          case ('rows', String id, List<int> indices, bool includeToolPreview):
+            if (active == null || id != '$generation') {
+              throw StateError('Document is no longer open');
+            }
+            if (indices.length > 256 ||
+                indices.any(
+                  (index) => index < 0 || index >= active!.rows.length,
+                )) {
+              throw RangeError('Invalid row request');
+            }
+            value = indices
+                .map(
+                  (index) =>
+                      _materialize(active!.rows[index], includeToolPreview),
+                )
+                .toList();
+          case ('digest', String id):
+            if (active == null || id != '$generation') {
+              throw StateError('Document is no longer open');
+            }
+            value = normalizedContentDigest(active!.rows);
+          default:
+            throw const FormatException('Unknown document request');
+        }
+        reply.send((value: value, error: null));
       } catch (error) {
-        request.$1.send((document: null, error: error.toString()));
+        reply.send((value: null, error: error.toString()));
       }
     });
   }
 }
+
+ChatRow _descriptor(ChatRow row) => ChatRow(
+  id: row.id,
+  kind: row.kind,
+  fileChanges: row.fileChanges,
+  hasImagePlaceholder: row.hasImagePlaceholder,
+  imageSources: row.imageSources,
+  toolName: row.toolName,
+  toolStatus: row.toolStatus,
+  deferred: true,
+);
+ChatRow _materialize(ChatRow row, bool includeToolPreview) => ChatRow(
+  id: row.id,
+  kind: row.kind,
+  fileChanges: row.fileChanges,
+  hasImagePlaceholder: row.hasImagePlaceholder,
+  imageSources: row.imageSources,
+  toolName: row.toolName,
+  toolStatus: row.toolStatus,
+  rawMarkdown: row.markdown,
+  rawToolPreview: includeToolPreview ? row.toolPreview : '',
+);

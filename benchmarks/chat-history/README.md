@@ -374,3 +374,5 @@ Content detector v3 scores the same transcript region in every app (24–98% of 
 For the measured causes of the native/RN differences, see the [platform timing investigation](PLATFORM_TIMING_REPORT.md).
 
 Built-in TextKit update: [native renderer changes, current three-app results, and videos](TEXTKIT_RESULTS.md).
+
+The September 13 [other-app alignment report](ALL_APPS_ALIGNMENT.md) documents deferred document loading, rendering/chrome corrections, visual evidence and remaining platform differences. These changes require fresh scored benchmarks; prior performance tables describe earlier builds.

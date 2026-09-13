@@ -165,9 +165,11 @@ bool _isCodexSubagent(String path) {
   try {
     handle = File(path).openSync();
     final bytes = handle.readSync(64 * 1024);
-    final source = utf8.decode(bytes, allowMalformed: true);
-    final lineEnd = source.indexOf('\n');
-    final firstLine = lineEnd >= 0 ? source.substring(0, lineEnd) : source;
+    final lineEnd = bytes.indexOf(10);
+    final firstLine = utf8.decode(
+      lineEnd < 0 ? bytes : bytes.sublist(0, lineEnd),
+      allowMalformed: true,
+    );
     final root = jsonDecode(firstLine);
     return root is Map<String, dynamic> &&
         root['payload'] is Map<String, dynamic> &&

@@ -7,6 +7,7 @@ import type {
   ChatDocument,
   ChatHistorySettings,
   ChatProvider,
+  ChatRow,
 } from "../../chat-history-electron/src/model";
 
 function imageSource(source: string) {
@@ -29,6 +30,12 @@ window.chatHistory = {
   },
   getSettings() {
     return invoke<ChatHistorySettings>("get_settings");
+  },
+  getRows(documentId, indices, includeToolPreview = false) {
+    return invoke<ChatRow[]>("get_rows", { documentId, indices, includeToolPreview });
+  },
+  getContentDigest(documentId) {
+    return invoke<string>("get_content_digest", { documentId });
   },
   async openChat(provider: ChatProvider, path: string) {
     const startedAt = performance.now();

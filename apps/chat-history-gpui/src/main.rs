@@ -17,9 +17,9 @@ use chat_history_rust::{
 use chrono::{Local, TimeZone};
 use gpui::{
     AnyElement, AnyWindowHandle, App, Application, Bounds, Context, Div, FontStyle, FontWeight,
-    HighlightStyle, InteractiveText, ListAlignment, ListOffset, ListState, Render, StrikethroughStyle,
-    StyledText, Task, TitlebarOptions, UnderlineStyle, Window, WindowAppearance, WindowBounds,
-    WindowOptions, div, img, list, prelude::*, px, rgb, rgba, size,
+    HighlightStyle, InteractiveText, ListAlignment, ListOffset, ListState, Render,
+    StrikethroughStyle, StyledText, Task, TitlebarOptions, UnderlineStyle, Window,
+    WindowAppearance, WindowBounds, WindowOptions, div, img, list, prelude::*, px, rgb, rgba, size,
 };
 use markdown::{BlockKind, InlineKind, MarkdownBlock, blocks};
 use settings::Settings;
@@ -30,6 +30,13 @@ struct Palette {
     background: gpui::Rgba,
     border: gpui::Rgba,
     code: gpui::Rgba,
+    code_background: gpui::Rgba,
+    code_text: gpui::Rgba,
+    inline_text: gpui::Rgba,
+    quote: gpui::Rgba,
+    quote_border: gpui::Rgba,
+    table_header: gpui::Rgba,
+    table_alt: gpui::Rgba,
     muted: gpui::Rgba,
     sidebar: gpui::Rgba,
     text: gpui::Rgba,
@@ -40,25 +47,39 @@ impl Palette {
     fn new(dark: bool) -> Self {
         if dark {
             Self {
-                accent: rgb(0x4f8cff),
+                accent: rgb(0x60a5fa),
                 background: rgb(0x191a1b),
-                border: rgb(0x36383a),
-                code: rgb(0x25272a),
-                muted: rgb(0x9a9da2),
-                sidebar: rgb(0x202224),
-                text: rgb(0xf1f2f3),
-                user: rgb(0x2b2e31),
+                border: rgb(0x3e4042),
+                code: rgb(0x2d2e30),
+                code_background: rgb(0x111213),
+                code_text: rgb(0xf5f5f5),
+                inline_text: rgb(0xeb5757),
+                quote: rgb(0x202122),
+                quote_border: rgb(0x6f7377),
+                table_header: rgb(0x2a2b2d),
+                table_alt: rgb(0x1f2021),
+                muted: rgb(0xa3a3a3),
+                sidebar: rgba(0x252528cc),
+                text: rgb(0xf5f5f5),
+                user: rgb(0x2d2e30),
             }
         } else {
             Self {
-                accent: rgb(0x1769e0),
-                background: rgb(0xffffff),
-                border: rgb(0xdfe2e6),
-                code: rgb(0xf2f3f5),
-                muted: rgb(0x6b7179),
-                sidebar: rgb(0xf5f6f8),
-                text: rgb(0x202124),
-                user: rgb(0xf0f1f3),
+                accent: rgb(0x2563eb),
+                background: rgb(0xf5f6f8),
+                border: rgb(0xd1d5db),
+                code: rgb(0xe5e7eb),
+                code_background: rgb(0x111827),
+                code_text: rgb(0xf9fafb),
+                inline_text: rgb(0x111827),
+                quote: rgb(0xf8fafc),
+                quote_border: rgb(0x94a3b8),
+                table_header: rgb(0xf3f4f6),
+                table_alt: rgb(0xf9fafb),
+                muted: rgb(0x6b7280),
+                sidebar: rgba(0xffffffb3),
+                text: rgb(0x111827),
+                user: rgb(0xf3f4f6),
             }
         }
     }
@@ -109,6 +130,10 @@ impl ChatHistory {
         let settings = benchmark
             .as_ref()
             .map(|benchmark| Settings {
+                appearance: benchmark
+                    .appearance
+                    .clone()
+                    .unwrap_or_else(|| "system".into()),
                 load_images: benchmark.load_images,
                 restore_selection: false,
                 ..Settings::default()
@@ -142,10 +167,18 @@ impl ChatHistory {
         self.loading = true;
         self.error = None;
         let target_ids = self.benchmark.as_ref().map(|benchmark| {
-            benchmark.targets.iter().map(|target| (target.id.clone(), target.provider.clone())).collect::<Vec<_>>()
+            benchmark
+                .targets
+                .iter()
+                .map(|target| (target.id.clone(), target.provider.clone()))
+                .collect::<Vec<_>>()
         });
         let discovery_started = Instant::now();
-        let limit = if target_ids.is_some() { usize::MAX } else { self.settings.recent_chat_limit };
+        let limit = if target_ids.is_some() {
+            usize::MAX
+        } else {
+            self.settings.recent_chat_limit
+        };
         let selected_id = self
             .settings
             .restore_selection
@@ -160,21 +193,39 @@ impl ChatHistory {
             let _ = this.update(cx, |view, cx| match result {
                 Ok(catalog) => {
                     if target_ids.is_some() {
-                        view.benchmark_discovery_ms = Some(discovery_started.elapsed().as_secs_f64() * 1000.0);
+                        view.benchmark_discovery_ms =
+                            Some(discovery_started.elapsed().as_secs_f64() * 1000.0);
                     }
                     view.catalog_loaded = true;
                     view.catalog_ms = catalog.native_total_ms;
-                    let resolved_targets = target_ids.as_ref().map(|ids| ids.iter().map(|(id, provider)| {
-                        catalog.summaries.iter().find(|item| item.id == *id && item.provider == *provider).cloned()
-                    }).collect::<Vec<_>>());
-                    let missing_target = resolved_targets.as_ref().is_some_and(|targets| targets.iter().any(Option::is_none));
+                    let resolved_targets = target_ids.as_ref().map(|ids| {
+                        ids.iter()
+                            .map(|(id, provider)| {
+                                catalog
+                                    .summaries
+                                    .iter()
+                                    .find(|item| item.id == *id && item.provider == *provider)
+                                    .cloned()
+                            })
+                            .collect::<Vec<_>>()
+                    });
+                    let missing_target = resolved_targets
+                        .as_ref()
+                        .is_some_and(|targets| targets.iter().any(Option::is_none));
                     if missing_target {
                         view.loading = false;
-                        view.error = Some("A pinned benchmark chat was not found during native history discovery".into());
+                        view.error = Some(
+                            "A pinned benchmark chat was not found during native history discovery"
+                                .into(),
+                        );
                         cx.notify();
                         return;
                     }
-                    let mut visible = catalog.summaries.into_iter().take(view.settings.recent_chat_limit).collect::<Vec<_>>();
+                    let mut visible = catalog
+                        .summaries
+                        .into_iter()
+                        .take(view.settings.recent_chat_limit)
+                        .collect::<Vec<_>>();
                     if let Some(targets) = &resolved_targets {
                         for target in targets.iter().flatten() {
                             if !visible.iter().any(|summary| summary.id == target.id) {
@@ -186,7 +237,12 @@ impl ChatHistory {
                     let initial = resolved_targets
                         .as_ref()
                         .and_then(|targets| targets.first().and_then(Clone::clone))
-                        .or_else(|| selected_id.as_deref().and_then(|id| view.summaries.iter().find(|item| item.id == id)).cloned())
+                        .or_else(|| {
+                            selected_id
+                                .as_deref()
+                                .and_then(|id| view.summaries.iter().find(|item| item.id == id))
+                                .cloned()
+                        })
                         .or_else(|| view.summaries.first().cloned());
                     view.loading = false;
                     if let Some(summary) = initial {
@@ -334,9 +390,12 @@ impl ChatHistory {
         let Some(target) = benchmark.targets.get(1) else {
             return;
         };
-        let Some(summary) = self.summaries.iter().find(|summary| {
-            summary.id == target.id && summary.provider == target.provider
-        }).cloned() else {
+        let Some(summary) = self
+            .summaries
+            .iter()
+            .find(|summary| summary.id == target.id && summary.provider == target.provider)
+            .cloned()
+        else {
             return;
         };
         let top_delay_ms = benchmark.top_delay_ms;
@@ -349,24 +408,29 @@ impl ChatHistory {
                 .timer(Duration::from_millis(top_delay_ms))
                 .await;
             let started = Instant::now();
-            let window = this.update(cx, |view, cx| {
-                if generation == view.generation {
-                    view.list_state.scroll_to(ListOffset {
-                        item_ix: 0,
-                        offset_in_item: px(0.0),
-                    });
-                    cx.notify();
-                    Some(view.window)
-                } else {
-                    None
-                }
-            }).ok().flatten();
+            let window = this
+                .update(cx, |view, cx| {
+                    if generation == view.generation {
+                        view.list_state.scroll_to(ListOffset {
+                            item_ix: 0,
+                            offset_in_item: px(0.0),
+                        });
+                        cx.notify();
+                        Some(view.window)
+                    } else {
+                        None
+                    }
+                })
+                .ok()
+                .flatten();
             let Some(window) = window else { return };
             let _ = window.update(cx, |root, window, cx| {
                 cx.notify(root.entity_id());
                 window.refresh();
             });
-            cx.background_executor().timer(Duration::from_millis(50)).await;
+            cx.background_executor()
+                .timer(Duration::from_millis(50))
+                .await;
             let _ = benchmark.emit(serde_json::json!({
                 "durationMs": started.elapsed().as_secs_f64() * 1000.0,
                 "name": "viewportReady",
@@ -451,8 +515,8 @@ impl ChatHistory {
                         .child(
                             div()
                                 .min_w(px(0.0))
-                                .overflow_hidden()
-                                .text_sm()
+                                .truncate()
+                                .text_size(px(13.0))
                                 .font_weight(FontWeight::SEMIBOLD)
                                 .text_color(if selected {
                                     rgb(0xffffff)
@@ -478,23 +542,26 @@ impl ChatHistory {
             }
         }
         div()
-            .w(px(260.0))
-            .h_full()
+            .w(px(252.0))
+            .ml(px(8.0))
+            .my(px(8.0))
+            .rounded(px(20.0))
+            .overflow_hidden()
             .flex_none()
             .flex()
             .flex_col()
             .bg(palette.sidebar)
-            .border_r_1()
+            .border_1()
             .border_color(palette.border)
             .child(
                 div()
-                    .h(px(52.0))
+                    .h(px(44.0))
                     .flex_none()
                     .flex()
                     .items_center()
                     .px(px(16.0))
                     .font_weight(FontWeight::SEMIBOLD)
-                    .child("Chat History"),
+                    .child(""),
             )
             .child(
                 div()
@@ -503,24 +570,6 @@ impl ChatHistory {
                     .min_h(px(0.0))
                     .overflow_y_scroll()
                     .children(entries),
-            )
-            .child(
-                div()
-                    .id("open-settings")
-                    .h(px(48.0))
-                    .flex_none()
-                    .flex()
-                    .items_center()
-                    .px(px(14.0))
-                    .border_t_1()
-                    .border_color(palette.border)
-                    .cursor_pointer()
-                    .hover(|item| item.bg(palette.background))
-                    .on_click(cx.listener(|view, _, _, cx| {
-                        view.settings_open = true;
-                        cx.notify();
-                    }))
-                    .child("⚙  Settings"),
             )
     }
 
@@ -537,20 +586,31 @@ impl ChatHistory {
             .map(|summary| summary.title.clone())
             .unwrap_or_else(|| "Select a chat".into());
         let header = div()
+            .absolute()
+            .top_0()
+            .left_0()
+            .right_0()
+            .bg(palette.sidebar)
             .h(px(52.0))
             .flex_none()
             .flex()
             .items_center()
             .justify_between()
-            .px(px(18.0))
+            .px(px(20.0))
             .border_b_1()
             .border_color(palette.border)
             .child(div().font_weight(FontWeight::SEMIBOLD).child(title))
             .child(
-                div()
-                    .text_xs()
-                    .text_color(palette.muted)
-                    .child("GPUI · Rust · GPU-native"),
+                div().text_xs().text_color(palette.muted).child(
+                    div()
+                        .id("open-settings")
+                        .cursor_pointer()
+                        .on_click(cx.listener(|view, _, _, cx| {
+                            view.settings_open = true;
+                            cx.notify();
+                        }))
+                        .child("⚙"),
+                ),
             );
 
         let body = if self.loading {
@@ -583,19 +643,27 @@ impl ChatHistory {
             list(self.list_state.clone(), move |index, window, _cx| {
                 let row = &document.rows[index];
                 let markdown = markdown[index].get_or_init(|| blocks(&row.markdown));
-                render_row(
-                    row,
-                    markdown,
-                    RowRenderState {
-                        files_expanded: expanded_files.contains(&row.id),
-                        index,
-                        load_images,
-                        palette,
-                        tool_expanded: expanded_tools.contains(&row.id),
-                    },
-                    &view,
-                    window,
-                )
+                div()
+                    .pt(px(if index == 0 { 64.0 } else { 0.0 }))
+                    .pb(px(if index + 1 == document.rows.len() {
+                        112.0
+                    } else {
+                        0.0
+                    }))
+                    .child(render_row(
+                        row,
+                        markdown,
+                        RowRenderState {
+                            files_expanded: expanded_files.contains(&row.id),
+                            index,
+                            load_images,
+                            palette,
+                            tool_expanded: expanded_tools.contains(&row.id),
+                        },
+                        &view,
+                        window,
+                    ))
+                    .into_any_element()
             })
             .size_full()
             .into_any_element()
@@ -622,7 +690,6 @@ impl ChatHistory {
             .flex()
             .flex_col()
             .bg(palette.background)
-            .child(header)
             .when(self.settings.show_performance_metrics, |content| {
                 content.when_some(self.document.as_ref(), |content, document| {
                     content.child(
@@ -631,7 +698,7 @@ impl ChatHistory {
                             .flex_none()
                             .flex()
                             .items_center()
-                            .px(px(18.0))
+                            .px(px(20.0))
                             .bg(palette.code)
                             .text_xs()
                             .text_color(palette.muted)
@@ -646,7 +713,14 @@ impl ChatHistory {
                     )
                 })
             })
+            .relative()
             .child(body)
+            .child(header)
+            .child(div().absolute().bottom(px(20.0)).left(px(24.0)).right(px(24.0)).flex().justify_center().child(
+                div().w_full().max_w(px(860.0)).h(px(60.0)).rounded(px(26.0)).border_1().border_color(palette.border).bg(palette.sidebar).px(px(16.0)).flex().items_center().justify_between()
+                    .child(div().text_size(px(15.0)).text_color(palette.muted).child("Send a test message that doesn't actually do anything"))
+                    .child(div().size(px(36.0)).rounded_full().bg(rgba(0x60a5fa4d)).text_color(rgb(0xffffff)).flex().items_center().justify_center().child("↑"))
+            ))
     }
 
     fn render_settings(&self, palette: Palette, cx: &mut Context<Self>) -> AnyElement {
@@ -773,7 +847,8 @@ impl Render for ChatHistory {
             .size_full()
             .flex()
             .text_color(palette.text)
-            .bg(palette.background)
+            .font_family(".AppleSystemUIFont")
+            .text_size(px(15.0))
             .child(self.render_sidebar(palette, cx))
             .child(self.render_content(palette, window, cx))
             .when(self.settings_open, |root| {
@@ -803,17 +878,14 @@ fn render_row(
             div()
                 .mx_auto()
                 .w_full()
-                .max_w(px(860.0))
-                .px(px(18.0))
-                .py(px(5.0))
+                .px(px(20.0))
+                .py(px(8.0))
                 .child(
                     div()
                         .id(gpui::SharedString::from(format!("tool-{id}")))
-                        .p(px(10.0))
-                        .rounded(px(8.0))
-                        .border_1()
+                        .py(px(12.0))
+                        .border_b_1()
                         .border_color(palette.border)
-                        .bg(palette.code)
                         .cursor_pointer()
                         .on_click(window.listener_for(view, move |state, _, _, cx| {
                             if !state.expanded_tools.remove(&id_for_click) {
@@ -825,20 +897,23 @@ fn render_row(
                         .child(
                             div()
                                 .flex()
-                                .justify_between()
-                                .text_sm()
-                                .font_weight(FontWeight::SEMIBOLD)
+                                .gap(px(8.0))
+                                .text_size(px(14.0))
+                                .line_height(px(20.0))
+                                .text_color(palette.muted)
+                                .font_weight(FontWeight::MEDIUM)
                                 .child(row.tool_name.clone())
-                                .child(if tool_expanded { "⌃" } else { "⌄" }),
+                                .child(if tool_expanded { "⌄" } else { "›" }),
                         )
-                        .when(!row.tool_preview.is_empty(), |tool| {
-                            tool.child(div().mt(px(5.0)).text_sm().text_color(palette.muted).child(
-                                if tool_expanded {
-                                    row.tool_preview.clone()
-                                } else {
-                                    preview(&row.tool_preview, 180)
-                                },
-                            ))
+                        .when(tool_expanded && !row.tool_preview.is_empty(), |tool| {
+                            tool.child(
+                                div()
+                                    .mt(px(16.0))
+                                    .text_size(px(14.0))
+                                    .line_height(px(24.0))
+                                    .text_color(palette.muted)
+                                    .child(row.tool_preview.to_string()),
+                            )
                         }),
                 )
                 .into_any_element()
@@ -847,17 +922,16 @@ fn render_row(
             let id = row.id.clone();
             let id_for_click = id.clone();
             let changes = row.file_changes.clone();
+            let hidden_files = changes.len().saturating_sub(3);
             div()
                 .mx_auto()
                 .w_full()
-                .max_w(px(860.0))
-                .px(px(18.0))
-                .py(px(5.0))
+                .px(px(20.0))
+                .py(px(8.0))
                 .child(
                     div()
                         .id(gpui::SharedString::from(format!("files-{id}")))
-                        .p(px(10.0))
-                        .rounded(px(8.0))
+                        .rounded(px(12.0))
                         .border_1()
                         .border_color(palette.border)
                         .cursor_pointer()
@@ -870,19 +944,107 @@ fn render_row(
                         }))
                         .child(
                             div()
-                                .font_weight(FontWeight::SEMIBOLD)
-                                .child(format!("{} changed files", changes.len())),
+                                .p(px(16.0))
+                                .flex()
+                                .items_center()
+                                .gap(px(12.0))
+                                .child(
+                                    div()
+                                        .size(px(40.0))
+                                        .flex_none()
+                                        .rounded(px(8.0))
+                                        .bg(palette.code)
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .text_size(px(22.0))
+                                        .child("+"),
+                                )
+                                .child(
+                                    div()
+                                        .flex()
+                                        .flex_col()
+                                        .gap(px(4.0))
+                                        .child(
+                                            div()
+                                                .text_size(px(16.0))
+                                                .font_weight(FontWeight::SEMIBOLD)
+                                                .child(format!(
+                                                    "Edited {} {}",
+                                                    changes.len(),
+                                                    if changes.len() == 1 {
+                                                        "file"
+                                                    } else {
+                                                        "files"
+                                                    }
+                                                )),
+                                        )
+                                        .child(
+                                            div()
+                                                .flex()
+                                                .gap(px(8.0))
+                                                .text_size(px(14.0))
+                                                .child(div().text_color(rgb(0x16843c)).child(
+                                                    format!(
+                                                        "+{}",
+                                                        changes
+                                                            .iter()
+                                                            .map(|file| file.additions)
+                                                            .sum::<usize>()
+                                                    ),
+                                                ))
+                                                .child(div().text_color(rgb(0xc22f2f)).child(
+                                                    format!(
+                                                        "−{}",
+                                                        changes
+                                                            .iter()
+                                                            .map(|file| file.deletions)
+                                                            .sum::<usize>()
+                                                    ),
+                                                )),
+                                        ),
+                                ),
                         )
-                        .when(files_expanded, |card| {
-                            card.children(changes.into_iter().map(|file| {
+                        .map(|card| {
+                            card.children(
+                                changes
+                                    .into_iter()
+                                    .take(if files_expanded { usize::MAX } else { 3 })
+                                    .map(|file| {
+                                        div()
+                                            .px(px(16.0))
+                                            .py(px(12.0))
+                                            .border_t_1()
+                                            .border_color(palette.border)
+                                            .flex()
+                                            .justify_between()
+                                            .text_sm()
+                                            .child(
+                                                div()
+                                                    .flex_1()
+                                                    .min_w(px(0.0))
+                                                    .truncate()
+                                                    .child(file.path),
+                                            )
+                                            .child(format!(
+                                                "+{}  −{}",
+                                                file.additions, file.deletions
+                                            ))
+                                    }),
+                            )
+                        })
+                        .when(hidden_files > 0, |card| {
+                            card.child(
                                 div()
-                                    .mt(px(7.0))
-                                    .flex()
-                                    .justify_between()
-                                    .text_sm()
-                                    .child(file.path)
-                                    .child(format!("+{}  −{}", file.additions, file.deletions))
-                            }))
+                                    .mt(px(8.0))
+                                    .text_size(px(13.0))
+                                    .text_color(palette.muted)
+                                    .child(if files_expanded {
+                                        "Show less".to_string()
+                                    } else {
+                                        format!("Show {hidden_files} more files")
+                                    }),
+                            )
                         }),
                 )
                 .into_any_element()
@@ -892,24 +1054,42 @@ fn render_row(
             div()
                 .mx_auto()
                 .w_full()
-                .max_w(px(860.0))
-                .px(px(18.0))
-                .py(px(9.0))
+                .px(px(20.0))
+                .py(px(if is_user { 8.0 } else { 12.0 }))
+                .flex()
+                .when(is_user, |row| row.justify_end())
                 .child(
                     div()
+                        .max_w(gpui::relative(if is_user { 0.82 } else { 0.92 }))
+                        .when(!is_user, |message| message.w(gpui::relative(0.92)))
+                        .min_w(px(0.0))
                         .when(is_user, |message| {
-                            message.p(px(13.0)).rounded(px(12.0)).bg(palette.user)
+                            message
+                                .px(px(16.0))
+                                .py(px(12.0))
+                                .rounded(px(16.0))
+                                .bg(palette.user)
                         })
-                        .child(render_markdown(&row.id, markdown, palette, load_images))
-                        .when(row.has_image_placeholder, |message| {
-                            message.child(
-                                div()
-                                    .mt(px(8.0))
-                                    .text_sm()
-                                    .text_color(palette.muted)
-                                    .child("Image attachment"),
-                            )
-                        })
+                        .child(render_markdown(
+                            &row.id,
+                            markdown,
+                            palette,
+                            load_images,
+                            window,
+                        ))
+                        .when(
+                            row.has_image_placeholder
+                                || (!load_images && !row.image_sources.is_empty()),
+                            |message| {
+                                message.child(
+                                    div()
+                                        .mt(px(8.0))
+                                        .text_sm()
+                                        .text_color(palette.muted)
+                                        .child("Image or attachment omitted"),
+                                )
+                            },
+                        )
                         .when(load_images, |message| {
                             message.children(row.image_sources.iter().filter_map(|source| {
                                 let path = PathBuf::from(source);
@@ -929,51 +1109,206 @@ fn render_markdown(
     blocks: &[MarkdownBlock],
     palette: Palette,
     load_images: bool,
+    window: &Window,
 ) -> Div {
     let row_id = row_id.to_string();
     div()
         .flex()
         .flex_col()
-        .gap(px(7.0))
+        .gap(px(0.0))
+        .text_size(px(15.0))
+        .line_height(px(22.0))
         .children(blocks.iter().cloned().enumerate().map(|(index, block)| {
             let text = styled_markdown_text(&block, palette, format!("markdown-{row_id}-{index}"));
             let images = block.images.clone();
-            match block.kind {
+            let element = match block.kind {
                 BlockKind::Heading(level) => div()
                     .text_size(px(match level {
-                        1 => 24.0,
-                        2 => 20.0,
-                        _ => 17.0,
+                        1 => 22.0,
+                        2 => 19.0,
+                        3 => 20.0,
+                        4 => 18.0,
+                        5 => 16.0,
+                        _ => 14.0,
+                    }))
+                    .line_height(px(match level {
+                        1 | 3 => 28.0,
+                        2 => 25.0,
+                        4 => 26.0,
+                        5 => 24.0,
+                        _ => 22.0,
                     }))
                     .font_weight(FontWeight::BOLD)
                     .child(text)
                     .into_any_element(),
-                BlockKind::Code => div()
-                    .p(px(10.0))
-                    .rounded(px(7.0))
-                    .bg(palette.code)
-                    .font_family("SF Mono")
-                    .text_sm()
-                    .child(text)
-                    .into_any_element(),
-                BlockKind::Quote => div()
-                    .pl(px(10.0))
-                    .border_l_2()
-                    .border_color(palette.border)
-                    .text_color(palette.muted)
-                    .child(text)
-                    .into_any_element(),
-                BlockKind::Table => div()
-                    .p(px(9.0))
-                    .rounded(px(7.0))
-                    .border_1()
-                    .border_color(palette.border)
-                    .font_family("SF Mono")
-                    .text_sm()
-                    .child(text)
+                BlockKind::Code => {
+                    let copy_text = block.text.clone();
+                    div()
+                        .w_full()
+                        .rounded(px(7.0))
+                        .border_1()
+                        .border_color(palette.border)
+                        .bg(palette.code_background)
+                        .text_color(palette.code_text)
+                        .overflow_hidden()
+                        .child(
+                            div()
+                                .h(px(26.0))
+                                .px(px(12.0))
+                                .flex()
+                                .items_center()
+                                .justify_between()
+                                .text_size(px(11.0))
+                                .text_color(palette.muted)
+                                .child(if block.language.is_empty() {
+                                    "Code".to_string()
+                                } else {
+                                    capitalize(&block.language)
+                                })
+                                .child(
+                                    div()
+                                        .id(gpui::SharedString::from(format!(
+                                            "copy-{row_id}-{index}"
+                                        )))
+                                        .cursor_pointer()
+                                        .child("Copy")
+                                        .on_click(move |_, _, cx| {
+                                            cx.write_to_clipboard(gpui::ClipboardItem::new_string(
+                                                copy_text.clone(),
+                                            ))
+                                        }),
+                                ),
+                        )
+                        .child(
+                            div()
+                                .id(gpui::SharedString::from(format!("code-{row_id}-{index}")))
+                                .overflow_x_scroll()
+                                .p(px(12.0))
+                                .font_family("Menlo")
+                                .text_size(px(12.0))
+                                .line_height(px(18.0))
+                                .whitespace_nowrap()
+                                .child(text),
+                        )
+                        .into_any_element()
+                }
+                BlockKind::Table => {
+                    // Share each measured column width across independently styled cells.
+                    let columns = block.cells.iter().map(Vec::len).max().unwrap_or(0);
+                    let widths = (0..columns)
+                        .map(|column| {
+                            block
+                                .cells
+                                .iter()
+                                .enumerate()
+                                .filter_map(|(row, cells)| {
+                                    cells.get(column).map(|cell| (row, cell))
+                                })
+                                .map(|(row, cell)| {
+                                    let mut cell = cell.clone();
+                                    if row == 0 {
+                                        cell.kind = BlockKind::Heading(6);
+                                    }
+                                    // Measure the same styled runs used to paint the cell.
+                                    // Italics, bold and Menlo can exceed plain system text.
+                                    window
+                                        .text_system()
+                                        .shape_text(
+                                            cell.text.clone().into(),
+                                            px(14.0),
+                                            &markdown_text_runs(&cell, palette),
+                                            None,
+                                            None,
+                                        )
+                                        .map(|lines| {
+                                            lines
+                                                .iter()
+                                                .map(|line| f32::from(line.width()))
+                                                .fold(0.0_f32, f32::max)
+                                        })
+                                        .unwrap_or(300.0)
+                                        .ceil()
+                                })
+                                .fold(44.0_f32, f32::max)
+                                .min(300.0)
+                                + 16.0
+                        })
+                        .collect::<Vec<_>>();
+                    div()
+                        .id(gpui::SharedString::from(format!("table-{row_id}-{index}")))
+                        .overflow_x_scroll()
+                        .text_size(px(14.0))
+                        .line_height(px(20.0))
+                        .child(div().flex().flex_col().w(px(widths.iter().sum())).children(
+                            block.cells.iter().enumerate().map(|(row_index, cells)| {
+                                div().flex().children(cells.iter().enumerate().map(
+                                    |(column, cell)| {
+                                        div()
+                                            .w(px(widths[column]))
+                                            .flex_none()
+                                            .px(px(8.0))
+                                            .py(px(6.0))
+                                            .relative()
+                                            // Draw the border without subtracting from the
+                                            // measured text width or the cell padding.
+                                            .child(
+                                                div()
+                                                    .absolute()
+                                                    .inset_0()
+                                                    .border_1()
+                                                    .border_color(palette.border),
+                                            )
+                                            .when(row_index == 0, |cell| {
+                                                cell.bg(palette.table_header)
+                                                    .font_weight(FontWeight::SEMIBOLD)
+                                            })
+                                            .when(row_index > 0 && row_index % 2 == 0, |cell| {
+                                                cell.bg(palette.table_alt)
+                                            })
+                                            .map(|cell| match block.alignments.get(column) {
+                                                Some(pulldown_cmark::Alignment::Center) => {
+                                                    cell.text_center()
+                                                }
+                                                Some(pulldown_cmark::Alignment::Right) => {
+                                                    cell.text_right()
+                                                }
+                                                _ => cell,
+                                            })
+                                            .child(styled_markdown_text(
+                                                &{
+                                                    let mut cell = cell.clone();
+                                                    if row_index == 0 {
+                                                        cell.kind = BlockKind::Heading(6);
+                                                    }
+                                                    cell
+                                                },
+                                                palette,
+                                                format!(
+                                                    "cell-{row_id}-{index}-{row_index}-{column}"
+                                                ),
+                                            ))
+                                    },
+                                ))
+                            }),
+                        ))
+                        .into_any_element()
+                }
+                BlockKind::Rule => div()
+                    .h(px(1.0))
+                    .w_full()
+                    .bg(palette.border)
+                    .my(px(8.0))
                     .into_any_element(),
                 BlockKind::Body => div()
                     .child(text)
+                    .when(!load_images && !images.is_empty(), |body| {
+                        body.child(
+                            div()
+                                .text_size(px(12.0))
+                                .text_color(palette.muted)
+                                .child("Image or attachment omitted"),
+                        )
+                    })
                     .when(load_images, |body| {
                         body.children(images.into_iter().map(|image| {
                             div()
@@ -982,11 +1317,45 @@ fn render_markdown(
                         }))
                     })
                     .into_any_element(),
+            };
+            let mut container = div().child(element);
+            let margin = if index + 1 == blocks.len() {
+                0.0
+            } else {
+                match block.kind {
+                    BlockKind::Heading(1) => 8.0,
+                    BlockKind::Heading(2) => 6.0,
+                    BlockKind::Heading(_) => 4.0,
+                    _ => 16.0,
+                }
+            };
+            if block.list_depth > 0 {
+                container = div()
+                    .flex()
+                    .pl(px((block.list_depth.saturating_sub(1) * 24) as f32))
+                    .child(
+                        div()
+                            .w(px(24.0))
+                            .flex_none()
+                            .child(block.marker.clone().unwrap_or_default()),
+                    )
+                    .child(container.flex_1().min_w(px(0.0)));
             }
+            for _ in 0..block.quote_depth {
+                container = div()
+                    .px(px(12.0))
+                    .py(px(8.0))
+                    .bg(palette.quote)
+                    .border_l(px(3.0))
+                    .border_color(palette.quote_border)
+                    .text_color(palette.muted)
+                    .child(container);
+            }
+            container.mb(px(margin)).into_any_element()
         }))
 }
 
-fn styled_markdown_text(block: &MarkdownBlock, palette: Palette, id: String) -> InteractiveText {
+fn markdown_text_runs(block: &MarkdownBlock, palette: Palette) -> Vec<gpui::TextRun> {
     let mut boundaries = Vec::with_capacity(block.highlights.len() * 2 + 2);
     boundaries.push(0);
     boundaries.push(block.text.len());
@@ -997,19 +1366,29 @@ fn styled_markdown_text(block: &MarkdownBlock, palette: Palette, id: String) -> 
     boundaries.sort_unstable();
     boundaries.dedup();
 
-    let mut highlights = Vec::new();
+    let mut runs = Vec::new();
     for pair in boundaries.windows(2) {
         let range = pair[0]..pair[1];
         if range.is_empty() {
             continue;
         }
         let mut style = HighlightStyle::default();
+        let mut font = gpui::font(if block.kind == BlockKind::Code {
+            "Menlo"
+        } else {
+            ".AppleSystemUIFont"
+        });
+        if matches!(block.kind, BlockKind::Heading(_)) {
+            font.weight = FontWeight::BOLD;
+        }
         for highlight in block.highlights.iter().filter(|highlight| {
             highlight.range.start <= range.start && highlight.range.end >= range.end
         }) {
             match highlight.kind {
                 InlineKind::Code => {
+                    font = gpui::font("Menlo");
                     style.background_color = Some(palette.code.into());
+                    style.color = Some(palette.inline_text.into());
                 }
                 InlineKind::Emphasis => style.font_style = Some(FontStyle::Italic),
                 InlineKind::Link => {
@@ -1029,11 +1408,33 @@ fn styled_markdown_text(block: &MarkdownBlock, palette: Palette, id: String) -> 
                 InlineKind::Strong => style.font_weight = Some(FontWeight::BOLD),
             }
         }
-        if style != HighlightStyle::default() {
-            highlights.push((range, style));
+        if let Some(weight) = style.font_weight {
+            font.weight = weight;
         }
+        if let Some(font_style) = style.font_style {
+            font.style = font_style;
+        }
+        runs.push(gpui::TextRun {
+            len: range.len(),
+            font,
+            color: style.color.unwrap_or(
+                if block.kind == BlockKind::Code {
+                    palette.code_text
+                } else {
+                    palette.text
+                }
+                .into(),
+            ),
+            background_color: style.background_color,
+            underline: style.underline,
+            strikethrough: style.strikethrough,
+        });
     }
-    let text = StyledText::new(block.text.clone()).with_highlights(highlights);
+    runs
+}
+
+fn styled_markdown_text(block: &MarkdownBlock, palette: Palette, id: String) -> InteractiveText {
+    let text = StyledText::new(block.text.clone()).with_runs(markdown_text_runs(block, palette));
     let links = block
         .highlights
         .iter()
@@ -1073,7 +1474,7 @@ fn setting_button(
             div()
                 .id(label)
                 .px(px(10.0))
-                .py(px(5.0))
+                .py(px(8.0))
                 .rounded(px(6.0))
                 .bg(palette.code)
                 .cursor_pointer()
@@ -1097,18 +1498,19 @@ fn toggle_setting(
 }
 
 fn format_date(timestamp_ms: f64) -> String {
-    Local
-        .timestamp_millis_opt(timestamp_ms as i64)
-        .single()
-        .map(|value| value.format("%b %-d").to_string())
-        .unwrap_or_default()
-}
-
-fn preview(value: &str, max: usize) -> String {
-    if value.chars().count() <= max {
-        return value.into();
+    let minutes =
+        ((Local::now().timestamp_millis() as f64 - timestamp_ms).max(0.0) / 60000.0) as u64;
+    match minutes {
+        0 => "now".into(),
+        1..60 => format!("{minutes}m"),
+        60..1440 => format!("{}h", minutes / 60),
+        1440..10080 => format!("{}d", minutes / 1440),
+        _ => Local
+            .timestamp_millis_opt(timestamp_ms as i64)
+            .single()
+            .map(|value| value.format("%b %-d").to_string())
+            .unwrap_or_default(),
     }
-    format!("{}…", value.chars().take(max).collect::<String>())
 }
 
 fn capitalize(value: &str) -> String {
@@ -1121,12 +1523,24 @@ fn capitalize(value: &str) -> String {
 
 fn main() {
     Application::new().run(|cx: &mut App| {
-        let bounds = Bounds::centered(None, size(px(1280.0), px(720.0)), cx);
+        let bounds = Bounds::centered(
+            None,
+            size(
+                px(std::env::var("CHAT_HISTORY_QA_WIDTH")
+                    .ok()
+                    .and_then(|value| value.parse::<f32>().ok())
+                    .unwrap_or(1280.0)),
+                px(720.0),
+            ),
+            cx,
+        );
         cx.open_window(
             WindowOptions {
                 focus: true,
+                window_background: gpui::WindowBackgroundAppearance::Blurred,
                 titlebar: Some(TitlebarOptions {
                     title: Some("Legend Chat History — GPUI".into()),
+                    appears_transparent: true,
                     ..Default::default()
                 }),
                 window_bounds: Some(WindowBounds::Windowed(bounds)),

@@ -1,0 +1,414 @@
+{
+  "captureScope": "Final narrow captures cover final web table-alignment and GPUI styled-cell measurement fixes. Dark web/GPUI captures precede those table-only fixes; parsing and viewport policy are unchanged.",
+  "createdAt": "2026-09-13T10:27:58.733601+00:00",
+  "purpose": "visual/workload alignment, not scored performance trials",
+  "checks": {
+    "dark": {
+      "Electron": {
+        "digests": [
+          "3a290b9eb53fa834",
+          "c27e9dc5a848d7f6"
+        ],
+        "window": {
+          "height": 720,
+          "width": 1280,
+          "x": 215,
+          "y": 86
+        },
+        "frameTimestamps": 1542,
+        "encodedFrames": 1542,
+        "durationSeconds": 27.816667,
+        "launch": {
+          "launchStartedTimestampMs": 1789294462603.595,
+          "desktopSession": {
+            "onConsole": true,
+            "locked": true,
+            "lastLockedTimestampMs": 1789290945000
+          },
+          "pid": 38374
+        },
+        "checks": "initial/top/switch events, expected digests, dimensions, monotonically increasing frame times; separate visual inspection required"
+      },
+      "Tauri": {
+        "digests": [
+          "3a290b9eb53fa834",
+          "c27e9dc5a848d7f6"
+        ],
+        "window": {
+          "height": 720,
+          "width": 1280,
+          "x": 215,
+          "y": 75
+        },
+        "frameTimestamps": 1556,
+        "encodedFrames": 1556,
+        "durationSeconds": 27.826667,
+        "launch": {
+          "pid": 36904,
+          "desktopSession": {
+            "locked": true,
+            "onConsole": true,
+            "lastLockedTimestampMs": 1789290945000
+          },
+          "launchStartedTimestampMs": 1789294361627.337
+        },
+        "checks": "initial/top/switch events, expected digests, dimensions, monotonically increasing frame times; separate visual inspection required"
+      },
+      "Deno WebView": {
+        "digests": [
+          "3a290b9eb53fa834",
+          "c27e9dc5a848d7f6"
+        ],
+        "window": {
+          "height": 748,
+          "width": 1280,
+          "x": 430,
+          "y": 98
+        },
+        "frameTimestamps": 1555,
+        "encodedFrames": 1555,
+        "durationSeconds": 27.7,
+        "launch": {
+          "pid": 43282,
+          "desktopSession": {
+            "locked": true,
+            "onConsole": true,
+            "lastLockedTimestampMs": 1789290945000
+          },
+          "launchStartedTimestampMs": 1789294764583.8142
+        },
+        "checks": "initial/top/switch events, expected digests, dimensions, monotonically increasing frame times; separate visual inspection required"
+      },
+      "Deno CEF": {
+        "digests": [
+          "3a290b9eb53fa834",
+          "c27e9dc5a848d7f6"
+        ],
+        "window": {
+          "height": 748,
+          "width": 1280,
+          "x": 0,
+          "y": 30
+        },
+        "frameTimestamps": 1553,
+        "encodedFrames": 1553,
+        "durationSeconds": 27.683333,
+        "launch": {
+          "desktopSession": {
+            "onConsole": true,
+            "locked": true,
+            "lastLockedTimestampMs": 1789290945000
+          },
+          "pid": 44238,
+          "launchStartedTimestampMs": 1789294797874.761
+        },
+        "checks": "initial/top/switch events, expected digests, dimensions, monotonically increasing frame times; separate visual inspection required"
+      },
+      "Flutter": {
+        "digests": [
+          "3a290b9eb53fa834",
+          "c27e9dc5a848d7f6"
+        ],
+        "window": {
+          "height": 720,
+          "width": 1280,
+          "x": 215,
+          "y": 75
+        },
+        "frameTimestamps": 1542,
+        "encodedFrames": 1542,
+        "durationSeconds": 27.826667,
+        "launch": {
+          "desktopSession": {
+            "onConsole": true,
+            "lastLockedTimestampMs": 1789290945000,
+            "locked": true
+          },
+          "launchStartedTimestampMs": 1789294529877.535,
+          "pid": 38548
+        },
+        "checks": "initial/top/switch events, expected digests, dimensions, monotonically increasing frame times; separate visual inspection required"
+      },
+      "GPUI": {
+        "digests": [
+          "3a290b9eb53fa834",
+          "c27e9dc5a848d7f6"
+        ],
+        "window": {
+          "height": 720,
+          "width": 1280,
+          "x": 215,
+          "y": 150
+        },
+        "frameTimestamps": 1539,
+        "encodedFrames": 1539,
+        "durationSeconds": 27.8,
+        "launch": {
+          "launchStartedTimestampMs": 1789294497174.4321,
+          "desktopSession": {
+            "locked": true,
+            "lastLockedTimestampMs": 1789290945000,
+            "onConsole": true
+          },
+          "pid": 38465
+        },
+        "checks": "initial/top/switch events, expected digests, dimensions, monotonically increasing frame times; separate visual inspection required"
+      }
+    },
+    "light": {
+      "Electron": {
+        "digests": [
+          "823dcadc7b873332",
+          "3a8f3a59960396c9"
+        ],
+        "window": {
+          "height": 720,
+          "width": 900,
+          "x": 405,
+          "y": 86
+        },
+        "frameTimestamps": 1557,
+        "encodedFrames": 1557,
+        "durationSeconds": 27.748333,
+        "launch": {
+          "launchStartedTimestampMs": 1789294998040.436,
+          "pid": 49738,
+          "desktopSession": {
+            "onConsole": true,
+            "lastLockedTimestampMs": 1789290945000,
+            "locked": true
+          }
+        },
+        "checks": "initial/top/switch events, expected digests, dimensions, monotonically increasing frame times; separate visual inspection required"
+      },
+      "Tauri": {
+        "digests": [
+          "823dcadc7b873332",
+          "3a8f3a59960396c9"
+        ],
+        "window": {
+          "height": 720,
+          "width": 900,
+          "x": 215,
+          "y": 75
+        },
+        "frameTimestamps": 1550,
+        "encodedFrames": 1550,
+        "durationSeconds": 27.775,
+        "launch": {
+          "pid": 50862,
+          "desktopSession": {
+            "onConsole": true,
+            "locked": true,
+            "lastLockedTimestampMs": 1789290945000
+          },
+          "launchStartedTimestampMs": 1789295034008.807
+        },
+        "checks": "initial/top/switch events, expected digests, dimensions, monotonically increasing frame times; separate visual inspection required"
+      },
+      "Deno WebView": {
+        "digests": [
+          "823dcadc7b873332",
+          "3a8f3a59960396c9"
+        ],
+        "window": {
+          "height": 748,
+          "width": 900,
+          "x": 455,
+          "y": 98
+        },
+        "frameTimestamps": 1555,
+        "encodedFrames": 1555,
+        "durationSeconds": 27.806667,
+        "launch": {
+          "desktopSession": {
+            "locked": true,
+            "onConsole": true,
+            "lastLockedTimestampMs": 1789290945000
+          },
+          "launchStartedTimestampMs": 1789295067258.21,
+          "pid": 51255
+        },
+        "checks": "initial/top/switch events, expected digests, dimensions, monotonically increasing frame times; separate visual inspection required"
+      },
+      "Deno CEF": {
+        "digests": [
+          "823dcadc7b873332",
+          "3a8f3a59960396c9"
+        ],
+        "window": {
+          "height": 748,
+          "width": 900,
+          "x": 0,
+          "y": 30
+        },
+        "frameTimestamps": 1550,
+        "encodedFrames": 1550,
+        "durationSeconds": 27.746667,
+        "launch": {
+          "launchStartedTimestampMs": 1789295101098.4631,
+          "desktopSession": {
+            "lastLockedTimestampMs": 1789290945000,
+            "onConsole": true,
+            "locked": true
+          },
+          "pid": 51642
+        },
+        "checks": "initial/top/switch events, expected digests, dimensions, monotonically increasing frame times; separate visual inspection required"
+      },
+      "Flutter": {
+        "digests": [
+          "823dcadc7b873332",
+          "3a8f3a59960396c9"
+        ],
+        "window": {
+          "height": 720,
+          "width": 900,
+          "x": 405,
+          "y": 75
+        },
+        "frameTimestamps": 1545,
+        "encodedFrames": 1545,
+        "durationSeconds": 27.778333,
+        "launch": {
+          "desktopSession": {
+            "onConsole": true,
+            "lastLockedTimestampMs": 1789290945000,
+            "locked": true
+          },
+          "launchStartedTimestampMs": 1789294935180.5479,
+          "pid": 48028
+        },
+        "checks": "initial/top/switch events, expected digests, dimensions, monotonically increasing frame times; separate visual inspection required"
+      },
+      "GPUI": {
+        "digests": [
+          "823dcadc7b873332",
+          "3a8f3a59960396c9"
+        ],
+        "window": {
+          "height": 720,
+          "width": 900,
+          "x": 405,
+          "y": 150
+        },
+        "frameTimestamps": 1564,
+        "encodedFrames": 1564,
+        "durationSeconds": 27.796667,
+        "launch": {
+          "pid": 57684,
+          "launchStartedTimestampMs": 1789295244468.609,
+          "desktopSession": {
+            "locked": true,
+            "lastLockedTimestampMs": 1789290945000,
+            "onConsole": true
+          }
+        },
+        "checks": "initial/top/switch events, expected digests, dimensions, monotonically increasing frame times; separate visual inspection required"
+      }
+    }
+  },
+  "sources": {
+    "apps/chat-history-electron/src/renderer.tsx": "68f3a9e6ee4dd19bc39f1cc9408a83930527cbd916937b05e9f6ca222c86240b",
+    "apps/chat-history-electron/src/path-validation.ts": "71eb2a42520483917fe786bdc8d5bf430d84292388a9465a7efaaff49f45f981",
+    "apps/chat-history-electron/src/globals.d.ts": "41753f28e3928edbf479845f9626162e10c5bf5b23c63d844dae6d3bef322dcd",
+    "apps/chat-history-electron/src/index.html": "75fd0fb8dcf56e52e8cbbc8af38dc2485f67cd7829fe76fad60d414e738e69ec",
+    "apps/chat-history-electron/src/preload.cjs": "bdb1d1a8d29b7d3d8bb6269332f801bff96996d17a0945ec8b6052ed3e898374",
+    "apps/chat-history-electron/src/main.ts": "61117ce0bb6b64c71ccb2a169acfdbd5510bf3272e21a50ea32d86cc81603679",
+    "apps/chat-history-electron/src/styles.css": "8c0f12ef0d0fda484607672aa2ce7e76f555954cf375b118871ba94f5881a2ae",
+    "apps/chat-history-electron/src/catalog.test.ts": "803478e079c30f3dd545c478a4dd873a73e5a5439673c6f99800391d8608f885",
+    "apps/chat-history-electron/src/parser.test.ts": "34451125578405c935ac8eb6dda8d9620a8d8df00b16f4d41ce25d1868b70b27",
+    "apps/chat-history-electron/src/row-loader.ts": "1319d583532e982dcf4d6b74d1ff5434efdf2078b282461dcf574376fce7c692",
+    "apps/chat-history-electron/src/document-registry.ts": "2e426cbc791f8e749c17d855561bc03747d5b2c08f2c2000b9ebd1ba28012bfe",
+    "apps/chat-history-electron/src/settings.ts": "fbd347b30254781e35bb228667a8c7126a9f2202601001e688a489975b9fbdd8",
+    "apps/chat-history-electron/src/json-range.test.ts": "569e900f13e42acf0602957bbe8267c6e49148140726fd678e65d31f60d537c4",
+    "apps/chat-history-electron/src/path-validation.test.ts": "03ef92c9d6194b9404af255f52f3604ab250f9b82aabe23121e1339136c424ea",
+    "apps/chat-history-electron/src/model.ts": "3c64f1e1a6f619c559d0dded41ca2b15c504947198d46d7e920ef78b1f962b8c",
+    "apps/chat-history-electron/src/settings.test.ts": "edc811f9dc8b124f3780bef5344604e001207b121a627af64b2f4c6673a16276",
+    "apps/chat-history-electron/src/json-range.ts": "9066b5e45a951b5b78df500b7a424360135d687ff37420a122e3312835a29d49",
+    "apps/chat-history-electron/src/parser.ts": "35f429b2956a10e8c93b6a693006553e071dd757abd1031ab03635fa71ac70d1",
+    "apps/chat-history-electron/src/electron-renderer.ts": "0c8f081f500ee575c2a909e55f4845d056c1de19e5be90615ccc34ee13408d48",
+    "apps/chat-history-electron/src/styles.d.ts": "35d26ea66c86da9701e4f4b467913481ffeae910761cea34c775c5dacb7f8eaa",
+    "apps/chat-history-electron/src/parser-worker.ts": "c147a33705be3cf8ac7a146ea554aff6daa127ca2e07cfd0ca9d0ec203768221",
+    "apps/chat-history-electron/src/catalog.ts": "504f33f7d5d86e244b9b4b41ce691c52a62f4b8086ad7d53ce37d1c1afa7f4ec",
+    "apps/chat-history-deno/src/index.html": "18d73aff1648e9bf2c7fc91ef09d777ba115d11249030df32c135d46a15294d5",
+    "apps/chat-history-deno/src/runtime.ts": "6678db251375d2375b75c479a32e2cbe2b232d063b848cc7a119ad714eda4606",
+    "apps/chat-history-deno/src/main_cef.ts": "8e81050a252b49cdaf2ddb9b6ff0e2e04fbf2938d97d4e913207ab9d6b13bacc",
+    "apps/chat-history-deno/src/main_webview.ts": "9c53629c5da6c07c15f3cb0ee466df482b02948fd7e06165a82de79bcbce6b3e",
+    "apps/chat-history-deno/src/parser_worker.ts": "3fef44f773bfe4d306c3ba5c4210a0caaa593fe102d4f82e2100257c5e4dea84",
+    "apps/chat-history-deno/src/bootstrap.ts": "cabcbf61504a4fa536566dafa5b27c0cc3baa8b051e7db240839fcad2b528874",
+    "apps/chat-history-flutter/lib/parser.dart": "800c3922970d25ea0f4e7f33c97efe47a5b2e5d766dc2d06c39c2f7c07dae688",
+    "apps/chat-history-flutter/lib/catalog.dart": "67ce39890c36c41b9c28bd5f3bee81880bf84c688b7ad6b2e5cba50244da681f",
+    "apps/chat-history-flutter/lib/json_range.dart": "a48d2f14e14ff8c3cc4c890a25edf761d285a5b42850870c33d2482e1692fff9",
+    "apps/chat-history-flutter/lib/main.dart": "74cb10b91b9c043276d12569a5204c26b7b46019d4473ecdb7f89a4bfca97e06",
+    "apps/chat-history-flutter/lib/benchmark.dart": "d062b66408fe3aa01b790ff4c1ea6a98dd8a1639747607cb081d2a4e3daf9ab1",
+    "apps/chat-history-flutter/lib/parser_worker.dart": "3f77281c05ef3e688400132edecd322f3d2ef442405557cac4695d112fe4ff4e",
+    "apps/chat-history-flutter/lib/model.dart": "86fcec54fb53e0619584850d6ce0d514a5de9cf7f458d564bffa1a86ab42fcb8",
+    "apps/chat-history-flutter/lib/markdown_style.dart": "d9f1abad03b7f0b1de963fabc1205a4abb781b6ab08237323b7e0272915fd002",
+    "apps/chat-history-flutter/lib/row_loader.dart": "e1482935abb3c71d67480406e620dc24628ff4f4167438a79e0a63e3a3ccd4c1",
+    "apps/chat-history-flutter/lib/settings.dart": "5c1ab8e6dd23d0a3e04212506ecd6e008bd23a2b3370ea64cfde4456d25393a3",
+    "apps/chat-history-flutter/macos/Runner/DebugProfile.entitlements": "7f5fd5153379206e95b8ba5e66be12c1944584400e3fe14f507515b344bebc7b",
+    "apps/chat-history-flutter/macos/Runner/MainFlutterWindow.swift": "bce15729e16508bef596f7738c63788607206ad6389ba1d2fbc01f9b96405273",
+    "apps/chat-history-flutter/macos/Runner/AppDelegate.swift": "ce9dbe45a57c59e85519da50a26c471615b9c8cdd85a8f4a39d2e480e62a4af4",
+    "apps/chat-history-flutter/macos/Runner/Info.plist": "f253e89c512b3a9a81bc5cdd7a14bf932470f835f261654a808ea4549cd94aad",
+    "apps/chat-history-flutter/macos/Runner/Release.entitlements": "97704a8960b4facceef54397a08fb5d0a456247c3627359215aa2a27df22656c",
+    "apps/chat-history-flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_16.png": "474550b3b5099e8072a0325305a2e459bbee16ffb3bd626649fb76de075b1f98",
+    "apps/chat-history-flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png": "8be8dc5a3f27931476f102bfd34e6d4183909c990adac36d33a7a81de8ddf3a7",
+    "apps/chat-history-flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png": "993992c2c2b05417ac6557321674a334bdc872d84aa666376beff2c1771e4ab8",
+    "apps/chat-history-flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_64.png": "50e1a7a207cda2bbcaa767ac7adc3862c691c74a680b4c189b1038f6e3dd223a",
+    "apps/chat-history-flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png": "cc9cf21cddc31e77b1f77748264746b85082b5d80d5a6a7ebdb6c07e7317b4a5",
+    "apps/chat-history-flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png": "8fbff39c8e1c4745d99e1dbdeec9a7fc89a7ce2395fc8b0611503a79563942ab",
+    "apps/chat-history-flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json": "bc6ba8105ca69651aeeb77358851590de295dca04681a1d58c0f449641c242f3",
+    "apps/chat-history-flutter/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_32.png": "69d7505621351235f838145a08c0553eb75446cef16d27c299ddbc46a46dced3",
+    "apps/chat-history-flutter/macos/Runner/Base.lproj/MainMenu.xib": "be9e9ef8469d3262370e0f0b855ed163cbf9c8362c59e330b2ffe63b86fa42f4",
+    "apps/chat-history-flutter/macos/Runner/Configs/AppInfo.xcconfig": "1214d818ef9486bc545a9e4d965c98489b93fb4e9ad868d7e2ed8814435ef9ce",
+    "apps/chat-history-flutter/macos/Runner/Configs/Debug.xcconfig": "8067d533ef6593760baad9a9855a786a7a77470fcc3f0925ec04fe43bc1ac4b0",
+    "apps/chat-history-flutter/macos/Runner/Configs/Release.xcconfig": "7a6a4b4d973a23052fa0a0388dd261e32d311d7b66ba1bfc3b914b361808ac61",
+    "apps/chat-history-flutter/macos/Runner/Configs/Warnings.xcconfig": "0e341a392b16ad302d12890aa3dac9257a6c10ece685437604259a85341645a3",
+    "apps/chat-history-gpui/src/benchmark.rs": "c6971a751a062738da288179951ec39891c3daad29d50cc91be6c826a4808d22",
+    "apps/chat-history-gpui/src/main.rs": "f0331dbf3821e56267a66ca52202ad2292b5c54e8835549550ff0b5dacf4e338",
+    "apps/chat-history-gpui/src/markdown.rs": "5e56882b124b7238b420d4c6688c2ccae0fbd30293f49c92369a7a68ea5c2c05",
+    "apps/chat-history-gpui/src/settings.rs": "73f373a2e8eb72896f98422cad9a6c45a5bc6c9cd9474ea1bc66359baf430643",
+    "apps/chat-history-tauri/src/index.html": "754d3a788ebea25186ab1489d16ff064f8a2c6110390f65f48e1a2102835948c",
+    "apps/chat-history-tauri/src/icon.svg": "938882aabbcec5f8a7720471095dcddd945fb8a12eb1292ccb02abff5e1e59d0",
+    "apps/chat-history-tauri/src/bootstrap.ts": "c00d4bb095f0d4374a299f6d2b9b4ea4ffc77d112d44ae6864d53fc88a484d11",
+    "apps/chat-history-tauri/src-tauri/src/lib.rs": "ff4e68690ca5c1c520a9ba73924b1a1f840501935db017ae663a94c8580e4ce8",
+    "apps/chat-history-tauri/src-tauri/src/main.rs": "69998eda46db6090f0ad3a10457548e65beeed7c4709699e11a884861b36ab74",
+    "apps/chat-history-tauri/src-tauri/src/settings.rs": "b5f0a7c58701cfbe50b4d648942c66b5cf06d7c4fa23a8b3264a4304e2a84804",
+    "packages/chat-history-rust/src/document_registry.rs": "8238fb7e837980108898af1ed9f2bf00d940adcdcfa8a25d0d91d9809ff62e21",
+    "packages/chat-history-rust/src/lib.rs": "e398154275bfa70511125a669ca7e49da3c37a511ad8c9f4b204391ae371351c",
+    "packages/chat-history-rust/src/catalog.rs": "a08e68a38fe4dd0ef4b4011eb155a6a1637ea22e72a0f6b9ea08e88bc284e3ac",
+    "packages/chat-history-rust/src/json_range.rs": "de704b497ac938f6d394a96fc3d39185abc61c95b0baaf4e4837c80979f018ef",
+    "packages/chat-history-rust/src/deferred_text.rs": "8bc1a6fd5593221067bc8c794bf40ecf74a55a8362cacf04e7e770f223e3ec87",
+    "packages/chat-history-rust/src/parser.rs": "969f290cb4feeff257d6c52eed56d5bd0a87d594eb08475c2cc29ff85e735a4a",
+    "packages/chat-history-rust/src/model.rs": "325271106ce9c7951d424cf9fa870823b23d4f97d2c8e058e20cc24374b47183"
+  },
+  "binaries": {
+    "Electron": {
+      "executable": ".build/chat-history-benchmarks/Chat History \u2014 Electron.app/Contents/MacOS/Electron",
+      "sha256": "938fa1ba61a97bdd3cb7776cd29c39cfe96d051c39ef58870d2dd482c07c9057"
+    },
+    "Tauri": {
+      "executable": ".build/chat-history-benchmarks/Chat History \u2014 Tauri.app/Contents/MacOS/legend-chat-history-tauri",
+      "sha256": "71cfe57dd53d98f4812d8032d31eec5b2546ac6045c4d3d9ae42ad30f7dacab5"
+    },
+    "Deno WebView": {
+      "executable": ".build/chat-history-benchmarks/Chat History \u2014 Deno WebView.app/Contents/MacOS/laufey_webview",
+      "sha256": "6e5ce1f3bbf1ced11727bed05a393987dc0973b61bf8f373820d8252c73a8f54",
+      "runtimeSha256": "4e8c2d2ce7fdfb24ef8b05eff9907e2d8338810b252ac68a407762cbaff30969"
+    },
+    "Deno CEF": {
+      "executable": ".build/chat-history-benchmarks/Chat History \u2014 Deno CEF.app/Contents/MacOS/laufey",
+      "sha256": "6f019883562b0a8a0c30c7dcacdebf4b154a31de6d71f63cb080d1453f9510ae",
+      "runtimeSha256": "c8f5d820b084e3c09a4fce4ee2f383b7bb198cfa071c40baaeaf4e947ea713d6"
+    },
+    "Flutter": {
+      "executable": ".build/chat-history-benchmarks/Chat History \u2014 Flutter.app/Contents/MacOS/Chat History - Flutter",
+      "sha256": "dbfe51a8fa92cb43bcc9767d4b46b929c128a9944a6584c56ba6067f9df9dd5d"
+    },
+    "GPUI": {
+      "executable": ".build/chat-history-benchmarks/Chat History \u2014 GPUI.app/Contents/MacOS/legend-chat-history-gpui",
+      "sha256": "24192095f31a94f5931bbd138e84ea667217d46f78b9906a0a252d1febd1968d"
+    }
+  }
+}

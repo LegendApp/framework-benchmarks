@@ -1,8 +1,9 @@
+import type { DocumentRequest } from "./document-registry";
 import { appendFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Worker } from "node:worker_threads";
-import { app, BrowserWindow, type IpcMainInvokeEvent, ipcMain, shell } from "electron";
+import { app, BrowserWindow, ipcMain, type IpcMainInvokeEvent, shell } from "electron";
 import { getRecentChats } from "./catalog";
 import type { BenchmarkConfig, BenchmarkEvent, ChatDocument, ChatProvider } from "./model";
 import { validateChatPath } from "./path-validation";
@@ -16,13 +17,13 @@ let parserWorker: Worker | undefined;
 let parserRequestId = 0;
 const parserRequests = new Map<number, {
   reject(error: Error): void;
-  resolve(document: ChatDocument): void;
+  resolve(result: unknown): void;
 }>();
 
 type ParseResponse = {
   error?: string;
   id: number;
-  result?: ChatDocument;
+  result?: unknown;
 };
 
 function rejectParserRequests(error: Error) {
@@ -65,11 +66,11 @@ function getParserWorker() {
   return worker;
 }
 
-function parseChatInWorker(provider: ChatProvider, path: string) {
-  return new Promise<ChatDocument>((resolve, reject) => {
+function requestDocument<T>(request: DocumentRequest) {
+  return new Promise<T>((resolve, reject) => {
     const id = ++parserRequestId;
-    parserRequests.set(id, { reject, resolve });
-    getParserWorker().postMessage({ id, path, provider });
+    parserRequests.set(id, { reject, resolve: (value) => resolve(value as T) });
+    getParserWorker().postMessage({ ...request, id });
   });
 }
 
@@ -102,16 +103,22 @@ async function emitBenchmarkEvent(event: BenchmarkEvent | { name: "windowShown" 
   if (!benchmarkEventsPath) {
     return;
   }
-  await appendFile(benchmarkEventsPath, `${JSON.stringify({ ...event, timestampMs: Date.now() })}\n`);
+  await appendFile(
+    benchmarkEventsPath,
+    `${JSON.stringify({ ...event, timestampMs: Date.now() })}\n`,
+  );
 }
 
 function createWindow() {
   const window = new BrowserWindow({
-    backgroundColor: "#f6f6f6",
+    backgroundColor: "#00000000",
+    titleBarStyle: "hiddenInset",
+    vibrancy: "sidebar",
+    visualEffectState: "active",
     height: 720,
     minHeight: 460,
     minWidth: 640,
-    show: false,
+    show: true,
     title: "Chat History — Electron",
     webPreferences: {
       contextIsolation: true,
@@ -119,12 +126,10 @@ function createWindow() {
       preload: join(bundleRoot, "preload.cjs"),
       sandbox: true,
     },
-    width: 1_280,
+    width: Number(process.env.CHAT_HISTORY_QA_WIDTH) || 1_280,
   });
-  window.once("ready-to-show", () => {
-    window.show();
-    void emitBenchmarkEvent({ name: "windowShown" });
-  });
+  // Present the shell immediately, matching the native benchmark apps.
+  void emitBenchmarkEvent({ name: "windowShown" });
   window.webContents.setWindowOpenHandler(({ url }) => {
     if (/^(?:https?|mailto):/i.test(url)) {
       void shell.openExternal(url);
@@ -141,7 +146,18 @@ ipcMain.handle("chat-history:get-recent", (event, limit: number) => {
 ipcMain.handle("chat-history:open", async (event, provider: ChatProvider, sourcePath: string) => {
   assertTrustedSender(event);
   const path = await validateChatPath(provider, sourcePath);
-  return parseChatInWorker(provider, path);
+  return requestDocument<ChatDocument>({ op: "open", provider, path });
+});
+ipcMain.handle(
+  "chat-history:get-rows",
+  (event, documentId: string, indices: number[], includeToolPreview = false) => {
+    assertTrustedSender(event);
+    return requestDocument({ op: "rows", documentId, indices, includeToolPreview });
+  },
+);
+ipcMain.handle("chat-history:get-digest", (event, documentId: string) => {
+  assertTrustedSender(event);
+  return requestDocument({ op: "digest", documentId });
 });
 ipcMain.handle("chat-history:get-benchmark-config", (event) => {
   assertTrustedSender(event);

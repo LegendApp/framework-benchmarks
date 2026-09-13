@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_markdown_plus: ^1.0.12
+  markdown: ^7.3.0
   path: ^1.9.1
   scrollable_positioned_list: ^0.3.8
   shared_preferences: ^2.5.5
