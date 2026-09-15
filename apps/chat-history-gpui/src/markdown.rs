@@ -40,6 +40,7 @@ pub struct MarkdownBlock {
     pub highlights: Vec<InlineRange>,
     pub images: Vec<MarkdownImage>,
     pub language: String,
+    pub syntax: Vec<crate::code_syntax::CodeToken>,
     pub quote_depth: usize,
     pub list_depth: usize,
     pub marker: Option<String>,
@@ -113,7 +114,12 @@ impl Builder {
     }
 
     fn flush(&mut self) {
-        let trimmed_len = self.text.trim_end().len();
+        // RN removes terminal newlines from code but preserves spaces and tabs.
+        let trimmed_len = if self.kind == BlockKind::Code {
+            self.text.trim_end_matches('\n').len()
+        } else {
+            self.text.trim_end().len()
+        };
         if trimmed_len == 0 && self.images.is_empty() {
             self.clear_block();
             return;
@@ -125,11 +131,17 @@ impl Builder {
         });
         self.highlights
             .sort_by_key(|highlight| (highlight.range.start, highlight.range.end));
+        let syntax = if self.kind == BlockKind::Code {
+            crate::code_syntax::highlight(&self.text, &self.language)
+        } else {
+            vec![]
+        };
         self.output.push(MarkdownBlock {
             kind: self.kind,
             text: std::mem::take(&mut self.text),
             highlights: std::mem::take(&mut self.highlights),
             images: std::mem::take(&mut self.images),
+            syntax,
             language: std::mem::take(&mut self.language),
             quote_depth: self.quote_depth,
             list_depth: self.list_depth,
@@ -184,7 +196,7 @@ pub fn blocks(source: &str) -> Vec<MarkdownBlock> {
                 if let CodeBlockKind::Fenced(language) = language
                     && !language.is_empty()
                 {
-                    builder.language = language.into_string();
+                    builder.language = language.split_whitespace().next().unwrap_or_default().to_owned();
                 }
             }
             Event::End(TagEnd::CodeBlock) => {
@@ -221,6 +233,7 @@ pub fn blocks(source: &str) -> Vec<MarkdownBlock> {
                         highlights: vec![],
                         images: vec![],
                         language: String::new(),
+                        syntax: vec![],
                         quote_depth: 0,
                         list_depth: 0,
                         marker: None,
@@ -238,6 +251,7 @@ pub fn blocks(source: &str) -> Vec<MarkdownBlock> {
                     highlights: vec![],
                     images: vec![],
                     language: String::new(),
+                    syntax: vec![],
                     quote_depth: builder.quote_depth,
                     list_depth: builder.list_depth,
                     marker: builder.marker.take(),
@@ -332,6 +346,7 @@ pub fn blocks(source: &str) -> Vec<MarkdownBlock> {
                     highlights: vec![],
                     images: vec![],
                     language: String::new(),
+                    syntax: vec![],
                     quote_depth: builder.quote_depth,
                     list_depth: builder.list_depth,
                     marker: builder.marker.take(),
@@ -352,6 +367,15 @@ pub fn blocks(source: &str) -> Vec<MarkdownBlock> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn code_panes_preserve_spaces_and_use_only_the_fence_language() {
+        let parsed = blocks("```rust title=example\nlet x = 1;  \n\n``` ");
+        assert_eq!(parsed[0].language, "rust");
+        assert_eq!(parsed[0].text, "let x = 1;  ");
+        let whitespace = blocks("```text\n  \t\n```");
+        assert_eq!(whitespace[0].text, "  \t");
+    }
 
     #[test]
     fn preserves_rich_inline_ranges_and_images() {

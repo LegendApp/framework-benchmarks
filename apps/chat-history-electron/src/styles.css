@@ -602,3 +602,14 @@ main {
 
 .markdown .task-list-item { list-style: none; }
 .markdown .task-list-item > input { margin-left: -20px; margin-right: 8px; width: 14px; height: 14px; }
+
+/* GitHub-dark token palette, matching RN's fenced-code syntax colors. */
+.code-pane .hljs-keyword, .code-pane .hljs-doctag, .code-pane .hljs-type { color: #ff7b72; }
+.code-pane .hljs-string, .code-pane .hljs-regexp { color: #a5d6ff; }
+.code-pane .hljs-number, .code-pane .hljs-literal, .code-pane .hljs-attr, .code-pane .hljs-attribute, .code-pane .hljs-property { color: #79c0ff; }
+.code-pane .hljs-comment, .code-pane .hljs-code { color: #8b949e; }
+.code-pane .hljs-title { color: #d2a8ff; }
+.code-pane .hljs-built_in, .code-pane .hljs-symbol { color: #ffa657; }
+.code-pane .hljs-name, .code-pane .hljs-selector-tag { color: #7ee787; }
+
+.code-pane .hljs-section { color: #d2a8ff; }

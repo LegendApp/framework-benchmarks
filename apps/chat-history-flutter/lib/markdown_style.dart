@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 
+import 'code_syntax_highlighter.dart';
+
 /// Keep Flutter's real GFM table cells, with the same content width bounds as RN.
 class TranscriptColumnWidth extends IntrinsicColumnWidth {
   const TranscriptColumnWidth();
@@ -27,7 +29,7 @@ class CodePaneBuilder extends MarkdownElementBuilder {
     final code = element.children?.whereType<md.Element>().firstOrNull;
     final language =
         code?.attributes['class']?.replaceFirst('language-', '') ?? 'Code';
-    final text = element.textContent.replaceFirst(RegExp(r'\n$'), '');
+    final text = codePaneSource(element.textContent);
     final colors = Theme.of(context).colorScheme;
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -73,8 +75,8 @@ class CodePaneBuilder extends MarkdownElementBuilder {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.all(12),
-            child: Text(
-              text,
+            child: Text.rich(
+              highlightCode(text, language),
               softWrap: false,
               style: const TextStyle(
                 fontFamily: 'Menlo',

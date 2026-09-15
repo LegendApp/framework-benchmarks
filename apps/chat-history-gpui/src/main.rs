@@ -1,4 +1,5 @@
 mod benchmark;
+mod code_syntax;
 mod markdown;
 mod settings;
 
@@ -149,7 +150,7 @@ impl ChatHistory {
             expanded_files: HashSet::new(),
             expanded_tools: HashSet::new(),
             generation: 0,
-            list_state: ListState::new(0, ListAlignment::Bottom, px(600.0)),
+            list_state: ListState::new(0, ListAlignment::Bottom, px(250.0)),
             loading: true,
             loading_task: None,
             markdown: Arc::new(Vec::new()),
@@ -1356,6 +1357,20 @@ fn render_markdown(
 }
 
 fn markdown_text_runs(block: &MarkdownBlock, palette: Palette) -> Vec<gpui::TextRun> {
+    if block.kind == BlockKind::Code && !block.syntax.is_empty() {
+        return block
+            .syntax
+            .iter()
+            .map(|token| gpui::TextRun {
+                len: token.range.len(),
+                font: gpui::font("Menlo"),
+                color: gpui::rgb(token.color).into(),
+                background_color: None,
+                underline: None,
+                strikethrough: None,
+            })
+            .collect();
+    }
     let mut boundaries = Vec::with_capacity(block.highlights.len() * 2 + 2);
     boundaries.push(0);
     boundaries.push(block.text.len());

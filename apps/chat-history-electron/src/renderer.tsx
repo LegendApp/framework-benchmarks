@@ -29,6 +29,7 @@ import {
 } from "./model";
 import { RowLoader } from "./row-loader";
 import "./styles.css";
+import { codePaneSource, highlightCode } from "./syntax-highlighting";
 
 const noLocalHistoriesMessage = "No local Codex or Claude transcripts found.";
 
@@ -148,14 +149,15 @@ function CodePane({ children }: { children: ReactNode }) {
     ? child.props
     : undefined;
   const language = props?.className?.replace(/^language-/, "") ?? "Code";
-  const text = String(props?.children ?? "");
+  const text = codePaneSource(String(props?.children ?? ""));
+  const highlighted = useMemo(() => highlightCode(text, language), [text, language]);
   return (
     <div className="code-pane">
       <header>
         <span>{language.charAt(0).toUpperCase() + language.slice(1)}</span>
         <button onClick={() => void navigator.clipboard.writeText(text)}>Copy</button>
       </header>
-      <pre>{children}</pre>
+      <pre><code dangerouslySetInnerHTML={{ __html: highlighted }} /></pre>
     </div>
   );
 }
@@ -367,7 +369,8 @@ function Transcript({
       contentContainerStyle={transcriptContentStyle}
       dataKey={document.path}
       data={document.rows}
-      estimatedItemSize={180}
+      estimatedItemSize={500}
+      drawDistance={250}
       getItemType={chatRowType}
       initialScrollAtEnd
       maintainScrollAtEnd

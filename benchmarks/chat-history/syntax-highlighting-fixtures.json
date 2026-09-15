@@ -1,0 +1,138 @@
+[
+  {
+    "language": "bash",
+    "source": "# greeting\necho \"hello\"\n"
+  },
+  {
+    "language": "c",
+    "source": "// greeting\nint main() { return 42; }\n"
+  },
+  {
+    "language": "cc",
+    "source": "// greeting\nstd::string name = \"hello\";\n"
+  },
+  {
+    "language": "cpp",
+    "source": "// greeting\nstd::string name = \"hello\";\n"
+  },
+  {
+    "language": "cs",
+    "source": "// greeting\nvar name = \"hello\";\n"
+  },
+  {
+    "language": "csharp",
+    "source": "// greeting\nvar name = \"hello\";\n"
+  },
+  {
+    "language": "css",
+    "source": "/* greeting */\nbody { color: red; }\n"
+  },
+  {
+    "language": "cxx",
+    "source": "// greeting\nstd::string name = \"hello\";\n"
+  },
+  {
+    "language": "go",
+    "source": "// greeting\nfunc main() { println(\"hello\") }\n"
+  },
+  {
+    "language": "golang",
+    "source": "// greeting\nfunc main() { println(\"hello\") }\n"
+  },
+  {
+    "language": "html",
+    "source": "<!-- greeting -->\n<div class=\"hello\">世界</div>\n"
+  },
+  {
+    "language": "java",
+    "source": "// greeting\nString name = \"hello\";\n"
+  },
+  {
+    "language": "javascript",
+    "source": "// greeting\nconst name = \"😀世界\";\n"
+  },
+  {
+    "language": "js",
+    "source": "// greeting\nconst name = \"😀世界\";\n"
+  },
+  {
+    "language": "json",
+    "source": "{\"message\": \"😀世界\", \"count\": 42}\n"
+  },
+  {
+    "language": "jsx",
+    "source": "// greeting\nconst name = \"😀世界\";\n"
+  },
+  {
+    "language": "markdown",
+    "source": "# Greeting\n**hello** `world`\n"
+  },
+  {
+    "language": "md",
+    "source": "# Greeting\n**hello** `world`\n"
+  },
+  {
+    "language": "php",
+    "source": "<?php\n// greeting\n$name = \"hello\";\n"
+  },
+  {
+    "language": "py",
+    "source": "# greeting\ndef hello():\n    return \"😀世界\"\n"
+  },
+  {
+    "language": "python",
+    "source": "# greeting\ndef hello():\n    return \"😀世界\"\n"
+  },
+  {
+    "language": "rb",
+    "source": "# greeting\ndef hello\n  \"world\"\nend\n"
+  },
+  {
+    "language": "rs",
+    "source": "// greeting\nfn main() { let name = \"😀世界\"; }\n"
+  },
+  {
+    "language": "ruby",
+    "source": "# greeting\ndef hello\n  \"world\"\nend\n"
+  },
+  {
+    "language": "rust",
+    "source": "// greeting\nfn main() { let name = \"😀世界\"; }\n"
+  },
+  {
+    "language": "sh",
+    "source": "# greeting\necho \"hello\"\n"
+  },
+  {
+    "language": "shell",
+    "source": "# greeting\necho \"hello\"\n"
+  },
+  {
+    "language": "swift",
+    "source": "// greeting\nlet name = \"😀世界\"\n"
+  },
+  {
+    "language": "ts",
+    "source": "// greeting\nconst name: string = \"😀世界\";\n"
+  },
+  {
+    "language": "tsx",
+    "source": "<div title=\"hello\">{name}</div>\n"
+  },
+  {
+    "language": "typescript",
+    "source": "// greeting\nconst name: string = \"😀世界\";\n"
+  },
+  {
+    "language": "yaml",
+    "source": "# greeting\nmessage: \"hello\"\ncount: 42\n"
+  },
+  {
+    "language": "yml",
+    "source": "# greeting\nmessage: \"hello\"\ncount: 42\n"
+  },
+  {
+    "language": "zsh",
+    "source": "# greeting\necho \"hello\"\n"
+  }
+]
