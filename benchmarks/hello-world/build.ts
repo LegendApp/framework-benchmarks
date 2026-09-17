@@ -1,3 +1,4 @@
+import { buildEnvironment, type BuildEnvironment } from "../build-environment";
 import { execFileSync, spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -119,18 +120,19 @@ const targets = selectedApps();
 if (process.argv.includes("--launch") && targets.length !== 1) throw new Error("--launch requires one --app");
 mkdirSync(buildRoot, { recursive: true });
 const manifestPath = join(buildRoot, "build-manifest.json");
-type BuildRecord = { builtAt: string; gitCommit: string; gitDirty: boolean; bundle: string; repositoryPath: string };
+type BuildRecord = { environment?: BuildEnvironment; builtAt: string; gitCommit: string; gitDirty: boolean; bundle: string; repositoryPath: string };
 const manifest: { version: 1; workload: "hello-world"; builds: Partial<Record<AppName, BuildRecord>> } = existsSync(manifestPath)
   ? JSON.parse(readFileSync(manifestPath, "utf8")) : { version: 1, workload: "hello-world", builds: {} };
 for (const app of targets) {
   // Invalidate provenance before building, including if a rebuild fails halfway through.
   delete manifest.builds[app];
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  const environment = buildEnvironment(repositoryRoot, app);
   await build(app);
   const sourceRepository = app === "legend-shell" ? legendAppsRepository : repositoryRoot;
   const git = (...args: string[]) => execFileSync("git", args, { cwd: sourceRepository, encoding: "utf8" }).trim();
   Object.assign(manifest, JSON.parse(readFileSync(manifestPath, "utf8")));
-  manifest.builds[app] = { builtAt: new Date().toISOString(), gitCommit: git("rev-parse", "HEAD"), gitDirty: !!git("status", "--porcelain"), bundle: bundlePath(app), repositoryPath: sourceRepository };
+  manifest.builds[app] = { environment, builtAt: new Date().toISOString(), gitCommit: git("rev-parse", "HEAD"), gitDirty: !!git("status", "--porcelain"), bundle: bundlePath(app), repositoryPath: sourceRepository };
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 }
 if (process.argv.includes("--launch")) run("open", ["-n", bundlePath(targets[0])]);

@@ -4,6 +4,7 @@ import Foundation
 private struct LaunchResult: Codable {
   let launchStartedTimestampMs: Double
   let pid: Int32
+  let desktopSession: DesktopSession
 }
 
 // A shareable display can still belong to a locked session. Some WebKit pages
@@ -37,7 +38,13 @@ let configuration = NSWorkspace.OpenConfiguration()
 configuration.activates = true
 configuration.addsToRecentItems = false
 configuration.createsNewApplicationInstance = true
-configuration.arguments = Array(CommandLine.arguments.dropFirst(2))
+// NSArgumentDomain is process-local: this does not write user/global defaults.
+// Both suites share this launcher, including capture-disabled memory launches.
+// The opt-out exists only for controlled presentation-policy verification.
+let useSystemAnimations = ProcessInfo.processInfo.environment["CHAT_HISTORY_BENCHMARK_SYSTEM_ANIMATIONS"] == "1"
+configuration.arguments = Array(CommandLine.arguments.dropFirst(2)) + (useSystemAnimations ? [] : [
+  "-NSAutomaticWindowAnimationsEnabled", "NO"
+])
 configuration.environment = ProcessInfo.processInfo.environment
 let launchStartedTimestampMs = Date().timeIntervalSince1970 * 1_000
 NSWorkspace.shared.openApplication(
@@ -55,7 +62,8 @@ NSWorkspace.shared.openApplication(
   do {
     let result = LaunchResult(
       launchStartedTimestampMs: launchStartedTimestampMs,
-      pid: application.processIdentifier)
+      pid: application.processIdentifier,
+      desktopSession: desktopSession)
     FileHandle.standardOutput.write(try JSONEncoder().encode(result))
     FileHandle.standardOutput.write(Data("\n".utf8))
     exit(0)

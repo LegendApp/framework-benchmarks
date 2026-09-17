@@ -5,12 +5,15 @@ import { join, resolve } from "node:path";
 import { describe, expect, test } from "bun:test";
 import { selectedApps, option } from "./config";
 import { median, percentile } from "./macos";
+import { writeReferenceScreenshot } from "./video";
 
 describe("baseline benchmark configuration", () => {
   test("selects all ten apps and both Deno backends", () => {
     expect(selectedApps([])).toHaveLength(10);
     expect(selectedApps(["--app=deno"])).toEqual(["deno-webview", "deno-cef"]);
     expect(selectedApps(["--app", "react-native"])).toEqual(["react-native"]);
+    expect(selectedApps(["--app=appkit,swiftui,appkit"])).toEqual(["appkit", "swiftui"]);
+    expect(() => selectedApps(["--app=appkit,unknown"])).toThrow("Unknown app");
   });
   test("rejects unknown targets and missing values", () => {
     expect(() => selectedApps(["--app", "__proto__"])).toThrow("Unknown app");
@@ -68,6 +71,29 @@ test("paired report consumes the product apps schema and rejects diagnostic-only
     const invalid = spawnSync("bun", args, { encoding: "utf8" });
     expect(invalid.status).not.toBe(0);
     expect(invalid.stderr).toContain("must use video-derived visual timing");
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("reference screenshots select the actual frame with a positive video time origin", () => {
+  const temp = mkdtempSync(join(tmpdir(), "hello-world-reference-test-"));
+  try {
+    const video = join(temp, "offset.mp4");
+    execFileSync("ffmpeg", ["-v", "error", "-f", "lavfi", "-i", "color=red:s=32x16:r=30:d=1",
+      "-f", "lavfi", "-i", "color=blue:s=32x16:r=30:d=1",
+      "-filter_complex", "[0:v][1:v]concat=n=2:v=1:a=0,setpts=PTS+1/TB[v]",
+      "-map", "[v]", "-fps_mode", "passthrough", "-y", video]);
+    const origin = Number(execFileSync("ffprobe", ["-v", "error", "-select_streams", "v:0",
+      "-show_entries", "stream=start_time", "-of", "default=nw=1:nk=1", video], { encoding: "utf8" }));
+    expect(origin).toBeGreaterThanOrEqual(1);
+    const screenshot = join(temp, "reference.png");
+    writeReferenceScreenshot(video, screenshot, 45, { x: 0, y: 0, width: 16, height: 8 });
+    const pixels = execFileSync("ffmpeg", ["-v", "error", "-i", screenshot,
+      "-f", "rawvideo", "-pix_fmt", "rgb24", "pipe:1"]);
+    expect(pixels.length).toBe(16 * 8 * 3);
+    expect(pixels[0]).toBeLessThan(15);
+    expect(pixels[2]).toBeGreaterThan(240);
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }

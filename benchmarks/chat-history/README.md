@@ -3,11 +3,17 @@
 This benchmark compares React Native macOS, Electron, Tauri, Deno Desktop
 WebView, Deno Desktop CEF, Flutter, GPUI, SwiftUI, and AppKit. React Native is
 maintained in the sibling `legend-apps` repository and exported into this
-repository's common production-build directory for every default run.
+repository's common production-build directory by the build command. Benchmark runs use existing builds.
 
-For the latest comparison with the lazy Swift parser and standardized native layouts, see [Swift/native parity results](SWIFT_PARITY_RESULTS.md). The prior production comparison is in [responsive AppKit results and SwiftUI diagnosis](RESPONSIVE_LAYOUT_RESULTS.md). The earlier detector correction and causal experiments are in [CAUSAL_ANALYSIS.md](CAUSAL_ANALYSIS.md). The earlier eight-app run and memory measurements are in [RESULTS.md](RESULTS.md).
+For the latest full run, see [September 16 final results for both workloads](../final-2026-09-16/RESULTS.md) and the [90-video viewer](results/2026-09-16T20-35-45.623Z-videos/index.html). The earlier parser/layout checkpoint is in [Swift/native parity results](SWIFT_PARITY_RESULTS.md). The prior production comparison is in [responsive AppKit results and SwiftUI diagnosis](RESPONSIVE_LAYOUT_RESULTS.md). The earlier detector correction and causal experiments are in [CAUSAL_ANALYSIS.md](CAUSAL_ANALYSIS.md). The earlier eight-app run and memory measurements are in [RESULTS.md](RESULTS.md).
 [PERFORMANCE_ANALYSIS.md](PERFORMANCE_ANALYSIS.md) preserves the historical
 September 4 analysis and its earlier implementation/corpus.
+
+See the [rendering-work audit](RENDERING_WORK_ALIGNMENT.md) for later source corrections and the remaining distinction between comparable features and identical rendering work.
+
+## Fairness standard
+
+The [fair comparison standard](FAIRNESS_STANDARD.md) defines comparable visible work with idiomatic platform engines. Build-time rendering provenance is required by the runner; shared-list or policy drift must be resolved before measuring.
 
 ## Swift document backend
 
@@ -15,7 +21,7 @@ AppKit and SwiftUI default to the equivalent lazy Swift parser. Their catalog di
 
 ## Minimal-project counterpart
 
-The [Hello World suite](../hello-world/README.md) measures the same nine runtimes with a standalone minimal app. Use `bun run benchmark:hello-world` for those builds and results, and `bun run benchmark:compare` to combine the two reports. Hello World compares startup, settled footprint, and bundle size; transcript-specific metrics below apply to the full product only.
+The [Hello World suite](../hello-world/README.md) measures the same nine runtimes with a standalone minimal app. Use `bun run benchmark:hello-world:build`, then `bun run benchmark:hello-world:run`, and `bun run benchmark:compare` to combine the two reports. Hello World compares startup, settled footprint, and bundle size; transcript-specific metrics below apply to the full product only.
 
 ## What is measured
 
@@ -149,24 +155,24 @@ Both are Codex histories because this machine currently has no `~/.claude`
 history store. Claude remains covered by parser conformance fixtures, but a real
 Claude performance corpus requires importing and pinning a stable Claude file.
 
+Prebuilt apps can be installed with `bun run benchmark:download --suite chat-history --repo OWNER/REPO` from the matching release checkout. See the [release instructions](../../README.md#prebuilt-releases) for prerequisites, version pinning, and publishing.
+
 ### Build and run
 
 Build all production-mode `.app` bundles, including React Native from
 `legend-apps`:
 
 ```sh
-bun run benchmark:build
+bun run benchmark:build --suite chat-history
 ```
 
-The build uses a `main` checkout at `../legend-apps`, or discovers the
-repository's `main` worktree when the sibling checkout is on another branch.
-It falls back to the sibling only when no usable `main` worktree exists. An
-explicit path always wins:
+The builder previews the selected apps and asks for confirmation before starting. Use `--yes` for automation or `--dry-run` to inspect the plan. It uses the exact sibling `../legend-apps` checkout by default, with no implicit worktree selection. Override the path explicitly:
 
 ```sh
-LEGEND_APPS_REPO=/absolute/path/to/legend-apps bun run benchmark:build
-bun run benchmark:build --react-native-repo /absolute/path/to/legend-apps
+bun run benchmark:build --suite chat-history --legend-apps-repo /absolute/path/to/legend-apps
 ```
+
+See the [root command reference](../../README.md#arguments-and-defaults) for all supported arguments. Without `--suite`, the root build/run commands select both workloads.
 
 React Native is built in Xcode's Release configuration and copied into the
 common build directory with an ad-hoc signature. This is production-mode code,
@@ -177,7 +183,7 @@ records both repository commits and whether either checkout was dirty.
 Run two discarded warm-up rounds and ten measured iterations per app:
 
 ```sh
-bun run benchmark:run
+bun run benchmark:run --suite chat-history
 ```
 
 Useful focused runs:
@@ -190,7 +196,7 @@ bun benchmarks/chat-history/run.ts --app appkit,swiftui --warmups 2 --iterations
 ```
 
 Video recording is the default and requires `ffmpeg`, `ffprobe`, and macOS
-Screen Recording access for `Chat History Benchmark Capture`. Use
+Screen Recording access for `Chat History Benchmark Capture`. Use the low-level `bun benchmarks/chat-history/run.ts` with
 `--no-video` only for internal-event diagnostics. Those reports are explicitly
 marked diagnostic-only and are not comparable with final video-derived
 reports. Framework callbacks generally precede WindowServer presentation, so
@@ -198,9 +204,7 @@ adding artificial delays to make the two boundaries agree would reduce rather
 than improve measurement accuracy.
 
 Machine-readable JSON, a Markdown summary, cropped videos, and frame sidecars
-are written under the ignored `benchmarks/chat-history/results/` directory. Run
-the full build and benchmark in one command with
-`bun run benchmark`.
+are written under the ignored `benchmarks/chat-history/results/` directory. Building and measuring are separate commands; `bun run benchmark` runs existing builds across both workloads.
 
 ## Modes
 
@@ -375,4 +379,8 @@ For the measured causes of the native/RN differences, see the [platform timing i
 
 Built-in TextKit update: [native renderer changes, current three-app results, and videos](TEXTKIT_RESULTS.md).
 
+Fairness completion: [implementation changes, common presentation policy, and matched results](FAIRNESS_RESULTS.md).
+
 The September 13 [other-app alignment report](ALL_APPS_ALIGNMENT.md) documents deferred document loading, rendering/chrome corrections, visual evidence and remaining platform differences. These changes require fresh scored benchmarks; prior performance tables describe earlier builds.
+
+Syntax highlighting is now enabled across all nine targets. See [the highlighting policy and validation](SYNTAX_HIGHLIGHTING.md). Existing performance tables predate this change and require a complete rerun for the highlighted workload.

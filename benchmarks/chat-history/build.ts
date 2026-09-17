@@ -1,3 +1,5 @@
+import { buildEnvironment, type BuildEnvironment } from "../build-environment";
+import { renderingInputs, verifyRenderingInputs, type RenderingInputs } from "./fairness";
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -13,6 +15,8 @@ type BuildTarget =
   | "tauri";
 
 type BuildRecord = {
+  environment?: BuildEnvironment;
+  renderingInputs?: RenderingInputs;
   builtAt: string;
   gitCommit: string;
   gitDirty: boolean;
@@ -171,7 +175,15 @@ const commands: Record<Exclude<BuildTarget, "react-native">, [string, string[]]>
 
 const targets = selectedTargets();
 const manifest = readBuildManifest();
+const rnRoot = targets.includes("react-native") ? reactNativeRepository() : undefined;
+const inputRecords = Object.fromEntries(targets.map(target => [target, renderingInputs(repositoryRoot, target, rnRoot)]));
+verifyRenderingInputs(inputRecords);
+mkdirSync(dirname(buildManifestPath), { recursive: true });
+const saveManifest = () => writeFileSync(buildManifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 for (const target of targets) {
+  delete manifest.builds[target];
+  saveManifest(); // A failed replacement must not retain provenance for the previous bundle.
+  const environment = buildEnvironment(repositoryRoot, target);
   if (target === "react-native") {
     const sourceRepository = reactNativeRepository();
     const output = resolve(buildRoot, "Chat History — React Native.app");
@@ -180,12 +192,13 @@ for (const target of targets) {
       ["run", "chat-history:benchmark:export", "--output", output],
       sourceRepository,
     );
-    manifest.builds[target] = gitRecord(sourceRepository);
+    manifest.builds[target] = { ...gitRecord(sourceRepository), renderingInputs: inputRecords[target], environment };
   } else {
     const [command, args] = commands[target];
     run(command, args);
-    manifest.builds[target] = gitRecord(repositoryRoot);
+    manifest.builds[target] = { ...gitRecord(repositoryRoot), renderingInputs: inputRecords[target], environment };
   }
+  saveManifest();
 }
 
 mkdirSync(dirname(buildManifestPath), { recursive: true });

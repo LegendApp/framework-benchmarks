@@ -1,4 +1,14 @@
-# Chat history results — September 11, 2026
+> Flutter/GPUI rendering has changed after the latest measured table. See [output alignment](FLUTTER_GPUI_OUTPUT_ALIGNMENT.md); affected timings await a repeated rerun.
+
+> **Latest results:** [September 16 final chat-history and Hello World tables](../final-2026-09-16/RESULTS.md) — 10 observations per app after 2 warmups, videos, separate memory launches, and built app sizes. Earlier tables below are historical.
+
+> **Latest measured results:** [September 15 highlighted nine-app benchmark](HIGHLIGHTED_RESULTS_2026-09-15.md) — ten observations per app after two warmups, all unlocked, with recordings and separate memory launches. Earlier tables below are historical.
+
+> **Cross-app fairness audit:** [September 13 audit](ALL_APPS_FAIRNESS_AUDIT.md) identifies unequal document preparation, Flutter viewport ordering, and rendering/style gaps in the broader suite. These historical timings are not an equivalent-work framework ranking.
+
+> **Previous results:** [September 12 fairness report](FAIRNESS_RESULTS.md) contains the updated eight-app table, native stages, Hello World baselines, videos, and concurrent-load limitations. The table below is historical.
+
+# Historical chat history results — September 11, 2026
 
 > **Latest AppKit measurements:** [Responsive width results](RESPONSIVE_LAYOUT_RESULTS.md) supersede this table’s AppKit timing row.
 

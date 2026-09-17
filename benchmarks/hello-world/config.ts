@@ -32,7 +32,8 @@ export function selectedApps(args = process.argv.slice(2)): AppName[] {
   const value = option("--app", args) ?? "all";
   if (value === "all") return allApps;
   if (value === "deno") return ["deno-webview", "deno-cef"];
-  if (allApps.includes(value as AppName)) return [value as AppName];
+  const requested = value.split(",") as AppName[];
+  if (requested.every((app) => allApps.includes(app))) return [...new Set(requested)];
   throw new Error(`Unknown app: ${value}. Choose ${allApps.join(", ")}, deno, or all.`);
 }
 

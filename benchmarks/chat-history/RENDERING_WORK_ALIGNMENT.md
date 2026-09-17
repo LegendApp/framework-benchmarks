@@ -1,3 +1,5 @@
+> Follow-up: [Flutter/GPUI output alignment](FLUTTER_GPUI_OUTPUT_ALIGNMENT.md) corrects list spacing and related geometry while retaining full Markdown and highlighting.
+
 # Rendering-work alignment — September 15, 2026
 
 The completed performance run measured the preceding binaries. This audit found additional concrete differences; its corrections have not yet received a full repeated performance run.
@@ -30,3 +32,7 @@ Validation completed: 15 web tests, 4 Flutter highlighting/normalization tests, 
 [Runtime validation results](results/2026-09-15T20-34-46.011Z.json) · [Video validation manifest](results/2026-09-15T20-34-46.011Z.rendering-validation.json)
 
 These six single observations validate transitions only. They are not a repeated performance comparison.
+
+## Adopted benchmark design
+
+The [fair comparison standard](FAIRNESS_STANDARD.md) adopts comparable visible features with idiomatic engines. Native prefetch and tokenization differences are disclosed properties of the stacks, not claims of identical internal work. Build/runner provenance checks now prevent shared-list and rendering-policy drift; retry reasons are retained in future results.

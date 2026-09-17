@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { copyFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, rmSync, writeFileSync } from "node:fs";
 import { relative } from "node:path";
 import { changedRatio, cropVideo, extractFeatures, firstStableFrame, nearestFrame, probeVideo, videoWindow, type WindowInfo } from "../chat-history/video";
 import { detectContentExecutable, verifyTextExecutable } from "./macos";
@@ -16,7 +16,8 @@ export async function analyzeHelloWorld(input: {
   const rect = videoWindow(input.window, probe.width, probe.height);
   const frames = await extractFeatures(input.recordingPath, probe.width, probe.height, probe.timestampsMs, rect);
   const referenceTimestampMs = frames.at(-1)!.timestampMs - 250;
-  const reference = frames[nearestFrame(frames, referenceTimestampMs)];
+  const referenceFrame = nearestFrame(frames, referenceTimestampMs);
+  const reference = frames[referenceFrame];
   const baseline = frames[nearestFrame(frames, input.launchTimestampMs - 100)];
   if (baseline.timestampMs >= input.launchTimestampMs) throw new Error("Recording has no pre-launch baseline");
   const change = changedRatio(reference.feature, baseline.feature);
@@ -47,9 +48,7 @@ export async function analyzeHelloWorld(input: {
   cropVideo(input.recordingPath, input.artifactPath, rect);
   const screenshot = input.artifactPath.replace(/\.mp4$/, ".png");
   // OCR only the central content region, excluding a title bar that also says Hello World.
-  execFileSync("ffmpeg", ["-v", "error", "-sseof", "-0.25", "-i", input.recordingPath,
-    "-vf", `crop=${textRect.width}:${textRect.height}:${Math.round(textRect.x)}:${Math.round(textRect.y)}`,
-    "-frames:v", "1", "-update", "1", "-y", screenshot]);
+  writeReferenceScreenshot(input.recordingPath, screenshot, referenceFrame, textRect);
   const recognizedText = execFileSync(verifyTextExecutable, [screenshot], { encoding: "utf8" }).trim();
   const captureTimestamps = input.artifactPath.replace(/\.mp4$/, ".capture.json");
   copyFileSync(input.timestampPath, captureTimestamps);
@@ -64,6 +63,8 @@ export async function analyzeHelloWorld(input: {
     windowOpenFrame: windowFrame,
     firstContentFrame: contentFrame,
     referenceTimestampMs,
+    referenceFrame,
+    referenceExtraction: "recorded frame index",
     frameCount: frames.length,
     window: input.window,
     textRect,
@@ -75,4 +76,19 @@ export async function analyzeHelloWorld(input: {
   };
   writeFileSync(input.artifactPath.replace(/\.mp4$/, ".frames.json"), JSON.stringify(evidence, null, 2) + "\n");
   return evidence;
+}
+
+export function writeReferenceScreenshot(
+  recordingPath: string,
+  outputPath: string,
+  frameIndex: number,
+  rect: { x: number; y: number; width: number; height: number },
+) {
+  // A positive presentation-time origin can make EOF seeking overshoot the last
+  // packet. Decode the recorded frame index instead; startup OCR is unchanged.
+  rmSync(outputPath, { force: true });
+  execFileSync("ffmpeg", ["-v", "error", "-i", recordingPath,
+    "-vf", `select='eq(n,${frameIndex})',crop=${rect.width}:${rect.height}:${Math.round(rect.x)}:${Math.round(rect.y)}`,
+    "-frames:v", "1", "-update", "1", "-y", outputPath]);
+  if (!existsSync(outputPath)) throw new Error(`No screenshot for recorded frame ${frameIndex}`);
 }

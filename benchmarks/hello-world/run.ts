@@ -30,7 +30,10 @@ const stamp = new Date().toISOString().replaceAll(":", "-");
 const resultsRoot = resolve(import.meta.dir, "results", stamp);
 mkdirSync(resultsRoot, { recursive: true });
 
+type DesktopSession = { locked: boolean; onConsole: boolean };
 type Observation = {
+  desktopSession: DesktopSession;
+  memoryDesktopSession: DesktopSession;
   windowOpenMs: number;
   firstContentMs: number;
   memory: Memory;
@@ -40,11 +43,12 @@ type Observation = {
 function launch(app: AppName) {
   // Never pass transcript configuration or app-specific readiness hooks to a baseline.
   const env = { ...process.env };
+  env.CHAT_HISTORY_BENCHMARK_ALLOW_LOCKED = process.argv.includes("--allow-locked-session") ? "1" : "0";
   delete env.CHAT_HISTORY_BENCHMARK_CONFIG;
   delete env.CHAT_HISTORY_BENCHMARK_EVENTS;
   return JSON.parse(execFileSync(launchExecutable, [bundlePath(app), "-ApplePersistenceIgnoreState", "YES"], {
     cwd: repositoryRoot, encoding: "utf8", env,
-  })) as { pid: number; launchStartedTimestampMs: number };
+  })) as { pid: number; launchStartedTimestampMs: number; desktopSession: DesktopSession };
 }
 
 async function observe(app: AppName, name: string): Promise<Observation> {
@@ -81,6 +85,8 @@ async function observe(app: AppName, name: string): Promise<Observation> {
     await Bun.sleep(Math.max(0, memoryLaunch.launchStartedTimestampMs + firstContentMs - Date.now()));
     const memory = await settledMemory(pid, baseline);
     return {
+      desktopSession: timing.desktopSession,
+      memoryDesktopSession: memoryLaunch.desktopSession,
       windowOpenMs: evidence.windowOpenTimestampMs - timing.launchStartedTimestampMs,
       firstContentMs, memory, videoEvidence: evidence,
     };
@@ -131,6 +137,10 @@ const report = {
   machine: { platform: process.platform, arch: process.arch, os: execFileSync("sw_vers", ["-productVersion"], { encoding: "utf8" }).trim(), hardware: execFileSync("sysctl", ["-n", "machdep.cpu.brand_string"], { encoding: "utf8" }).trim() },
   warmups, iterations, settleMs, builds: manifest,
   methodology: {
+    windowPresentation: process.env.CHAT_HISTORY_BENCHMARK_SYSTEM_ANIMATIONS === "1"
+      ? "System window animations retained for a diagnostic control."
+      : "Process-local NSAutomaticWindowAnimationsEnabled=NO before app initialization; shells shown without waiting for content.",
+    desktopSession: "Both timing and companion memory observations retain their launch-time console lock state; --allow-locked-session explicitly permits locked launches.",
     content: 'Centered "Hello, world!", 32-point text, white background, 1280×720 content window. React web hosts include React/ReactDOM; no chat dependencies.',
     startup: "LaunchServices launch to first of three consecutive frames with the greeting recognized by native-resolution Vision OCR. Window opening still uses three stable changed frames.",
     memory: "Separate non-recording launch, wait for timing launch's observed content boundary, then median of 3 physical-footprint samples starting 2500 ms later, 200 ms apart. RSS is diagnostic.",

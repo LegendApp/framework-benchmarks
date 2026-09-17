@@ -1,40 +1,35 @@
-# Hello World framework baseline — fresh OCR detector run
+> **Latest results:** [September 16 final chat-history and Hello World tables](../final-2026-09-16/RESULTS.md) — 10 observations per app after 2 warmups, videos, separate memory launches, and built app sizes. Earlier tables below are historical.
 
-Measured September 11, 2026 on Apple M4 (arm64), macOS 26.6.1. Same release builds as the September 10 run.
+# Hello World framework baseline — September 12, 2026
 
-10 measured iterations per runtime; 2 discarded warmups. Timing is p50 / p90 in ms; footprint is from a separate launch without recording.
+5 measured iterations per runtime; 1 discarded warmups. Timing is p50 / p90 in ms; footprint is from a separate launch without recording.
 
 | Runtime | Window ms | Hello World ms | Footprint MiB | Bundle MiB |
 | --- | ---: | ---: | ---: | ---: |
-| React Native | 230.4 / 245.0 | 234.0 / 246.2 | 21.7 | 16.3 |
-| Legend Shell | 233.1 / 248.2 | 241.4 / 248.2 | 22.4 | 9.3 |
-| Electron | 500.5 / 531.8 | 575.0 / 615.1 | 81.4 | 285.1 |
-| Tauri | 242.8 / 263.5 | 409.7 / 430.2 | 69.8 | 10.3 |
-| Deno WebView | 349.1 / 365.8 | 406.7 / 421.6 | 80.0 | 65.0 |
-| Deno CEF | 618.3 / 632.1 | 726.6 / 765.5 | 201.2 | 307.0 |
-| Flutter | 228.6 / 248.9 | 237.5 / 254.8 | 67.0 | 33.6 |
-| GPUI | 217.9 / 236.3 | 233.9 / 237.6 | 41.2 | 5.3 |
-| SwiftUI | 230.1 / 244.9 | 239.5 / 249.0 | 17.2 | 0.1 |
-| AppKit | 219.0 / 234.0 | 232.8 / 247.5 | 14.7 | 0.1 |
+| AppKit | 193.4 / 212.3 | 193.4 / 228.9 | 15.5 | 0.1 |
+| SwiftUI | 209.2 / 211.8 | 210.8 / 225.9 | 18.3 | 0.1 |
+| React Native | 210.5 / 228.3 | 243.8 / 261.6 | 23.4 | 16.3 |
+| Legend Shell | 225.9 / 227.2 | 242.6 / 243.8 | 23.8 | 9.3 |
+| Electron | 292.3 / 511.4 | 326.8 / 578.1 | 84.1 | 285.1 |
+| Flutter | 243.3 / 261.1 | 245.5 / 277.7 | 55.2 | 33.6 |
+| GPUI | 211.0 / 227.9 | 227.3 / 227.9 | 56.5 | 5.3 |
+| Deno WebView | 376.9 / 410.7 | 411.8 / 427.3 | 82.5 | 65.0 |
+| Deno CEF | 375.2 / 380.0 | 380.0 / 394.6 | 202.4 | 307.0 |
 
 Hello World and the full chat product are distinct workloads. No transcript fixtures, parsing, chat switching, or list work runs in these apps. These are explicit minimal apps, not untouched generator templates.
 
 Raw observations, build provenance, OCR text, cropped videos, text images, and frame timestamps accompany this report. RSS is retained only in JSON as a diagnostic.
-## Detector and memory policy
 
-This is a fresh run of all ten release apps using analysis version 2, not an offline reanalysis. First content is the first of three consecutive native-resolution frames where Vision OCR recognizes the greeting with confidence at least 0.8. Window timing uses three changed frames. Startup precision is approximately one 60 Hz frame (16.7 ms), so the 233–241 ms group should be treated as tied rather than ranked by tiny differences.
+## Validation and presentation policy
 
-Memory was measured from separate fresh launches without recording: wait until the corrected visual content boundary, then 2.5 seconds, then take three physical-footprint samples 200 ms apart. The table shows the median across ten launches. App descendants and new WebKit helpers are included; WindowServer is excluded.
+Both suites now pass process-local `NSAutomaticWindowAnimationsEnabled=NO` before app initialization. No global preferences were changed. The current run used the existing release apps; Tauri was excluded.
 
-OS caches were warm after two discarded warmups. Finder and icon-services background activity was present. These figures describe this machine and these release builds, not cold boots or isolated framework overhead.
+All 45 retained videos pass three consecutive OCR matches at confidence ≥0.8, matching frame/timestamp counts, and positive separately measured footprint. All timing and companion memory launches began unlocked. The same three-frame startup detector is retained; differences near one 60 Hz frame should not be overinterpreted.
 
-## Recordings
+Seven invalid artifact attempts were discarded under the runner's existing retry policy: one AppKit warmup, two AppKit measured attempts, two Flutter measured attempts, and two Deno CEF measured attempts. End-of-file seeking produced no settled PNG. After this batch, that extraction was fixed to select the recorded reference frame directly, with a passing regression test for a positive timestamp origin. Startup OCR timings were not changed or recomputed. The valid five observations per app remain the reported sample.
 
-All 100 measured startup videos and 20 warmup videos are retained with timestamps, OCR evidence, and text images. No attempts required retries.
+Five-second activity logging found no competing Vitest/compiler jobs above 30% CPU during the measured period. Ordinary macOS activity remained, including Spotlight indexing; this is not an exclusive-machine or cold-boot measurement.
 
-- [Video comparison gallery](results/2026-09-11T09-56-59.935Z/videos.html)
-- [All measured recordings](results/2026-09-11T09-56-59.935Z/videos.md)
-- [Raw results and build provenance](results/2026-09-11T09-56-59.935Z/results.json)
-- [Previous run, corrected by offline OCR reanalysis](results/2026-09-11T09-56-59.935Z/../2026-09-10T20-59-54.228Z/results.md)
+[Video gallery](results/2026-09-12T15-34-04.820Z/videos.html) · [All recording links](results/2026-09-12T15-34-04.820Z/videos.md) · [Raw results and provenance](results/2026-09-12T15-34-04.820Z/results.json)
 
-Raw video artifacts are saved locally under the ignored results directory.
+[Previous September 11 run](results/2026-09-11T09-56-59.935Z/results.md).

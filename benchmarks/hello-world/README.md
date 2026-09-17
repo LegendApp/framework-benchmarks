@@ -1,5 +1,7 @@
 # Hello World framework baseline
 
+Latest: [September 16 final results for both workloads](../final-2026-09-16/RESULTS.md), with ten observations per app, built sizes, and the [100-video gallery](results/2026-09-16T21-25-32.060Z/videos.html).
+
 This is the minimal-project counterpart to the [full chat product benchmark](../chat-history/README.md). All ten apps display **Hello, world!** in centered 32-point text on white, in a 1280×720 content window. These are deliberately minimal apps rather than unmodified generator demos.
 
 | Runtime | Baseline source | Runtime dependencies |
@@ -18,6 +20,8 @@ The three web hosts bundle the same `packages/hello-world-web` view. The baselin
 
 See [the September 11 measured results](RESULTS.md) for the complete run and saved video gallery.
 
+Prebuilt apps can be installed with `bun run benchmark:download --suite hello-world --repo OWNER/REPO` from the matching release checkout. See the [release instructions](../../README.md#prebuilt-releases) for prerequisites, version pinning, and publishing.
+
 ## Build and open
 
 Install the same prerequisites as the product suite, plus CocoaPods for React Native macOS. Run `bun install` once. Builds use the repository's toolchain wrappers, release configurations, lockfiles, and ad-hoc signatures.
@@ -33,18 +37,21 @@ bun run hello-world:gpui
 bun run hello-world:swiftui
 bun run hello-world:appkit
 bun run hello-world:react-native
-bun run benchmark:hello-world:build --app legend-shell --launch
+bun benchmarks/hello-world/build.ts --app legend-shell --launch
 ```
 
 Each `hello-world:*` command builds and opens that runtime's release app. To build one without opening it, use `bun run benchmark:hello-world:build --app electron`. Both Deno backends can be selected with `--app deno`. Deno Desktop uses local port 8000, so close another Deno app before launching one. React Native builds its embedded JavaScript bundle with Metro during Xcode's Release build; it needs no running development server.
+
+The batch build command previews its plan and asks for confirmation. Use `--yes` for automation, or `--dry-run` to inspect without building.
 
 Bundles and a build provenance manifest are written to `.build/hello-world-benchmarks/`, separate from product artifacts.
 
 ## Measure
 
 ```sh
-# Build, then run two warmup rounds and ten measured rounds across all runtimes.
-bun run benchmark:hello-world
+# Build (with confirmation), then measure existing builds.
+bun run benchmark:hello-world:build
+bun run benchmark:hello-world:run
 
 # Run existing builds or do a short smoke check.
 bun run benchmark:hello-world:run
@@ -66,7 +73,7 @@ Timestamped JSON and Markdown reports, videos, central text screenshots, OCR res
 
 ## Compare the two workloads
 
-The existing `bun run benchmark` remains the full-product suite. Keep both workloads' reports, then generate a table with paired Hello World / full product numbers:
+The root `bun run benchmark` now measures existing builds in both workloads; it does not build. See the [command reference](../../README.md#arguments-and-defaults) for filters and defaults. Keep both workloads' reports, then generate a table with paired Hello World / full product numbers:
 
 ```sh
 bun run benchmark:compare \
@@ -78,3 +85,11 @@ bun run benchmark:compare \
 Use measurements from the same machine and comparable release builds, display conditions, and video mode. The shared columns are startup, settled physical footprint, and bundle size. The product additionally reports discovery, parsing, bridge transfer, top jump, and transcript switch. Differences between the workloads include all product behavior and dependencies; they are not a controlled attribution to any single library or renderer.
 
 Harness regression checks: `bun test benchmarks/hello-world/benchmark.test.ts`.
+
+## Shared window-presentation policy
+
+Both suites now launch apps with process-local `-NSAutomaticWindowAnimationsEnabled NO`. This does not write system or user preferences. See [the fairness report](../chat-history/FAIRNESS_RESULTS.md) for the controlled validation and current results. `CHAT_HISTORY_BENCHMARK_SYSTEM_ANIMATIONS=1` retains system behavior for diagnostic comparisons; result metadata records the policy.
+
+Select several apps with `--app appkit,swiftui,react-native`. The default still selects all ten. `--allow-locked-session` explicitly allows the existing locked-console workflow; timing and companion memory launches both retain their lock state. Such runs describe that session condition, not verified unlocked foreground behavior.
+
+Settled OCR screenshots are extracted by recorded frame index. This avoids EOF-seek failures when a ScreenCaptureKit video has a positive timestamp origin; it does not change the three-frame startup OCR rule.

@@ -1,3 +1,4 @@
+import { renderingContract, renderingInputs, verifyRenderingInputs, type RenderingInputs } from "./fairness";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import {
@@ -70,6 +71,7 @@ type MemorySample = {
 type ProcessRow = { command: string; pid: number; ppid: number; rssKb: number };
 type IterationResult = {
   desktopSession?: { locked: boolean; onConsole: boolean; lastLockedTimestampMs?: number };
+  memoryDesktopSession?: IterationResult["desktopSession"];
   diagnostics?: {
     initial?: DiagnosticEvent[];
     switch?: DiagnosticEvent[];
@@ -587,6 +589,8 @@ async function runIteration(
   }
 }
 
+const discardedAttempts: { app: AppName; recorded: boolean; attempt: number; at: string; reason: string }[] = [];
+
 async function runIterationWithRetries(
   app: AppName,
   config: BenchmarkConfig,
@@ -604,6 +608,9 @@ async function runIterationWithRetries(
       }
       assertDesktopSession();
       lastError = error;
+      const reason = error instanceof Error ? error.message : String(error);
+      discardedAttempts.push({ app, recorded: shouldRecord, attempt, at: new Date().toISOString(), reason });
+      console.warn(`${app}: failed attempt ${attempt}/${attempts}: ${reason}`);
       if (attempt < attempts) {
         console.warn(`${app}: discarded failed launch ${attempt}/${attempts}; retrying`);
       }
@@ -713,7 +720,7 @@ function buildBenchmarkHelpers() {
 }
 
 function formatMegabytes(bytes: number) {
-  return `${(bytes / 1_048_576).toFixed(1)} MB`;
+  return `${(bytes / 1_048_576).toFixed(1)} MiB`;
 }
 
 function formatMillisecondsPair(p50: number | null, p90: number | null) {
@@ -817,6 +824,13 @@ async function main() {
   const iterations = Math.max(1, Number(option("--iterations") ?? 10));
   const warmups = Math.max(0, Number(option("--warmups") ?? 2));
   const requestedApps = selectedApps();
+  const buildManifest = JSON.parse(readFileSync(resolve(buildRoot, "build-manifest.json"), "utf8")) as {
+    builds: Record<string, { renderingInputs?: RenderingInputs }>;
+  };
+  const inputRecords = Object.fromEntries(requestedApps.map(app => [app,
+    buildManifest.builds[app.startsWith("deno-") ? "deno" : app]?.renderingInputs]));
+  // Compare build-time provenance, not whichever source happens to be on disk now.
+  verifyRenderingInputs({ ...inputRecords, currentPolicy: renderingInputs(repositoryRoot, "policy") });
   const timestamp = new Date().toISOString().replaceAll(":", "-");
   const videoDirectory = join(resultsRoot, `${timestamp}-videos`);
   mkdirSync(resultsRoot, { recursive: true });
@@ -852,6 +866,7 @@ async function main() {
       if (recordVideo) {
         console.log(`${app}: settled-memory ${round + 1}/${iterations}`);
         const memoryResult = await runIterationWithRetries(app, config, undefined, false);
+        timingResult.memoryDesktopSession = memoryResult.desktopSession;
         timingResult.initialMemory = memoryResult.initialMemory;
         timingResult.topMemory = memoryResult.topMemory;
         timingResult.switchedMemory = memoryResult.switchedMemory;
@@ -888,6 +903,9 @@ async function main() {
   mkdirSync(resultsRoot, { recursive: true });
   const result = {
     apps: results,
+    renderingContract,
+    renderingInputRecords: inputRecords,
+    discardedAttempts,
     buildManifest: existsSync(resolve(buildRoot, "build-manifest.json"))
       ? JSON.parse(readFileSync(resolve(buildRoot, "build-manifest.json"), "utf8"))
       : undefined,
@@ -921,6 +939,9 @@ async function main() {
     },
     iterations,
     protocol: {
+      windowPresentation: process.env.CHAT_HISTORY_BENCHMARK_SYSTEM_ANIMATIONS === "1"
+        ? "System window animations retained for a diagnostic control."
+        : "Process-local NSAutomaticWindowAnimationsEnabled=NO before app initialization; shells shown without waiting for transcript content.",
       desktopSession: allowLockedSession
         ? "Explicit locked-session run permitted; each observation records console lock state. Phase completion and video checks remain required. Results describe this session condition, not verified foreground performance."
         : "Requires an unlocked console session before every launch and after each observation; session failures abort without retry.",
