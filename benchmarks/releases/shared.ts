@@ -1,3 +1,4 @@
+import { grammarEngines, grammarEngineForApp, type GrammarPackRecord } from "../chat-history/grammar-packs";
 import type { BuildEnvironment } from "../build-environment";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -8,10 +9,12 @@ import type { Suite } from "../cli";
 import type { RenderingInputs } from "../chat-history/fairness";
 
 export const manifestName = "benchmark-release.json";
-export type BuildRecord = { environment?: BuildEnvironment; builtAt: string; gitCommit: string; gitDirty: boolean; repositoryPath?: string; bundle?: string; renderingInputs?: RenderingInputs; release?: ReleaseIdentity };
+export type BuildRecord = { grammarPack?: GrammarPackRecord; environment?: BuildEnvironment; builtAt: string; gitCommit: string; gitDirty: boolean; repositoryPath?: string; bundle?: string; renderingInputs?: RenderingInputs; release?: ReleaseIdentity };
 export type ReleaseIdentity = { repository: string; tag: string; manifestSha256: string; comparisonCommit: string; bundles: Record<string, { archiveSha256: string; bundleSha256: string }> };
 export type Asset = { suite: Suite; app: AppName; name: string; bytes: number; sha256: string; bundleSha256: string; build: BuildRecord };
+export type GrammarAsset = { name: string; bytes: number; sha256: string; treeSha256: string; pack: GrammarPackRecord };
 export type Manifest = {
+  grammarAssets?: GrammarAsset[];
   version: 1; tag: string; createdAt: string; platform: "darwin"; arch: string;
   // Conservative support floor: release build host, not a claim about older OS versions.
   minimumMacOS: string; comparisonCommit: string; legendAppsCommit: string;
@@ -63,6 +66,18 @@ export function validateManifest(value: unknown): Manifest {
     const expected = (asset.suite === "chat-history" && asset.app === "react-native") || asset.app === "legend-shell" ? data.legendAppsCommit : data.comparisonCommit;
     if (!asset.build || asset.build.gitDirty !== false || asset.build.gitCommit !== expected || asset.build.environment?.architecture !== data.arch || !asset.build.environment.tools || typeof asset.build.environment.macOS !== "string") throw new Error(`Unpinned source provenance: ${key}`);
     keys.add(key); names.add(asset.name);
+  }
+  const packs = new Map<string, GrammarAsset>();
+  for (const asset of data.grammarAssets ?? []) {
+    const pack = asset.pack;
+    if (!pack || !grammarEngines.includes(pack.engine) || pack.version !== "v1" || packs.has(pack.engine) || names.has(asset.name) || asset.name !== `grammars-${pack.engine}-v1-macos-${data.arch}.tar.gz` || !sha(asset.sha256) || !sha(asset.treeSha256) || !sha(pack.manifestSha256) || !Number.isSafeInteger(asset.bytes) || asset.bytes <= 0 || !Number.isSafeInteger(pack.bytes) || pack.bytes <= 0) throw new Error("Invalid grammar release asset");
+    packs.set(pack.engine, asset); names.add(asset.name);
+  }
+  for (const asset of data.assets) {
+    if (data.grammarAssets && asset.suite === "chat-history") {
+      const pack = packs.get(grammarEngineForApp(asset.app));
+      if (!pack || JSON.stringify(pack.pack) !== JSON.stringify(asset.build.grammarPack)) throw new Error(`Missing or mismatched grammar asset for ${asset.app}`);
+    } else if (asset.build.grammarPack) throw new Error("Grammar provenance without release assets");
   }
   if (keys.size !== 19) throw new Error("A release must contain all 19 apps");
   return data;

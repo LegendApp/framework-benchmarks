@@ -1,3 +1,4 @@
+import { externalGrammarRoot } from "./grammar-path";
 import type { DocumentRequest } from "./document-registry";
 import { appendFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -197,4 +198,9 @@ app.on("before-quit", () => {
   parserWorker = undefined;
   rejectParserRequests(new Error("Application is quitting"));
   void worker?.terminate();
+});
+
+ipcMain.handle("chat-history:get-grammar-source", (event) => {
+  assertTrustedSender(event);
+  return readFile(join(externalGrammarRoot(process.execPath, process.env.BENCHMARK_GRAMMAR_ROOT), "highlight-js/grammars.mjs"), "utf8");
 });

@@ -1,3 +1,4 @@
+import { initializeGrammarPack } from "../../chat-history-electron/src/syntax-highlighting";
 import type {
   BenchmarkConfig,
   BenchmarkEvent,
@@ -38,6 +39,11 @@ function localFileSource(source: string) {
 const implementationName = await bindings.getImplementationName();
 
 window.chatHistory = {
+  async getGrammarSource() {
+    const response = await fetch("/__grammar_pack");
+    if (!response.ok) throw new Error("External grammar pack unavailable");
+    return response.text();
+  },
   implementationName,
   emitBenchmarkEvent(event) {
     return bindings.emitBenchmarkEvent(event);
@@ -102,4 +108,5 @@ while (window.innerWidth !== contentWidth || window.innerHeight !== contentHeigh
   if (performance.now() > layoutDeadline) throw new Error("Window client bounds did not settle");
   await new Promise((resolve) => setTimeout(resolve, 16));
 }
+await initializeGrammarPack(await window.chatHistory.getGrammarSource());
 mountChatHistory();

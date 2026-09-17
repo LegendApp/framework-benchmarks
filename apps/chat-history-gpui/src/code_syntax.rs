@@ -1,5 +1,5 @@
 use std::{ops::Range, sync::LazyLock};
-use two_face::re_exports::syntect::{
+use syntect::{
     easy::HighlightLines,
     highlighting::{Color, StyleModifier, Theme, ThemeItem},
     parsing::SyntaxSet,
@@ -12,7 +12,17 @@ pub struct CodeToken {
     pub color: u32,
 }
 
-static SYNTAXES: LazyLock<SyntaxSet> = LazyLock::new(two_face::syntax::extra_newlines);
+static SYNTAXES: LazyLock<SyntaxSet> = LazyLock::new(|| {
+    let root = std::env::var_os("BENCHMARK_GRAMMAR_ROOT").map(std::path::PathBuf::from)
+        .unwrap_or_else(|| {
+            let executable = std::env::current_exe().expect("executable path");
+            let app = executable.ancestors().find(|path| path.extension().is_some_and(|ext| ext == "app"));
+            app.and_then(|path| path.parent()).map(|parent| parent.join("grammar-packs/v1"))
+                .unwrap_or_else(|| std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.build/chat-history-benchmarks/grammar-packs/v1"))
+        });
+    syntect::dumps::from_dump_file(root.join("syntect/syntaxes.pack"))
+        .expect("Missing or invalid external syntect grammar pack; build benchmark assets first")
+});
 static THEME: LazyLock<Theme> = LazyLock::new(|| {
     let mut theme = Theme::default();
     theme.settings.foreground = Some(color(0xf5f5f5));

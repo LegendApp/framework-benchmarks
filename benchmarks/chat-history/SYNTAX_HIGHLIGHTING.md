@@ -1,5 +1,7 @@
 # Syntax highlighting alignment — September 13, 2026
 
+Historical audit: see [external grammar packs](EXTERNAL_GRAMMARS.md) for the subsequent packaging and runtime-loading changes.
+
 The preceding all-app alignment was checkpointed in `a96c3d3`. Syntax highlighting
 is now enabled in all nine chat-history targets. Hello World has no Markdown/code
 content and is unaffected.

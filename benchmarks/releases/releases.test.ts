@@ -82,3 +82,17 @@ test("release entry points show help without GitHub or build side effects", () =
     expect(child.stdout.toString()).toContain("Usage:");
   }
 });
+
+test("release grammar assets must match every chat app's engine and pinned pack", async () => {
+  const { grammarEngines, grammarEngineForApp } = await import("../chat-history/grammar-packs");
+  const value = manifest();
+  value.grammarAssets = grammarEngines.map(engine => ({ name: `grammars-${engine}-v1-macos-arm64.tar.gz`, bytes: 10, sha256: sha, treeSha256: sha, pack: { engine, version: "v1", bytes: 20, manifestSha256: sha } }));
+  for (const asset of value.assets) if (asset.suite === "chat-history") asset.build.grammarPack = { ...value.grammarAssets.find(pack => pack.pack.engine === grammarEngineForApp(asset.app))!.pack };
+  expect(validateManifest(value).grammarAssets).toHaveLength(5);
+  const missing = structuredClone(value); missing.grammarAssets!.pop();
+  expect(() => validateManifest(missing)).toThrow("Missing or mismatched");
+  const mismatch = structuredClone(value); mismatch.assets[0].build.grammarPack!.manifestSha256 = "f".repeat(64);
+  expect(() => validateManifest(mismatch)).toThrow("Missing or mismatched");
+  const escaped = structuredClone(value); escaped.grammarAssets![0].name = "../grammars.tar.gz";
+  expect(() => validateManifest(escaped)).toThrow("Invalid grammar");
+});

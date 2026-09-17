@@ -7,6 +7,7 @@ function imageSource(source) {
 }
 
 contextBridge.exposeInMainWorld("chatHistory", {
+  getGrammarSource() { return ipcRenderer.invoke("chat-history:get-grammar-source"); },
   implementationName: "Electron",
   emitBenchmarkEvent(event) {
     return ipcRenderer.invoke("chat-history:emit-benchmark-event", event);

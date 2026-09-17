@@ -58,11 +58,22 @@ open class Highlighter {
         // Get the library's bundle based on how it's
         // being included in the host app
 #if SWIFT_PACKAGE
-        // SwiftPM CLI's accessor assumes a flat bundle. Signed macOS apps
-        // place resource bundles in Contents/Resources instead.
-        let bundle = Bundle.main.resourceURL.flatMap {
-            Bundle(url: $0.appendingPathComponent("Highlighter_Highlighter.bundle"))
-        } ?? Bundle.module
+        // The benchmark installs versioned grammar resources beside the apps.
+        // SwiftPM tests retain their own resource bundle; packaged apps must not
+        // silently fall back to a developer's build directory.
+        let bundle: Bundle
+        if Bundle.main.bundleURL.pathExtension == "app" {
+            let root = ProcessInfo.processInfo.environment["BENCHMARK_GRAMMAR_ROOT"].map {
+                URL(fileURLWithPath: $0, isDirectory: true)
+            } ?? Bundle.main.bundleURL.deletingLastPathComponent()
+                .appendingPathComponent("grammar-packs/v1", isDirectory: true)
+            guard let external = Bundle(url: root.appendingPathComponent("highlighter-swift/Highlighter_Highlighter.bundle")) else {
+                fatalError("Missing external HighlighterSwift grammar pack")
+            }
+            bundle = external
+        } else {
+            bundle = Bundle.module
+        }
 #else
         let bundle = Bundle(for: Highlighter.self)
 #endif

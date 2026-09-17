@@ -1,3 +1,4 @@
+import { installRuntimeGrammarPacks, verifyAppGrammarPack, type GrammarPackRecord } from "./grammar-packs";
 import { renderingContract, renderingInputs, verifyRenderingInputs, type RenderingInputs } from "./fairness";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -98,6 +99,8 @@ type IterationResult = {
 type AppResult = {
   app: AppName;
   buildSizeBytes: number;
+  grammarPackBytes: number;
+  combinedInstalledBytes: number;
   executable: string;
   iterations: IterationResult[];
   median: IterationResult;
@@ -741,11 +744,11 @@ function markdown(results: AppResult[]) {
       ? "Video-derived p50 / p90 for time columns; memory columns are p50 macOS physical footprint."
       : "Diagnostic only — internal-event timings are not comparable with final video-derived reports. Memory columns are p50 macOS physical footprint.",
     "",
-    "| App | Window open | Discovery | First content total | Jump to top | Switch content | Initial footprint | Top footprint | Switched footprint | Build size |",
-    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+    "| App | Window open | Discovery | First content total | Jump to top | Switch content | Initial footprint | Top footprint | Switched footprint | App size | Grammar pack | Combined installed |",
+    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
   ];
   for (const result of results) {
-    lines.push(`| ${result.app} | ${formatMillisecondsPair(result.median.windowOpenMs, result.p90.windowOpenMs)} | ${formatMillisecondsPair(result.median.discoveryMs, result.p90.discoveryMs)} | ${formatMillisecondsPair(result.median.firstContentMs, result.p90.firstContentMs)} | ${formatMillisecondsPair(result.median.topJumpMs, result.p90.topJumpMs)} | ${formatMillisecondsPair(result.median.switchContentMs, result.p90.switchContentMs)} | ${formatMegabytes(result.median.initialMemory.physicalFootprintBytes)} | ${formatMegabytes(result.median.topMemory.physicalFootprintBytes)} | ${formatMegabytes(result.median.switchedMemory.physicalFootprintBytes)} | ${formatMegabytes(result.buildSizeBytes)} |`);
+    lines.push(`| ${result.app} | ${formatMillisecondsPair(result.median.windowOpenMs, result.p90.windowOpenMs)} | ${formatMillisecondsPair(result.median.discoveryMs, result.p90.discoveryMs)} | ${formatMillisecondsPair(result.median.firstContentMs, result.p90.firstContentMs)} | ${formatMillisecondsPair(result.median.topJumpMs, result.p90.topJumpMs)} | ${formatMillisecondsPair(result.median.switchContentMs, result.p90.switchContentMs)} | ${formatMegabytes(result.median.initialMemory.physicalFootprintBytes)} | ${formatMegabytes(result.median.topMemory.physicalFootprintBytes)} | ${formatMegabytes(result.median.switchedMemory.physicalFootprintBytes)} | ${formatMegabytes(result.buildSizeBytes)} | ${formatMegabytes(result.grammarPackBytes)} | ${formatMegabytes(result.combinedInstalledBytes)} |`);
   }
   if (results.length > 0) {
     lines.push(
@@ -825,12 +828,14 @@ async function main() {
   const warmups = Math.max(0, Number(option("--warmups") ?? 2));
   const requestedApps = selectedApps();
   const buildManifest = JSON.parse(readFileSync(resolve(buildRoot, "build-manifest.json"), "utf8")) as {
-    builds: Record<string, { renderingInputs?: RenderingInputs }>;
+    builds: Record<string, { grammarPack?: GrammarPackRecord; renderingInputs?: RenderingInputs }>;
   };
   const inputRecords = Object.fromEntries(requestedApps.map(app => [app,
     buildManifest.builds[app.startsWith("deno-") ? "deno" : app]?.renderingInputs]));
   // Compare build-time provenance, not whichever source happens to be on disk now.
   verifyRenderingInputs({ ...inputRecords, currentPolicy: renderingInputs(repositoryRoot, "policy") });
+  const grammarPacks = Object.fromEntries(requestedApps.map(app => [app, verifyAppGrammarPack(repositoryRoot, app, buildManifest.builds[app.startsWith("deno-") ? "deno" : app]?.grammarPack)]));
+  process.env.BENCHMARK_GRAMMAR_ROOT = installRuntimeGrammarPacks(repositoryRoot, requestedApps);
   const timestamp = new Date().toISOString().replaceAll(":", "-");
   const videoDirectory = join(resultsRoot, `${timestamp}-videos`);
   mkdirSync(resultsRoot, { recursive: true });
@@ -894,6 +899,8 @@ async function main() {
     return {
       app,
       buildSizeBytes: bundleSize(apps[app].bundle),
+      grammarPackBytes: grammarPacks[app].bytes,
+      combinedInstalledBytes: bundleSize(apps[app].bundle) + grammarPacks[app].bytes,
       executable: apps[app].executable,
       iterations: measured,
       median: aggregateResult(measured, median),

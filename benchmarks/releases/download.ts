@@ -1,3 +1,4 @@
+import { grammarPackRoot, verifyGrammarPack } from "../chat-history/grammar-packs";
 import { execFileSync } from "node:child_process";
 import { closeSync, existsSync, mkdirSync, mkdtempSync, openSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -75,8 +76,21 @@ async function main() {
       writeFileSync(nextManifest, JSON.stringify(local, null, 2) + "\n");
       replacements.push({ staged: nextManifest, destination: oldManifestPath });
     }
+    const neededEngines = new Set(jobs.flatMap(job => job.suite === "chat-history" ? job.apps.map(app => manifest.assets.find(asset => asset.suite === job.suite && asset.app === app)!.build.grammarPack?.engine).filter(Boolean) : []));
+    for (const asset of manifest.grammarAssets ?? []) {
+      if (!neededEngines.has(asset.pack.engine)) continue;
+      const archive = resolve(staging, asset.name);
+      fetchAsset(repo, apiAssets.find(item => item.name === asset.name), archive);
+      if (statSync(archive).size !== asset.bytes || hashFile(archive) !== asset.sha256) throw new Error(`Grammar checksum mismatch: ${asset.name}`);
+      const extracted = resolve(staging, `grammar-${asset.pack.engine}`);
+      command("python3", [resolve(import.meta.dir, "archive.py"), "extract", archive, extracted, asset.pack.engine]);
+      const directory = resolve(extracted, asset.pack.engine);
+      if (bundleHash(directory) !== asset.treeSha256 || hashFile(resolve(directory, "manifest.json")) !== asset.pack.manifestSha256) throw new Error(`Grammar pack differs: ${asset.name}`);
+      verifyGrammarPack(directory, asset.pack.engine);
+      replacements.push({ staged: directory, destination: resolve(grammarPackRoot(repositoryRoot), asset.pack.engine) });
+    }
     // All downloads, hashes, signatures and provenance checks have passed before any replacement.
-    console.log(`Installing ${replacements.length - jobs.length} apps from ${repo}@${manifest.tag}`);
+    console.log(`Installing ${jobs.reduce((sum, job) => sum + job.apps.length, 0)} apps and their grammar packs from ${repo}@${manifest.tag}`);
     try { installTransaction(replacements, resolve(staging, "backups")); }
     catch (error) { keepStaging = true; throw new Error(`Install failed; rollback attempted. Recovery files retained at ${staging}. ${error}`); }
     console.log(`Installed verified builds. Run bun run benchmark:run with the same --suite/--app selection.\nRelease: https://github.com/${repo}/releases/tag/${manifest.tag}`);

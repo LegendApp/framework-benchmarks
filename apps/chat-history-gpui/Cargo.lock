@@ -2978,6 +2978,7 @@ dependencies = [
  "pulldown-cmark",
  "serde",
  "serde_json",
+ "syntect",
  "two-face",
 ]
 

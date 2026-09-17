@@ -1,3 +1,6 @@
+import { buildWebGrammarPack, buildSyntectGrammarPack } from "./build-grammar-packs";
+import { buildTreeSitterPack } from "./build-tree-sitter-pack";
+import { grammarPackRecord, prepareGrammarPack, sealGrammarPack, type GrammarPackRecord } from "./grammar-packs";
 import { buildEnvironment, type BuildEnvironment } from "../build-environment";
 import { renderingInputs, verifyRenderingInputs, type RenderingInputs } from "./fairness";
 import { execFileSync, spawnSync } from "node:child_process";
@@ -15,6 +18,7 @@ type BuildTarget =
   | "tauri";
 
 type BuildRecord = {
+  grammarPack?: GrammarPackRecord;
   environment?: BuildEnvironment;
   renderingInputs?: RenderingInputs;
   builtAt: string;
@@ -184,6 +188,15 @@ for (const target of targets) {
   delete manifest.builds[target];
   saveManifest(); // A failed replacement must not retain provenance for the previous bundle.
   const environment = buildEnvironment(repositoryRoot, target);
+  if (["electron", "tauri", "deno"].includes(target)) await buildWebGrammarPack();
+  if (target === "gpui") buildSyntectGrammarPack();
+  if (target === "react-native") buildTreeSitterPack(rnRoot!, repositoryRoot);
+  if (target === "flutter") {
+    const directory = prepareGrammarPack(repositoryRoot, "dart-highlighting");
+    run(resolve(repositoryRoot, "scripts/with-local-flutter.sh"), ["flutter", "pub", "get"], resolve(repositoryRoot, "apps/chat-history-flutter"));
+    run(resolve(repositoryRoot, "scripts/with-local-flutter.sh"), ["dart", "run", "scripts/export-grammar-pack.dart", resolve(directory, "grammars.json")], resolve(repositoryRoot, "apps/chat-history-flutter"));
+    sealGrammarPack(directory, "dart-highlighting");
+  }
   if (target === "react-native") {
     const sourceRepository = reactNativeRepository();
     const output = resolve(buildRoot, "Chat History — React Native.app");
@@ -198,6 +211,7 @@ for (const target of targets) {
     run(command, args);
     manifest.builds[target] = { ...gitRecord(repositoryRoot), renderingInputs: inputRecords[target], environment };
   }
+  manifest.builds[target]!.grammarPack = grammarPackRecord(repositoryRoot, target);
   saveManifest();
 }
 

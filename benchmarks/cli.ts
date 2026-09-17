@@ -1,3 +1,4 @@
+import { verifyAppGrammarPack } from "./chat-history/grammar-packs";
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -84,6 +85,7 @@ export function preflightBuilds(jobs: ReturnType<typeof plan>, root = repository
       if (!existsSync(resolve(bundle, "Contents/Info.plist")) || !manifest.builds?.[key]) {
         throw new Error(`Missing build or provenance for ${job.suite}/${app}. Run benchmark:build --suite ${job.suite} --app ${app}.`);
       }
+      if (job.suite === "chat-history") verifyAppGrammarPack(root, app, manifest.builds[key].grammarPack);
       inputs[app] = manifest.builds[key].renderingInputs;
       releaseRecords.push({ app, bundle, build: manifest.builds[key] });
     }

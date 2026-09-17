@@ -1,3 +1,4 @@
+import { grammarPackRoot, verifyAppGrammarPack } from "../chat-history/grammar-packs";
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs, plan } from "../cli";
@@ -32,6 +33,7 @@ async function main() {
       if (executable.includes("/") || executable === "..") throw new Error(`Invalid executable: ${bundle}`);
       const archs = command("/usr/bin/lipo", ["-archs", resolve(bundle, "Contents/MacOS", executable)]).split(/\s+/);
       if (!archs.includes(process.arch === "x64" ? "x86_64" : process.arch)) throw new Error(`Architecture mismatch: ${bundle}`);
+      if (job.suite === "chat-history") verifyAppGrammarPack(repositoryRoot, app, record.grammarPack);
       return { suite: job.suite, app, bundle, record };
     });
   });
@@ -43,7 +45,7 @@ async function main() {
     ["deno", resolve(repositoryRoot, "scripts/with-local-deno.sh"), ["deno", "--version"]],
     ["cocoapods", "pod", ["--version"]],
   ] as const) tools[name] = command(executable, [...toolArgs]);
-  const manifest: Manifest = { version: 1, tag: releaseTag, createdAt: new Date().toISOString(), platform: "darwin", arch: process.arch, minimumMacOS: tools.macOS, comparisonCommit, legendAppsCommit, tools, signing: "ad-hoc-or-developer-signed-not-notarization-verified", assets: [] };
+  const manifest: Manifest = { version: 1, tag: releaseTag, createdAt: new Date().toISOString(), platform: "darwin", arch: process.arch, minimumMacOS: tools.macOS, comparisonCommit, legendAppsCommit, tools, signing: "ad-hoc-or-developer-signed-not-notarization-verified", assets: [], grammarAssets: [] };
   mkdirSync(output, { recursive: true });
   for (const item of selected) {
     const name = `${item.suite}-${item.app}-macos-${process.arch}.tar.gz`;
@@ -60,10 +62,23 @@ async function main() {
     const { repositoryPath: _path, bundle: _bundle, release: _release, ...build } = item.record;
     manifest.assets.push({ suite: item.suite, app: item.app, name, bytes: statSync(resolve(output, name)).size, sha256: hashFile(resolve(output, name)), bundleSha256: before, build });
   }
+  const grammarRecords = new Map(selected.filter(item => item.suite === "chat-history").map(item => [item.record.grammarPack!.engine, item.record.grammarPack!]));
+  for (const [engine, pack] of grammarRecords) {
+    const source = resolve(grammarPackRoot(repositoryRoot), engine);
+    const name = `grammars-${engine}-v1-macos-${process.arch}.tar.gz`;
+    const treeSha256 = bundleHash(source);
+    command("python3", [resolve(import.meta.dir, "archive.py"), "create", source, resolve(output, name)]);
+    const verification = resolve(output, `.verify-grammar-${engine}`);
+    try {
+      command("python3", [resolve(import.meta.dir, "archive.py"), "extract", resolve(output, name), verification, engine]);
+      if (bundleHash(resolve(verification, engine)) !== treeSha256 || bundleHash(source) !== treeSha256) throw new Error(`Grammar archive round trip failed: ${engine}`);
+    } finally { rmSync(verification, { recursive: true, force: true }); }
+    manifest.grammarAssets!.push({ name, bytes: statSync(resolve(output, name)).size, sha256: hashFile(resolve(output, name)), treeSha256, pack });
+  }
   if (cleanCommit(repositoryRoot) !== comparisonCommit || cleanCommit(legendRoot) !== legendAppsCommit) throw new Error("Source changed during packaging.");
   validateManifest(manifest);
   writeFileSync(resolve(output, manifestName), JSON.stringify(manifest, null, 2) + "\n");
-  writeFileSync(resolve(output, "SHA256SUMS"), [manifestName, ...manifest.assets.map(asset => asset.name)].map(name => `${hashFile(resolve(output, name))}  ${name}\n`).join(""));
+  writeFileSync(resolve(output, "SHA256SUMS"), [manifestName, ...manifest.assets.map(asset => asset.name), ...manifest.grammarAssets!.map(asset => asset.name)].map(name => `${hashFile(resolve(output, name))}  ${name}\n`).join(""));
   console.log(`Release package: ${output}\nNo files published. The manifest is only written after every archive succeeds.`);
 }
 try { await main(); } catch (error) { console.error(error instanceof Error ? error.message : error); process.exitCode = 1; }

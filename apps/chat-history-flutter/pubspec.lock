@@ -114,10 +114,9 @@ packages:
   highlighting:
     dependency: "direct main"
     description:
-      name: highlighting
-      sha256: "196005ed9c98ee559939fcecd466fa941b9e99b3a93394691b86780ad4da50f3"
-      url: "https://pub.dev"
-    source: hosted
+      path: "../../packages/dart-highlighting"
+      relative: true
+    source: path
     version: "0.9.0+11.8.0"
   leak_tracker:
     dependency: transitive

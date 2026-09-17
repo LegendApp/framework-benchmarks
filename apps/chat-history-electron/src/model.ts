@@ -200,6 +200,7 @@ export type BenchmarkEvent =
   | BenchmarkViewportReadyEvent;
 
 export type ChatHistoryApi = {
+  getGrammarSource(): Promise<string>;
   implementationName:
     | "Deno CEF"
     | "Deno WebView"

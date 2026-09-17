@@ -11,11 +11,11 @@ async function main() {
   const repo = repository(args["--repo"]);
   const directory = resolve(args["--directory"]);
   const manifest = readManifest(resolve(directory, manifestName));
-  for (const asset of manifest.assets) {
+  for (const asset of [...manifest.assets, ...(manifest.grammarAssets ?? [])]) {
     const path = resolve(directory, asset.name);
     if (statSync(path).size !== asset.bytes || hashFile(path) !== asset.sha256) throw new Error(`Archive checksum mismatch: ${asset.name}`);
   }
-  const files = [manifestName, ...manifest.assets.map(asset => asset.name)];
+  const files = [manifestName, ...manifest.assets.map(asset => asset.name), ...(manifest.grammarAssets ?? []).map(asset => asset.name)];
   const sums = files.map(name => `${hashFile(resolve(directory, name))}  ${name}\n`).join("");
   if (readFileSync(resolve(directory, "SHA256SUMS"), "utf8") !== sums) throw new Error("SHA256SUMS does not match the package.");
   // Resolve the actual tag ref, including annotated tags; never create a tag implicitly.
@@ -28,7 +28,7 @@ async function main() {
     writeFileSync(notes, `Prebuilt desktop benchmarks: all 19 apps, macOS ${manifest.minimumMacOS}+ (${manifest.arch}).\n\nComparison source: ${manifest.comparisonCommit}\nLegend Apps source: ${manifest.legendAppsCommit}\n\nUse the harness at this tag. Run \`bun run benchmark:download --repo ${repo} --release ${manifest.tag}\`, then \`bun run benchmark:run\`.\n\nThese are benchmark builds; notarization is not verified. Private histories are not included. See the README for measurement prerequisites and fixture selection.\n`);
     // Create first: an existing release fails here before any upload can overwrite it.
     command("gh", ["release", "create", manifest.tag, "--repo", repo, "--verify-tag", "--draft", "--title", `Desktop benchmarks ${manifest.tag}`, "--notes-file", notes]);
-    command("gh", ["release", "upload", manifest.tag, "--repo", repo, resolve(directory, manifestName), resolve(directory, "SHA256SUMS"), ...manifest.assets.map(asset => resolve(directory, asset.name))]);
+    command("gh", ["release", "upload", manifest.tag, "--repo", repo, resolve(directory, manifestName), resolve(directory, "SHA256SUMS"), ...[...manifest.assets, ...(manifest.grammarAssets ?? [])].map(asset => resolve(directory, asset.name))]);
     if (!args["--draft"]) command("gh", ["release", "edit", manifest.tag, "--repo", repo, "--draft=false", "--latest"]);
     console.log(`${args["--draft"] ? "Draft created" : "Published"}: https://github.com/${repo}/releases/tag/${manifest.tag}`);
   } finally { rmSync(temp, { recursive: true, force: true }); }

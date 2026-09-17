@@ -1,3 +1,4 @@
+import { externalGrammarRoot } from "../../chat-history-electron/src/grammar-path.ts";
 import type { DocumentRequest } from "../../chat-history-electron/src/document-registry.ts";
 import { extname, join } from "jsr:@std/path@1.1.2";
 import { getRecentChats } from "../../chat-history-electron/src/catalog.ts";
@@ -264,6 +265,11 @@ export async function runDesktop(
 
   Deno.serve({ hostname: "127.0.0.1", port: 8000 }, (request) => {
     const url = new URL(request.url);
+    if (url.pathname === "/__grammar_pack") {
+      return Deno.readFile(join(externalGrammarRoot(Deno.execPath(), Deno.env.get("BENCHMARK_GRAMMAR_ROOT")), "highlight-js/grammars.mjs"))
+        .then(data => new Response(data, { headers: { "content-type": "text/javascript" } }))
+        .catch(error => { console.error("External grammar pack:", error); return new Response("External grammar pack unavailable", { status: 500 }); });
+    }
     return url.pathname === "/__local_file" ? serveLocalFile(url) : serveStatic(url.pathname);
   });
 

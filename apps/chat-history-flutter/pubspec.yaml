@@ -11,7 +11,8 @@ dependencies:
     sdk: flutter
   flutter_markdown_plus:
     path: ../../packages/flutter-markdown-plus
-  highlighting: ^0.9.0+11.8.0
+  highlighting:
+    path: ../../packages/dart-highlighting
   markdown: ^7.3.0
   path: ^1.9.1
   scrollable_positioned_list: ^0.3.8

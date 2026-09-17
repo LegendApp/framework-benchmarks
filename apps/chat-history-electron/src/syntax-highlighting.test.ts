@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { initializeGrammarPack } from "./syntax-highlighting";
+await initializeGrammarPack(readFileSync(new URL("../../../.build/chat-history-benchmarks/grammar-packs/v1/highlight-js/grammars.mjs", import.meta.url), "utf8"));
 import { expect, test } from "bun:test";
 import fixtures from "../../../benchmarks/chat-history/syntax-highlighting-fixtures.json";
 import { codePaneSource, highlightCode } from "./syntax-highlighting";

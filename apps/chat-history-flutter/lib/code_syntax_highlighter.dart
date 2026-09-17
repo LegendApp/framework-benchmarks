@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:path/path.dart' as paths;
+import 'package:highlighting/src/grammar_pack.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -58,6 +61,24 @@ const _colors = <String, Color>{
   'selector-tag': Color(0xff7ee787),
 };
 
+bool _grammarsLoaded = false;
+void _loadGrammarPack() {
+  if (_grammarsLoaded) return;
+  var root = Platform.environment['BENCHMARK_GRAMMAR_ROOT'];
+  if (root == null) {
+    var directory = paths.dirname(Platform.resolvedExecutable);
+    while (paths.dirname(directory) != directory && !directory.endsWith('.app')) {
+      directory = paths.dirname(directory);
+    }
+    root = directory.endsWith('.app')
+        ? paths.join(paths.dirname(directory), 'grammar-packs', 'v1')
+        : paths.absolute('../../.build/chat-history-benchmarks/grammar-packs/v1');
+  }
+  final pack = jsonDecode(File(paths.join(root, 'dart-highlighting', 'grammars.json')).readAsStringSync()) as Map<String, dynamic>;
+  for (final language in decodeLanguages(pack).values) { hl.highlight.registerLanguage(language); }
+  _grammarsLoaded = true;
+}
+
 TextSpan highlightCode(String source, String fence) {
   final language = codeLanguages[fence.toLowerCase()];
   if (language == null ||
@@ -65,6 +86,7 @@ TextSpan highlightCode(String source, String fence) {
       '\n'.allMatches(source).length + 1 > 2000) {
     return TextSpan(text: source);
   }
+  _loadGrammarPack();
   TextSpan span(hl.Node node) {
     // highlight.js scopes such as title.function inherit their base token color.
     final color = _colors[node.className?.split('.').first];

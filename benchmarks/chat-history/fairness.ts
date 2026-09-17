@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 export const renderingContract = {
+  grammarStorage: "External versioned packs installed before launch; loading and initialization occur inside app execution; no network or precomputed highlighting.",
   version: 1,
   objective: "Comparable visible features with idiomatic platform rendering engines.",
   sharedLibraries: "React Native and web hosts must use identical Legend List DOM artifacts from the same snapshot.",

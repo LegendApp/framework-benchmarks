@@ -13,7 +13,12 @@ rmSync(outputApp, { force: true, recursive: true });
 mkdirSync(dirname(outputApp), { recursive: true });
 cpSync(electronApp, outputApp, { recursive: true });
 mkdirSync(resourcesApp, { recursive: true });
-cpSync(join(appRoot, "dist"), join(resourcesApp, "dist"), { recursive: true });
+mkdirSync(join(resourcesApp, "dist"), { recursive: true });
+// Package only current entrypoints; obsolete outputs from earlier builds must
+// not inflate app size or retain old bundled grammar code.
+for (const file of ["main.js", "parser-worker.js", "electron-renderer.js", "electron-renderer.css", "index.html", "preload.cjs"]) {
+  cpSync(join(appRoot, "dist", file), join(resourcesApp, "dist", file));
+}
 writeFileSync(join(resourcesApp, "package.json"), JSON.stringify({
   main: "dist/main.js",
   name: "legend-chat-history-electron-benchmark",

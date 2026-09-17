@@ -186,6 +186,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            get_grammar_source,
             emit_benchmark_event,
             get_benchmark_config,
             get_recent_chats,
@@ -206,4 +207,15 @@ pub fn run() {
             let _ = append_benchmark_event(serde_json::json!({ "name": "windowShown" }));
         }
     });
+}
+
+#[tauri::command]
+fn get_grammar_source() -> Result<String, String> {
+    let root = std::env::var_os("BENCHMARK_GRAMMAR_ROOT").map(std::path::PathBuf::from).unwrap_or_else(|| {
+        let exe = std::env::current_exe().expect("executable path");
+        exe.ancestors().find(|p| p.extension().is_some_and(|e| e == "app"))
+            .and_then(|p| p.parent()).map(|p| p.join("grammar-packs/v1"))
+            .unwrap_or_else(|| std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../.build/chat-history-benchmarks/grammar-packs/v1"))
+    });
+    std::fs::read_to_string(root.join("highlight-js/grammars.mjs")).map_err(|e| format!("External grammar pack: {e}"))
 }

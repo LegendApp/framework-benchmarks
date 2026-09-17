@@ -1,3 +1,4 @@
+import { initializeGrammarPack } from "../../chat-history-electron/src/syntax-highlighting";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -18,6 +19,7 @@ function imageSource(source: string) {
 }
 
 window.chatHistory = {
+  getGrammarSource() { return invoke<string>("get_grammar_source"); },
   implementationName: "Tauri",
   emitBenchmarkEvent(event) {
     return invoke<void>("emit_benchmark_event", { event });
@@ -77,4 +79,5 @@ if (windowTitle) {
   syncWindowTitle();
 }
 
+await initializeGrammarPack(await window.chatHistory.getGrammarSource());
 mountChatHistory();
