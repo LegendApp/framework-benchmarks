@@ -5,7 +5,7 @@ Release-mode macOS apps in React Native, Electron, Tauri, Deno Desktop (WebView 
 - **Chat history:** nine apps browse pinned transcripts with Markdown and syntax highlighting.
 - **Hello World:** ten apps display the same greeting, including both standalone React Native and the Legend Apps shell.
 
-The [September 16 results](benchmarks/final-2026-09-16/RESULTS.md) contain separate tables for startup, memory, and built app size. They describe those builds: subsequent [Flutter/GPUI rendering changes](benchmarks/chat-history/FLUTTER_GPUI_OUTPUT_ALIGNMENT.md) require new measurements. Comparable features do not imply identical rendering engines or pixels; see the [fairness standard](benchmarks/chat-history/FAIRNESS_STANDARD.md).
+The [September 17 results](benchmarks/final-2026-09-17/RESULTS.md) contain fresh separate tables for startup, memory, and built app size, including the latest [Flutter/GPUI rendering changes](benchmarks/chat-history/FLUTTER_GPUI_OUTPUT_ALIGNMENT.md). All 19 bundles were rebuilt from clean committed source and validated against their recordings. Comparable features do not imply identical rendering engines or pixels; see the [fairness standard](benchmarks/chat-history/FAIRNESS_STANDARD.md) and the report’s conditions and limitations. The earlier [September 16 results](benchmarks/final-2026-09-16/RESULTS.md) remain available for historical context.
 
 ## Setup
 
@@ -85,7 +85,7 @@ Each workload produces its own JSON and Markdown results table:
 - Chat history: `benchmarks/chat-history/results/<timestamp>.json`, `.md`, observation journal, and `<timestamp>-videos/`.
 - Hello World: `benchmarks/hello-world/results/<timestamp>/results.json`, `results.md`, observation journal, videos, and `videos.html`.
 
-Keep the full result directories to review recordings later. These generated artifacts are gitignored. App-reported stages are diagnostics; use the video-derived columns for comparisons. See the [chat-history methodology](benchmarks/chat-history/README.md) and [Hello World methodology](benchmarks/hello-world/README.md) for detection, sampling, retries, and limitations. The unified runner does not automate the additional idle-CPU, thermal, bundle-hash, and visual-review audit used for the historical September 16 report; review machine conditions and evidence before publishing results.
+Keep the full result directories to review recordings later. These generated artifacts are gitignored. App-reported stages are diagnostics; use the video-derived columns for comparisons. See the [chat-history methodology](benchmarks/chat-history/README.md) and [Hello World methodology](benchmarks/hello-world/README.md) for detection, sampling, retries, and limitations. The unified runner does not automate the additional idle-CPU, thermal, bundle-hash, and visual-review audit used for the September 17 report (which does not include fresh per-app idle CPU measurements); review machine conditions and evidence before publishing results.
 
 An optional paired report can be generated from two completed runs:
 
