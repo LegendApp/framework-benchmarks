@@ -77,14 +77,10 @@ main {
   height: 100vh;
 }
 .sidebar {
-  margin: 8px 0 8px 8px;
   padding: 44px 8px 0;
-  border: 1px solid var(--line);
-  border-radius: 20px;
+  border-right: 1px solid var(--line);
   overflow-y: auto;
-  background: var(--glass);
-  backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  background: var(--surface);
 }
 .sidebar section + section {
   margin-top: 12px;

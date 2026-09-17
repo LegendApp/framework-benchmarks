@@ -35,3 +35,11 @@ The September 15 ten-run table predates the latest shared-list/code-pane alignme
 ## Validation of enforcement
 
 All nine production apps rebuilt with rendering provenance; the actual exported records pass the policy/shared-list compatibility check. Three regression tests cover artifact drift, absent provenance and policy mismatch; TypeScript checking passes. An end-to-end foreground check was attempted but correctly refused before measurement because the console had locked. No new performance ranking was produced.
+
+## Sidebar presentation
+
+Use native split-view presentation in the native UI stacks. The current Electron, Tauri, Deno, Flutter, and GPUI implementations use a plain, full-height sidebar with a solid background and one divider. They retain a 260-point sidebar allocation, without imitating native glass through outer insets or rounded panels. Adding a native split-view host to these implementations would require a separate platform integration; it is not part of the existing renderer. Markdown, highlighting, and document-loading policies are unchanged by this presentation choice.
+
+## Composer material limitation
+
+The [composer audit](../../docs/COMPOSER_MATERIALS.md) distinguishes native Liquid Glass, conventional backdrop blur, and transparency. RN/AppKit/SwiftUI use native glass on macOS 26; the web apps and Flutter blur the transcript in their renderer. GPUI 0.2.2 currently only alpha-blends its composer and does not perform equivalent backdrop-blur work. Treat this as an explicit remaining rendering-work difference in comparisons.

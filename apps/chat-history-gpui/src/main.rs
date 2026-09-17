@@ -40,6 +40,7 @@ struct Palette {
     table_alt: gpui::Rgba,
     muted: gpui::Rgba,
     sidebar: gpui::Rgba,
+    sidebar_surface: gpui::Rgba,
     text: gpui::Rgba,
     user: gpui::Rgba,
 }
@@ -60,7 +61,8 @@ impl Palette {
                 table_header: rgb(0x2a2b2d),
                 table_alt: rgb(0x1f2021),
                 muted: rgb(0xa3a3a3),
-                sidebar: rgba(0x252528cc),
+                sidebar: rgba(0x252528c7),
+                sidebar_surface: rgb(0x242526),
                 text: rgb(0xf5f5f5),
                 user: rgb(0x2d2e30),
             }
@@ -78,7 +80,8 @@ impl Palette {
                 table_header: rgb(0xf3f4f6),
                 table_alt: rgb(0xf9fafb),
                 muted: rgb(0x6b7280),
-                sidebar: rgba(0xffffffb3),
+                sidebar: rgba(0xf5f5f7c7),
+                sidebar_surface: rgb(0xffffff),
                 text: rgb(0x111827),
                 user: rgb(0xf3f4f6),
             }
@@ -543,16 +546,13 @@ impl ChatHistory {
             }
         }
         div()
-            .w(px(252.0))
-            .ml(px(8.0))
-            .my(px(8.0))
-            .rounded(px(20.0))
+            .w(px(260.0))
             .overflow_hidden()
             .flex_none()
             .flex()
             .flex_col()
-            .bg(palette.sidebar)
-            .border_1()
+            .bg(palette.sidebar_surface)
+            .border_r_1()
             .border_color(palette.border)
             .child(
                 div()

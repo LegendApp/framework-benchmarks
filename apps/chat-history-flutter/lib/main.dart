@@ -561,16 +561,11 @@ class _Sidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      margin: const EdgeInsets.fromLTRB(8, 8, 0, 8),
-      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).dividerColor),
+        border: Border(right: BorderSide(color: Theme.of(context).dividerColor)),
       ),
       child: ColoredBox(
-        color: (isDark ? const Color(0xff242526) : Colors.white).withValues(
-          alpha: 0.7,
-        ),
+        color: isDark ? const Color(0xff242526) : Colors.white,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(8, 44, 8, 0),
           children: <Widget>[
@@ -763,8 +758,8 @@ class _Content extends StatelessWidget {
           ),
         ),
         Positioned(
-          left: 20,
-          right: 20,
+          left: 24,
+          right: 24,
           bottom: 20,
           child: Center(
             child: ConstrainedBox(
@@ -777,8 +772,10 @@ class _Content extends StatelessWidget {
                     height: 60,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface
-                          .withValues(alpha: 0.8),
+                      color: (Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xff252528)
+                              : const Color(0xfff5f5f7))
+                          .withValues(alpha: 0.78),
                       borderRadius: BorderRadius.circular(26),
                       border: Border.all(color: Theme.of(context).dividerColor),
                     ),
