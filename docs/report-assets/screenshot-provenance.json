@@ -1,0 +1,65 @@
+[
+  {
+    "app": "react-native",
+    "material": "Native Liquid Glass",
+    "videoSecond": 2.439114501953125,
+    "phase": "top",
+    "timestampMs": 1789661182145
+  },
+  {
+    "app": "electron",
+    "material": "CSS backdrop blur",
+    "videoSecond": 2.993107421875,
+    "phase": "top",
+    "timestampMs": 1789661188249
+  },
+  {
+    "app": "tauri",
+    "material": "CSS backdrop blur",
+    "videoSecond": 2.891762939453125,
+    "phase": "top",
+    "timestampMs": 1789661194181
+  },
+  {
+    "app": "deno-webview",
+    "material": "CSS backdrop blur",
+    "videoSecond": 2.703416748046875,
+    "phase": "top",
+    "timestampMs": 1789661199926
+  },
+  {
+    "app": "deno-cef",
+    "material": "CSS backdrop blur",
+    "videoSecond": 3.17673876953125,
+    "phase": "top",
+    "timestampMs": 1789661206166
+  },
+  {
+    "app": "flutter",
+    "material": "Gaussian backdrop blur",
+    "videoSecond": 2.982726806640625,
+    "phase": "top",
+    "timestampMs": 1789661212222
+  },
+  {
+    "app": "gpui",
+    "material": "Transparency only (no backdrop blur)",
+    "videoSecond": 2.767051513671875,
+    "phase": "top",
+    "timestampMs": 1789661218173
+  },
+  {
+    "app": "appkit",
+    "material": "Native Liquid Glass",
+    "videoSecond": 2.419231201171875,
+    "phase": "top",
+    "timestampMs": 1789661223641.858
+  },
+  {
+    "app": "swiftui",
+    "material": "Native Liquid Glass",
+    "videoSecond": 2.83105126953125,
+    "phase": "top",
+    "timestampMs": 1789661229387.0222
+  }
+]

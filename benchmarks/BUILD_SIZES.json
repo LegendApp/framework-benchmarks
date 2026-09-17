@@ -1,0 +1,273 @@
+{
+  "measuredAt": "2026-09-17T15:34:18.387Z",
+  "measurement": "Logical regular-file bytes; symlinks excluded; system frameworks excluded",
+  "suites": {
+    "chat-history": [
+      {
+        "app": "react-native",
+        "label": "React Native",
+        "appBytes": 20614246,
+        "grammarPackBytes": 23617711,
+        "combinedInstalledBytes": 44231957,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:24:57.286Z",
+        "gitCommit": "b371b339ac10de3050af162da4493a2d4f09cc23",
+        "gitDirty": true,
+        "grammarPack": {
+          "engine": "tree-sitter",
+          "version": "v1",
+          "bytes": 23617711,
+          "manifestSha256": "28890a6c177858e6f35798c57d31f5bc2522c6fc3dc5dcfbe3513bc21f40c076"
+        }
+      },
+      {
+        "app": "electron",
+        "label": "Electron",
+        "appBytes": 299476637,
+        "grammarPackBytes": 82651,
+        "combinedInstalledBytes": 299559288,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:24:58.541Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true,
+        "grammarPack": {
+          "engine": "highlight-js",
+          "version": "v1",
+          "bytes": 82651,
+          "manifestSha256": "9a76d0a3726bcd1028fd981a7c4dfc13742fff28642594a5ceb964ee4279fb54"
+        }
+      },
+      {
+        "app": "tauri",
+        "label": "Tauri",
+        "appBytes": 12100697,
+        "grammarPackBytes": 82651,
+        "combinedInstalledBytes": 12183348,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:25:14.635Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true,
+        "grammarPack": {
+          "engine": "highlight-js",
+          "version": "v1",
+          "bytes": 82651,
+          "manifestSha256": "9a76d0a3726bcd1028fd981a7c4dfc13742fff28642594a5ceb964ee4279fb54"
+        }
+      },
+      {
+        "app": "deno-webview",
+        "label": "Deno WebView",
+        "appBytes": 69026775,
+        "grammarPackBytes": 82651,
+        "combinedInstalledBytes": 69109426,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:25:18.053Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true,
+        "grammarPack": {
+          "engine": "highlight-js",
+          "version": "v1",
+          "bytes": 82651,
+          "manifestSha256": "9a76d0a3726bcd1028fd981a7c4dfc13742fff28642594a5ceb964ee4279fb54"
+        }
+      },
+      {
+        "app": "deno-cef",
+        "label": "Deno CEF",
+        "appBytes": 322733640,
+        "grammarPackBytes": 82651,
+        "combinedInstalledBytes": 322816291,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:25:18.053Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true,
+        "grammarPack": {
+          "engine": "highlight-js",
+          "version": "v1",
+          "bytes": 82651,
+          "manifestSha256": "9a76d0a3726bcd1028fd981a7c4dfc13742fff28642594a5ceb964ee4279fb54"
+        }
+      },
+      {
+        "app": "flutter",
+        "label": "Flutter",
+        "appBytes": 22596822,
+        "grammarPackBytes": 605873,
+        "combinedInstalledBytes": 23202695,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:33:53.560Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true,
+        "grammarPack": {
+          "engine": "dart-highlighting",
+          "version": "v1",
+          "bytes": 605873,
+          "manifestSha256": "465cae3d2ffcb65e85bb79d5bac59e66408bc17e3a21ac486b98ae82ba1d0a6b"
+        }
+      },
+      {
+        "app": "gpui",
+        "label": "GPUI",
+        "appBytes": 10356530,
+        "grammarPackBytes": 890385,
+        "combinedInstalledBytes": 11246915,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:25:38.921Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true,
+        "grammarPack": {
+          "engine": "syntect",
+          "version": "v1",
+          "bytes": 890385,
+          "manifestSha256": "7a11c89e59d8e034997fb50862608601785d38e938f446d13eb4671e8e4f4287"
+        }
+      },
+      {
+        "app": "swiftui",
+        "label": "SwiftUI",
+        "appBytes": 3891560,
+        "grammarPackBytes": 1379783,
+        "combinedInstalledBytes": 5271343,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:25:39.659Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true,
+        "grammarPack": {
+          "engine": "highlighter-swift",
+          "version": "v1",
+          "bytes": 1379783,
+          "manifestSha256": "7dbd092516aff27dff965d737582732677c1684046029eed63f44bc5e31ec690"
+        }
+      },
+      {
+        "app": "appkit",
+        "label": "AppKit",
+        "appBytes": 3366500,
+        "grammarPackBytes": 1379783,
+        "combinedInstalledBytes": 4746283,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:25:40.219Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true,
+        "grammarPack": {
+          "engine": "highlighter-swift",
+          "version": "v1",
+          "bytes": 1379783,
+          "manifestSha256": "7dbd092516aff27dff965d737582732677c1684046029eed63f44bc5e31ec690"
+        }
+      }
+    ],
+    "hello-world": [
+      {
+        "app": "react-native",
+        "label": "React Native",
+        "appBytes": 17048794,
+        "grammarPackBytes": 0,
+        "combinedInstalledBytes": 17048794,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:26:17.435Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true
+      },
+      {
+        "app": "legend-shell",
+        "label": "Legend Shell",
+        "appBytes": 9781088,
+        "grammarPackBytes": 0,
+        "combinedInstalledBytes": 9781088,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:27:07.340Z",
+        "gitCommit": "b371b339ac10de3050af162da4493a2d4f09cc23",
+        "gitDirty": true
+      },
+      {
+        "app": "electron",
+        "label": "Electron",
+        "appBytes": 298947547,
+        "grammarPackBytes": 0,
+        "combinedInstalledBytes": 298947547,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:27:08.473Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true
+      },
+      {
+        "app": "tauri",
+        "label": "Tauri",
+        "appBytes": 10775687,
+        "grammarPackBytes": 0,
+        "combinedInstalledBytes": 10775687,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:27:22.395Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true
+      },
+      {
+        "app": "deno-webview",
+        "label": "Deno WebView",
+        "appBytes": 68173135,
+        "grammarPackBytes": 0,
+        "combinedInstalledBytes": 68173135,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:27:23.453Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true
+      },
+      {
+        "app": "deno-cef",
+        "label": "Deno CEF",
+        "appBytes": 321879995,
+        "grammarPackBytes": 0,
+        "combinedInstalledBytes": 321879995,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:27:25.421Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true
+      },
+      {
+        "app": "flutter",
+        "label": "Flutter",
+        "appBytes": 17844664,
+        "grammarPackBytes": 0,
+        "combinedInstalledBytes": 17844664,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:34:04.291Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true
+      },
+      {
+        "app": "gpui",
+        "label": "GPUI",
+        "appBytes": 5572322,
+        "grammarPackBytes": 0,
+        "combinedInstalledBytes": 5572322,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:27:40.059Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true
+      },
+      {
+        "app": "swiftui",
+        "label": "SwiftUI",
+        "appBytes": 89979,
+        "grammarPackBytes": 0,
+        "combinedInstalledBytes": 89979,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:27:40.810Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true
+      },
+      {
+        "app": "appkit",
+        "label": "AppKit",
+        "appBytes": 81096,
+        "grammarPackBytes": 0,
+        "combinedInstalledBytes": 81096,
+        "architectures": "arm64",
+        "builtAt": "2026-09-17T15:27:41.441Z",
+        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
+        "gitDirty": true
+      }
+    ]
+  }
+}

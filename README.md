@@ -5,7 +5,11 @@ Release-mode macOS apps in React Native, Electron, Tauri, Deno Desktop (WebView 
 - **Chat history:** nine apps browse pinned transcripts with Markdown and syntax highlighting.
 - **Hello World:** ten apps display the same greeting, including both standalone React Native and the Legend Apps shell.
 
-The [September 17 results](benchmarks/final-2026-09-17/RESULTS.md) contain fresh separate tables for startup, memory, and built app size, including the latest [Flutter/GPUI rendering changes](benchmarks/chat-history/FLUTTER_GPUI_OUTPUT_ALIGNMENT.md). All 19 bundles were rebuilt from clean committed source and validated against their recordings. Comparable features do not imply identical rendering engines or pixels; see the [fairness standard](benchmarks/chat-history/FAIRNESS_STANDARD.md) and the report’s conditions and limitations. The earlier [September 16 results](benchmarks/final-2026-09-16/RESULTS.md) remain available for historical context.
+The latest measured [September 17 results](benchmarks/final-2026-09-17/RESULTS.md), from before external grammar packs, contain separate tables for startup, memory, and built app size, including the latest [Flutter/GPUI rendering changes](benchmarks/chat-history/FLUTTER_GPUI_OUTPUT_ALIGNMENT.md). All 19 bundles were rebuilt from clean committed source and validated against their recordings. Comparable features do not imply identical rendering engines or pixels; see the [fairness standard](benchmarks/chat-history/FAIRNESS_STANDARD.md) and the report’s conditions and limitations. The earlier [September 16 results](benchmarks/final-2026-09-16/RESULTS.md) remain available for historical context.
+
+The latest [built app sizes](benchmarks/BUILD_SIZES.md) come from a subsequent rebuild of all 19 apps with external grammar packs. They separate app, grammar-pack, and combined installed sizes; startup and memory were not rerun.
+
+The illustrated [framework comparison report](docs/DESKTOP_FRAMEWORK_REPORT.md) combines the size tables, benchmark results, UI architectures, and framework tradeoffs with screenshots of all nine chat-history apps.
 
 ## Setup
 
@@ -73,6 +77,12 @@ Both scripts accept `--name value` or `--name=value`. Unknown options and invali
 App names: `react-native`, `legend-shell`, `electron`, `tauri`, `deno-webview`, `deno-cef`, `flutter`, `gpui`, `swiftui`, `appkit`. `deno` selects both backends. `legend-shell` only exists in Hello World. Selecting a technology without `--suite` selects its apps in both workloads. The chat-history Deno exporter always builds **both backends**, even when only one is requested; the preview shows this. Benchmarking still runs only the requested backend.
 
 Suite-specific aliases are available: `benchmark:chat-history:build`, `benchmark:chat-history:run`, `benchmark:hello-world:build`, and `benchmark:hello-world:run`. Build aliases have the same confirmation. `benchmark:chat-history` and `benchmark:hello-world` are run-only aliases. Lower-level suite scripts are implementation/diagnostic entry points; use the commands above for normal builds and measurements.
+
+Flutter release builds target ARM64 in both workloads, including the bundled engine and Dart code. These benchmark exports require Apple Silicon.
+
+## External grammar assets
+
+Chat-history grammars are installed in a shared folder beside the built apps. Builds and prebuilt downloads prepare the required packs automatically. Keep `.build/chat-history-benchmarks/grammar-packs/` alongside the apps when relocating them. The runner verifies pack hashes before measurement; loading and highlighting remain timed app work. New reports separate app size, grammar-pack size, and combined installed size. See [external grammar packs](benchmarks/chat-history/EXTERNAL_GRAMMARS.md) for engine formats and release behavior. The September 17 figures predate this change.
 
 ## Results and recordings
 

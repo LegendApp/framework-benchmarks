@@ -1,5 +1,7 @@
 # Desktop benchmark release measurements — September 17, 2026
 
+For current builds with external grammars, see the [updated app-size tables](../BUILD_SIZES.md). The sizes below remain those of the builds used for these timing and memory measurements.
+
 Fresh release builds from committed source, including the latest Flutter/GPUI Markdown layout alignment. Two discarded warmup rounds and ten measured rounds per app, rotating app order. Fresh processes with warm filesystem caches. Visible timings use screen recordings; settled physical footprint uses separate unrecorded launches.
 
 All times are median milliseconds. Memory and logical built `.app` size are MiB (1,048,576 bytes). System frameworks and symlink duplicates are excluded from bundle size. These are comparable application stacks, not a universal framework ranking.
