@@ -1,2 +1,6 @@
 #include "../../Flutter/Flutter-Release.xcconfig"
 #include "Warnings.xcconfig"
+
+// Benchmark release artifacts target Apple Silicon, including Flutter frameworks.
+ARCHS = arm64
+EXCLUDED_ARCHS = x86_64
