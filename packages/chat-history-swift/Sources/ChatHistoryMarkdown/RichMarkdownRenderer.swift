@@ -36,12 +36,7 @@ private struct Renderer {
   }
 
   func render(_ document: Document) -> NSAttributedString {
-    let result = NSMutableAttributedString(string: "")
-    for (index, child) in document.children.enumerated() {
-      if index > 0 { result.append(NSAttributedString(string: "\n\n")) }
-      result.append(renderBlock(child))
-    }
-    return result
+    renderBlockChildren(document)
   }
 
   private func renderBlock(_ markup: Markup) -> NSAttributedString {
@@ -61,30 +56,31 @@ private struct Renderer {
     case let paragraph as Paragraph:
       return renderInlineChildren(paragraph)
     case let code as CodeBlock:
-      let text = NSMutableAttributedString(
-        string: code.code,
-        attributes: [
-          .font: NSFont(name: "Menlo", size: 12)
-            ?? NSFont.monospacedSystemFont(ofSize: 12, weight: .regular),
-          .foregroundColor: TranscriptColors.codeForeground,
-          .backgroundColor: TranscriptColors.codeBackground,
-        ])
-      let style = NSMutableParagraphStyle()
-      style.minimumLineHeight = 18
-      style.maximumLineHeight = 18
-      text.addAttribute(.paragraphStyle, value: style, range: text.fullRange)
-      return text
+      return renderCodeBlock(code)
     case let list as UnorderedList:
       return renderList(list, start: nil)
     case let list as OrderedList:
       return renderList(list, start: Int(list.startIndex))
     case let quote as BlockQuote:
-      let content = renderBlockChildren(quote)
-      return prefixLines(in: content, with: "│ ", color: .secondaryLabelColor)
+      let content = NSMutableAttributedString(attributedString: renderBlockChildren(quote))
+      var depth = 1
+      var parent = quote.parent
+      while let ancestor = parent {
+        if ancestor is BlockQuote { depth += 1 }
+        parent = ancestor.parent
+      }
+      let marker = TranscriptQuote(depth: depth)
+      content.enumerateAttributes(in: content.fullRange) { attributes, range, _ in
+        let style = (attributes[.paragraphStyle] as? NSParagraphStyle ?? .default).mutableCopy() as! NSMutableParagraphStyle
+        style.firstLineHeadIndent += 19
+        style.headIndent += 19
+        var markers = attributes[.transcriptQuotes] as? [TranscriptQuote] ?? []
+        markers.append(marker)
+        content.addAttributes([.paragraphStyle: style, .transcriptQuotes: markers], range: range)
+      }
+      return content
     case is ThematicBreak:
-      return NSAttributedString(
-        string: "────────────────────────",
-        attributes: [.foregroundColor: NSColor.separatorColor])
+      return NSAttributedString(string: "\u{fffc}", attributes: [.transcriptRule: true])
     case let table as Table:
       return renderTable(table)
     default:
@@ -96,55 +92,109 @@ private struct Renderer {
   private func renderList(_ markup: Markup, start: Int?) -> NSAttributedString {
     let result = NSMutableAttributedString(string: "")
     let items = markup.children.compactMap { $0 as? ListItem }
-    for (offset, item) in items.enumerated() {
-      if offset > 0 { result.append(NSAttributedString(string: "\n")) }
-      let marker = start.map { "\($0 + offset). " } ?? "• "
-      let body = renderBlockChildren(item, separator: "\n")
-      let line = NSMutableAttributedString(string: marker, attributes: baseAttributes)
-      line.append(body)
-      let style = NSMutableParagraphStyle()
-      style.minimumLineHeight = 22
-      style.maximumLineHeight = 22
-      style.firstLineHeadIndent = 0
-      style.headIndent = 22
-      style.paragraphSpacing = 4
-      line.addAttribute(.paragraphStyle, value: style, range: line.fullRange)
-      result.append(line)
+    var depth = 0
+    var parent = markup.parent
+    while let ancestor = parent {
+      if ancestor is OrderedList || ancestor is UnorderedList { depth += 1 }
+      parent = ancestor.parent
     }
-    return result
-  }
-
-  private func renderTable(_ table: Table) -> NSAttributedString {
-    let result = NSMutableAttributedString(string: "")
-    let rows: [Markup] = [table.head] + Array(table.body.children)
-    for (index, row) in rows.enumerated() {
-      if index > 0 { result.append(NSAttributedString(string: "\n")) }
-      let cells = row.children.map { plainText($0) }
-      let line = NSMutableAttributedString(
-        string: cells.joined(separator: "   │   "), attributes: baseAttributes)
-      if index == 0 {
-        line.addAttributes(
-          [.font: NSFont.systemFont(ofSize: 14, weight: .semibold)], range: line.fullRange)
+    for (offset, item) in items.enumerated() {
+      if offset > 0 { result.append(NSAttributedString(string: "\n", attributes: baseAttributes)) }
+      let checked = item.checkbox.map { $0 == .checked }
+      let number = start.map { $0 + offset }
+      let markerWidth: CGFloat = checked != nil ? 14 : (number != nil
+        ? ("99." as NSString).size(withAttributes: [.font: NSFont.systemFont(ofSize: 15, weight: .medium)]).width : 3)
+      let indent = markerWidth + 8 + CGFloat(depth) * 24
+      let line = NSMutableAttributedString(attributedString: renderBlockChildren(item))
+      line.enumerateAttributes(in: line.fullRange) { attributes, range, _ in
+        // A nested list owns its own indentation. Embedded blocks retain their
+        // attachment layout and are indented with their containing item.
+        guard attributes[.transcriptListMarker] == nil else { return }
+        let style = (attributes[.paragraphStyle] as? NSParagraphStyle ?? .default).mutableCopy() as! NSMutableParagraphStyle
+        if style.headIndent > indent { return }
+        style.firstLineHeadIndent = indent
+        style.headIndent = indent
+        style.paragraphSpacing = 0
+        line.addAttribute(.paragraphStyle, value: style, range: range)
+        if checked == true { line.addAttribute(.foregroundColor, value: TranscriptColors.muted, range: range) }
+      }
+      if line.length > 0 {
+        line.addAttribute(.transcriptListMarker,
+          value: TranscriptListMarker(number: number, checked: checked),
+          range: NSRange(location: 0, length: 1))
       }
       result.append(line)
     }
     return result
   }
 
-  private func renderBlockChildren(_ markup: Markup, separator: String = "\n\n")
+  private func renderCodeBlock(_ code: CodeBlock) -> NSAttributedString {
+    var source = code.code
+    while source.last == "\n" { source.removeLast() }
+    return NSAttributedString(string: "\u{fffc}", attributes: [
+      .transcriptCode: CodePaneContent(source: source, language: code.language ?? ""),
+    ])
+  }
+
+  private func renderTable(_ table: Table) -> NSAttributedString {
+    let rows: [Markup] = [table.head] + Array(table.body.children)
+    let renderedRows = rows.enumerated().map { rowIndex, row in
+      row.children.enumerated().map { column, cell -> NSAttributedString in
+        let content = renderInlineChildren(cell)
+        content.enumerateAttribute(.font, in: content.fullRange) { value, range, _ in
+          if let font = value as? NSFont, font.pointSize == 15 {
+            content.addAttribute(.font, value: NSFontManager.shared.convert(font, toSize: 14), range: range)
+          }
+        }
+        if rowIndex == 0 { addFontTrait(.boldFontMask, to: content) }
+        let style = NSMutableParagraphStyle()
+        style.minimumLineHeight = 22; style.maximumLineHeight = 22
+        switch table.columnAlignments[column] {
+        case .center?: style.alignment = .center
+        case .right?: style.alignment = .right
+        default: style.alignment = .left
+        }
+        content.addAttribute(.paragraphStyle, value: style, range: content.fullRange)
+        return content
+      }
+    }
+    return NSAttributedString(string: "\u{fffc}", attributes: [.transcriptTable: TablePaneContent(rows: renderedRows)])
+  }
+
+  private func renderBlockChildren(_ markup: Markup, separator: String = "\n")
     -> NSAttributedString
   {
     let result = NSMutableAttributedString(string: "")
-    for (index, child) in markup.children.enumerated() {
-      if index > 0 { result.append(NSAttributedString(string: separator)) }
-      result.append(renderBlock(child))
+    let children = Array(markup.children)
+    for (index, child) in children.enumerated() {
+      if index > 0 { result.append(NSAttributedString(string: separator, attributes: baseAttributes)) }
+      let block = NSMutableAttributedString(attributedString: renderBlock(child))
+      if block.length > 0 {
+        // RN's normalized styles use 16-point block spacing, not a blank
+        // 22-point text line. The final block has allowTrailingMargin=false.
+        let lastLine = (block.string as NSString).lineRange(for: NSRange(location: block.length - 1, length: 0))
+        block.enumerateAttribute(.paragraphStyle, in: lastLine) { value, range, _ in
+          let style = (value as? NSParagraphStyle ?? baseAttributes[.paragraphStyle] as! NSParagraphStyle).mutableCopy() as! NSMutableParagraphStyle
+          let headingMargins: [CGFloat] = [8, 6, 4, 4, 4, 4]
+          let margin = (child as? Heading).map { headingMargins[min(5, max(0, $0.level - 1))] } ?? 16
+          style.paragraphSpacing = index == children.count - 1 ? 0 : margin
+          if child is ThematicBreak { style.paragraphSpacingBefore = 24; style.paragraphSpacing = 24 }
+          block.addAttribute(.paragraphStyle, value: style, range: range)
+        }
+      }
+      result.append(block)
     }
     return result
   }
 
   private func renderInlineChildren(_ markup: Markup) -> NSMutableAttributedString {
     let result = NSMutableAttributedString(string: "")
-    for child in markup.children { result.append(renderInline(child)) }
+    for child in markup.children {
+      if child is InlineCode, result.length > 0 {
+        result.addAttribute(.kern, value: 3.0, range: NSRange(location: result.length - 1, length: 1))
+      }
+      result.append(renderInline(child))
+    }
     return result
   }
 
@@ -159,7 +209,8 @@ private struct Renderer {
           .font: NSFont(name: "Menlo", size: 13)
             ?? NSFont.monospacedSystemFont(ofSize: 13, weight: .regular),
           .foregroundColor: TranscriptColors.inlineCodeForeground,
-          .backgroundColor: TranscriptColors.inlineCodeBackground,
+          .transcriptInlineCode: true,
+          .paragraphStyle: baseAttributes[.paragraphStyle]!,
         ])
     case is SoftBreak:
       return NSAttributedString(string: " ", attributes: baseAttributes)
@@ -183,7 +234,7 @@ private struct Renderer {
       if let destination = link.destination, let url = URL(string: destination) {
         result.addAttributes(
           [
-            .link: url, .foregroundColor: NSColor.linkColor,
+            .link: url, .foregroundColor: TranscriptColors.primary,
             .underlineStyle: NSUnderlineStyle.single.rawValue,
           ],
           range: result.fullRange)
@@ -249,23 +300,7 @@ private struct Renderer {
     return markup.children.map(plainText).joined()
   }
 
-  private func prefixLines(
-    in value: NSAttributedString, with prefix: String, color: NSColor
-  ) -> NSAttributedString {
-    let result = NSMutableAttributedString(string: "")
-    let lines = value.string.split(separator: "\n", omittingEmptySubsequences: false)
-    var location = 0
-    for (index, line) in lines.enumerated() {
-      if index > 0 { result.append(NSAttributedString(string: "\n")) }
-      result.append(NSAttributedString(string: prefix, attributes: [.foregroundColor: color]))
-      let length = (line as NSString).length
-      if length > 0 {
-        result.append(value.attributedSubstring(from: NSRange(location: location, length: length)))
-      }
-      location += length + 1
-    }
-    return result
-  }
+
 }
 
 extension NSAttributedString {

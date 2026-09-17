@@ -22,7 +22,7 @@ use gpui::{
     StrikethroughStyle, StyledText, Task, TitlebarOptions, UnderlineStyle, Window,
     WindowAppearance, WindowBounds, WindowOptions, div, img, list, prelude::*, px, rgb, rgba, size,
 };
-use markdown::{BlockKind, InlineKind, MarkdownBlock, blocks};
+use markdown::{BlockKind, InlineKind, MarkdownBlock, block_bottom_margin, blocks};
 use settings::Settings;
 
 #[derive(Clone, Copy)]
@@ -1155,6 +1155,8 @@ fn render_markdown(
                         .child(
                             div()
                                 .h(px(26.0))
+                                .border_b_1()
+                                .border_color(palette.border)
                                 .px(px(12.0))
                                 .flex()
                                 .items_center()
@@ -1320,25 +1322,61 @@ fn render_markdown(
                     .into_any_element(),
             };
             let mut container = div().child(element);
-            let margin = if index + 1 == blocks.len() {
-                0.0
-            } else {
-                match block.kind {
-                    BlockKind::Heading(1) => 8.0,
-                    BlockKind::Heading(2) => 6.0,
-                    BlockKind::Heading(_) => 4.0,
-                    _ => 16.0,
-                }
-            };
+            let margin = block_bottom_margin(blocks, index);
             if block.list_depth > 0 {
+                let marker = block.marker.as_deref().unwrap_or("");
+                let marker_width = if marker.ends_with('.') {
+                    let mut font = gpui::font(".AppleSystemUIFont");
+                    font.weight = FontWeight::MEDIUM;
+                    window
+                        .text_system()
+                        .shape_text(
+                            "99.".into(),
+                            px(15.0),
+                            &[gpui::TextRun {
+                                len: 3,
+                                font,
+                                color: palette.muted.into(),
+                                background_color: None,
+                                underline: None,
+                                strikethrough: None,
+                            }],
+                            None,
+                            None,
+                        )
+                        .map(|lines| {
+                            lines
+                                .first()
+                                .map(|line| f32::from(line.width()))
+                                .unwrap_or(0.0)
+                                + 8.0
+                        })
+                        .unwrap_or(32.0)
+                } else if marker == "☑" || marker == "☐" {
+                    22.0
+                } else {
+                    11.0
+                };
                 container = div()
                     .flex()
                     .pl(px((block.list_depth.saturating_sub(1) * 24) as f32))
                     .child(
                         div()
-                            .w(px(24.0))
+                            .w(px(marker_width))
                             .flex_none()
-                            .child(block.marker.clone().unwrap_or_default()),
+                            .text_color(palette.muted)
+                            .when(marker == "•", |column| {
+                                column.child(
+                                    div()
+                                        .mt(px(8.0))
+                                        .size(px(6.0))
+                                        .rounded_full()
+                                        .bg(palette.muted),
+                                )
+                            })
+                            .when(marker != "•", |column| {
+                                column.child(block.marker.clone().unwrap_or_default())
+                            }),
                     )
                     .child(container.flex_1().min_w(px(0.0)));
             }

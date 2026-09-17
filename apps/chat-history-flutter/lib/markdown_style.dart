@@ -92,6 +92,33 @@ class CodePaneBuilder extends MarkdownElementBuilder {
   }
 }
 
+Widget transcriptBullet(MarkdownBulletParameters parameters) {
+  if (parameters.style == BulletStyle.unorderedList) {
+    return SizedBox(
+      height: 22,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          width: 6,
+          height: 6,
+          decoration: const BoxDecoration(
+            color: Color(0xff6f7377),
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+    );
+  }
+  return Text(
+    '${parameters.index + 1}.',
+    style: const TextStyle(
+      fontSize: 15,
+      height: 22 / 15,
+      fontWeight: FontWeight.w500,
+    ),
+  );
+}
+
 // Flutter Markdown re-parses when the stylesheet identity changes. Keep it stable
 // for a given ThemeData while retaining the package's full GFM renderer.
 final _styles = Expando<MarkdownStyleSheet>();
@@ -135,6 +162,13 @@ MarkdownStyleSheet transcriptMarkdownStyle(ThemeData theme) {
       fontWeight: FontWeight.bold,
     ),
     blockSpacing: 16,
+    listIndent: 11, // RN: 3-point bullet marker plus 8-point gap.
+    listBulletPadding: EdgeInsets.zero,
+    listBullet: const TextStyle(
+      fontSize: 15,
+      height: 22 / 15,
+      fontWeight: FontWeight.w500,
+    ),
     horizontalRuleDecoration: BoxDecoration(
       border: Border(top: BorderSide(color: theme.dividerColor, width: 1)),
     ),

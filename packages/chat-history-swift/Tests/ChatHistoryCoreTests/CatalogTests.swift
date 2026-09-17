@@ -70,3 +70,21 @@ import Testing
   #expect(!result.summaries.contains(where: { $0.id == "codex:\(subagentId)" }))
   #expect(getRecentChats(limit: 0, home: home.path).summaries.isEmpty)
 }
+
+@Test func codexHeaderDiscoveryIgnoresFollowingBytes() throws {
+  let fm = FileManager.default
+  let home = fm.temporaryDirectory.appending(path: "legend-header-boundary-\(UUID().uuidString)")
+  defer { try? fm.removeItem(at: home) }
+  let root = home.appending(path: ".codex/sessions")
+  try fm.createDirectory(at: root, withIntermediateDirectories: true)
+  let hidden = "44444444-4444-4444-4444-444444444444"
+  let visible = "55555555-5555-5555-5555-555555555555"
+  // Invalid/truncated UTF-8 in the next record must not invalidate the header.
+  var data = Data("{\"payload\":{\"source\":{\"subagent\":{}}}}\n".utf8)
+  data.append(contentsOf: [0xff, 0xe2, 0x82])
+  try data.write(to: root.appending(path: "rollout-2026-01-01-\(hidden).jsonl"))
+  // A later mention of subagent must not hide an ordinary session.
+  try Data("{\"payload\":{\"source\":\"cli\"}}\n{\"payload\":{\"source\":{\"subagent\":{}}}}\n".utf8)
+    .write(to: root.appending(path: "rollout-2026-01-01-\(visible).jsonl"))
+  #expect(getRecentChats(home: home.path).summaries.map(\.id) == ["codex:\(visible)"])
+}

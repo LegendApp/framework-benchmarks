@@ -40,9 +40,12 @@ final class ChatHistoryStore: ObservableObject {
 
   func loadCatalog(preferredId: String? = nil) async {
     let limit = benchmarkConfig == nil ? settings.recentChatLimit : Int.max
+    // Synthetic visual fixtures are isolated from the real history catalog.
+    let home = benchmarkConfig == nil ? NSHomeDirectory()
+      : ProcessInfo.processInfo.environment["CHAT_HISTORY_BENCHMARK_HOME"] ?? NSHomeDirectory()
     let discoveryStartedAt = ProcessInfo.processInfo.systemUptime * 1_000
     let result = await Task.detached(priority: .userInitiated) {
-      getRecentChats(limit: limit)
+      getRecentChats(limit: limit, home: home)
     }.value
     if let benchmarkConfig {
       benchmarkDiscoveryMs = ProcessInfo.processInfo.systemUptime * 1_000 - discoveryStartedAt
@@ -95,11 +98,13 @@ final class ChatHistoryStore: ObservableObject {
     firstPaintMs = nil
     isLoading = true
     openedAt = ProcessInfo.processInfo.systemUptime * 1_000
+    // Start disk/parsing work before the main actor processes loading-state updates.
+    let loadingTask = Task.detached(priority: .userInitiated) {
+      try openChatFile(provider: summary.provider, path: summary.path)
+    }
     Task {
       do {
-        let loaded = try await Task.detached(priority: .userInitiated) {
-          try openChatFile(provider: summary.provider, path: summary.path)
-        }.value
+        let loaded = try await loadingTask.value
         guard generation == currentGeneration else { return }
         document = loaded
         isLoading = false
@@ -173,6 +178,25 @@ struct ChatHistorySwiftUIApp: App {
     }
     .defaultSize(width: 1_280, height: 720)
     .windowToolbarStyle(.unified)
+    .commands { ChatHistoryCommands() }
+  }
+}
+
+private struct ChatSettingsActionKey: FocusedValueKey {
+  typealias Value = () -> Void
+}
+private extension FocusedValues {
+  var showChatSettings: (() -> Void)? {
+    get { self[ChatSettingsActionKey.self] }
+    set { self[ChatSettingsActionKey.self] = newValue }
+  }
+}
+private struct ChatHistoryCommands: Commands {
+  @FocusedValue(\.showChatSettings) private var showSettings
+  var body: some Commands {
+    CommandGroup(replacing: .appSettings) {
+      Button("Settings…") { showSettings?() }.keyboardShortcut(",")
+    }
   }
 }
 
@@ -199,6 +223,8 @@ struct ContentView: View {
             onFirstPaint: { store.recordFirstPaint(for: document.path) },
             onTopPaint: { store.recordTopPaint(for: document.path, startedAt: $0) },
             demo: demo)
+            // A new document must not inherit the previous list's layout and scroll state.
+            .id(document.path)
         } else if let errorMessage = store.errorMessage {
           EmptyState(errorMessage, color: .red)
         } else if store.isLoading {
@@ -216,16 +242,21 @@ struct ContentView: View {
           TextField("Send a test message that doesn't actually do anything", text: $composerText)
             .textFieldStyle(.plain).font(.system(size: 15)).frame(minHeight: 36)
             .onSubmit(sendDemo)
-          Button(action: sendDemo) { Image(systemName: "arrow.up").frame(width: 36, height: 36) }
-            .buttonStyle(.plain).background(.quaternary, in: Circle())
+          Button(action: sendDemo) {
+            Text("↑").font(.system(size: 18, weight: .semibold)).foregroundStyle(.white)
+              .frame(width: 36, height: 36)
+          }
+            .buttonStyle(.plain).background(Color(nsColor: TranscriptColors.primary), in: Circle())
+            .opacity(composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.3 : 1)
             .disabled(composerText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
         .padding(.horizontal, 16).padding(.vertical, 12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 26))
-        .overlay(
-          RoundedRectangle(cornerRadius: 26).stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-        )
+        .background { TranscriptGlass() }
         .frame(maxWidth: 860).padding(.horizontal, 24).padding(.top, 8).padding(.bottom, 20)
+      }
+      .overlay(alignment: .top) {
+        TranscriptGlass(titlebar: true).frame(height: 52).ignoresSafeArea(edges: .top)
+          .allowsHitTesting(false)
       }
       .onChange(of: store.selectedId) { _, _ in
         demo.reset()
@@ -233,18 +264,9 @@ struct ContentView: View {
       }
       .background(Color(nsColor: TranscriptColors.background))
       .navigationTitle(selectedTitle)
-      .navigationSubtitle("SwiftUI")
-      .toolbar {
-        ToolbarItemGroup(placement: .primaryAction) {
-          Text(store.catalogMs.map { "catalog \(formatMs($0)) ms" } ?? "Loading catalog…")
-            .font(.caption)
-            .foregroundStyle(.secondary)
-          Button("Settings", systemImage: "gearshape") {
-            settingsOpen = true
-          }
-          .labelStyle(.iconOnly)
-        }
-      }
+      .navigationSubtitle("")
+      .toolbarBackground(.hidden, for: .windowToolbar)
+      .focusedSceneValue(\.showChatSettings, { settingsOpen = true })
     }
     .preferredColorScheme(store.settings.appearance.colorScheme)
     .onAppear {
@@ -285,7 +307,7 @@ private struct Sidebar: View {
       }
       .padding(.horizontal, 8)
     }
-    .background(.regularMaterial)
+    .background(Color(nsColor: TranscriptColors.surfaceMuted))
   }
 
   @ViewBuilder
@@ -300,21 +322,21 @@ private struct Sidebar: View {
       Button {
         store.select(summary)
       } label: {
-        HStack(spacing: 8) {
-          Text(summary.title).lineLimit(1)
+        HStack(spacing: 4) {
+          Text(summary.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
           Spacer(minLength: 4)
           Text(relativeDate(summary.updatedAt))
-            .font(.caption2)
-            .opacity(0.7)
+            .font(.system(size: 11))
+            .foregroundStyle(store.selectedId == summary.id ? Color.white.opacity(0.7) : Color(nsColor: TranscriptColors.muted))
         }
         .contentShape(Rectangle())
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 8)
         .frame(height: 34)
       }
       .buttonStyle(.plain)
-      .foregroundStyle(store.selectedId == summary.id ? Color.white : Color.primary)
+      .foregroundStyle(store.selectedId == summary.id ? Color.white : Color(nsColor: TranscriptColors.foreground))
       .background(
-        store.selectedId == summary.id ? Color.accentColor : Color.clear,
+        store.selectedId == summary.id ? Color(nsColor: TranscriptColors.primary) : Color.clear,
         in: RoundedRectangle(cornerRadius: 8))
     }
   }
@@ -354,13 +376,17 @@ private struct TranscriptView: View {
       ScrollViewReader { proxy in
         List {
           ForEach(rows.indices, id: \.self) { index in
-            TranscriptRow(
-              loadImages: settings.loadImages, row: rows[index], markdownCache: markdownCache
+            LazyTranscriptRow(
+              loadImages: settings.loadImages, rows: rows, index: index, markdownCache: markdownCache
             )
-            .padding(.top, index == 0 ? 12 : 0)
+            .padding(.top, index == 0 ? 64 : 0)
+            .padding(.bottom, index == rows.count - 1 ? TranscriptStyle.composerHeight + TranscriptStyle.bottomGap : 0)
             .id(index)
+            // Plain macOS List retains an eight-point cell gutter. Rows own their insets.
+            .padding(.horizontal, -8)
             .listRowInsets(EdgeInsets())
             .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
             .onAppear {
               if index == document.rows.count - 1 {
                 onFirstPaint()
@@ -375,24 +401,25 @@ private struct TranscriptView: View {
               }
             }
           }
-          Color.clear.frame(height: TranscriptStyle.composerHeight + TranscriptStyle.bottomGap)
-            .listRowInsets(EdgeInsets()).listRowSeparator(.hidden).id("transcript-bottom")
         }
         .listStyle(.plain)
+        .environment(\.defaultMinListRowHeight, 0)
         .contentMargins(.horizontal, 0, for: .scrollContent)
         .scrollContentBackground(.hidden)
+        .ignoresSafeArea(edges: .top)
         .overlay {
           if document.rows.isEmpty {
             Color.clear.frame(height: 1).onAppear(perform: onFirstPaint)
           }
         }
-        .onAppear {
-          if !document.rows.isEmpty {
-            proxy.scrollTo("transcript-bottom", anchor: .bottom)
-          }
+        .task(id: document.path) {
+          // Resolve the row target after the new list has entered layout.
+          await Task.yield()
+          guard !Task.isCancelled else { return }
+          if let last = rows.indices.last { proxy.scrollTo(last, anchor: .bottom) }
         }
         .onChange(of: demo.rows.last?.markdown) { _, _ in
-          proxy.scrollTo("transcript-bottom", anchor: .bottom)
+          if let last = rows.indices.last { proxy.scrollTo(last, anchor: .bottom) }
         }
         .task(id: firstPaintMs) {
           guard firstPaintMs != nil, let topDelayMs, !document.rows.isEmpty else { return }
@@ -461,9 +488,10 @@ private struct TranscriptRow: View {
             .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
         }
       }
-      .foregroundStyle(.secondary)
+      .foregroundStyle(Color(nsColor: TranscriptColors.muted))
       .padding(.vertical, 12)
-      .overlay(alignment: .bottom) { Divider() }
+      .padding(.bottom, 1)
+      .overlay(alignment: .bottom) { Color(nsColor: TranscriptColors.border).frame(height: 1) }
       .padding(.horizontal, TranscriptStyle.horizontalInset)
       .padding(.vertical, 8)
     case .assistant, .user:
@@ -608,12 +636,12 @@ private struct FileChangesRow: View {
           .font(.title2)
           .frame(width: 40, height: 40)
           .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 4) {
           Text("Edited \(row.fileChanges.count) \(row.fileChanges.count == 1 ? "file" : "files")")
             .font(.system(size: 16, weight: .semibold))
           HStack(spacing: 8) {
-            Text("+\(additions)").foregroundStyle(.green)
-            Text("−\(deletions)").foregroundStyle(.red)
+            Text("+\(additions)").foregroundStyle(Color(nsColor: TranscriptColors.additions))
+            Text("-\(deletions)").foregroundStyle(Color(nsColor: TranscriptColors.deletions))
           }
         }
         Spacer()
@@ -624,8 +652,8 @@ private struct FileChangesRow: View {
         HStack {
           Text(file.path).lineLimit(1).textSelection(.enabled)
           Spacer()
-          Text("+\(file.additions)").foregroundStyle(.green)
-          Text("−\(file.deletions)").foregroundStyle(.red)
+          Text("+\(file.additions)").foregroundStyle(Color(nsColor: TranscriptColors.additions))
+          Text("-\(file.deletions)").foregroundStyle(Color(nsColor: TranscriptColors.deletions))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -637,14 +665,16 @@ private struct FileChangesRow: View {
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(10)
-        .background(.quaternary)
+        .padding(.horizontal, 16).padding(.vertical, 12)
+        .background(Color(nsColor: TranscriptColors.surfaceMuted))
       }
     }
-    .overlay(RoundedRectangle(cornerRadius: 12).stroke(.separator))
+    .font(.system(size: 14))
+    .background(Color(nsColor: TranscriptColors.surface))
+    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(nsColor: TranscriptColors.border)))
     .clipShape(RoundedRectangle(cornerRadius: 12))
     .padding(.horizontal, TranscriptStyle.horizontalInset)
-    .padding(.vertical, 10)
+    .padding(.vertical, 8)
   }
 }
 
@@ -736,4 +766,27 @@ extension ChatAppearance {
 
 private func formatMs(_ value: Double) -> String {
   String(format: "%.2f", value)
+}
+
+// A fixed outer view lets List identify rows without evaluating each row's
+// conditional body and materializing its Markdown before it is needed.
+private struct LazyTranscriptRow: View {
+  let loadImages: Bool
+  let rows: ChatRows
+  let index: Int
+  let markdownCache: TranscriptMarkdownCache
+
+  var body: some View {
+    VStack(spacing: 0) {
+      TranscriptRow(loadImages: loadImages, row: rows[index], markdownCache: markdownCache)
+    }
+  }
+}
+
+// Keep the SwiftUI bridge in this executable so the AppKit app does not link
+// SwiftUI merely to use the shared AppKit glass control.
+private struct TranscriptGlass: NSViewRepresentable {
+  var titlebar = false
+  func makeNSView(context: Context) -> TranscriptGlassView { TranscriptGlassView(titlebar: titlebar) }
+  func updateNSView(_ nsView: TranscriptGlassView, context: Context) {}
 }

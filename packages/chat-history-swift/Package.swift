@@ -10,7 +10,8 @@ let package = Package(
     .library(name: "ChatHistoryMarkdown", targets: ["ChatHistoryMarkdown"]),
   ],
   dependencies: [
-    .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.8.0")
+    .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.8.0"),
+    .package(path: "Vendor/HighlighterSwift")
   ],
   targets: [
     .target(
@@ -21,7 +22,7 @@ let package = Package(
     .target(name: "ChatHistoryCore", dependencies: ["ChatHistoryNative"]),
     .target(
       name: "ChatHistoryMarkdown",
-      dependencies: [.product(name: "Markdown", package: "swift-markdown")]),
+      dependencies: [.product(name: "Markdown", package: "swift-markdown"), .product(name: "Highlighter", package: "HighlighterSwift")]),
     .testTarget(name: "ChatHistoryCoreTests", dependencies: ["ChatHistoryCore"]),
     .testTarget(name: "ChatHistoryMarkdownTests", dependencies: ["ChatHistoryMarkdown"]),
   ],

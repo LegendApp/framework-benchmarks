@@ -48,6 +48,24 @@ pub struct MarkdownBlock {
     pub alignments: Vec<Alignment>,
 }
 
+// The RN renderer gives adjacent list items one 22-point line, with no
+// paragraph gap. Keep paragraph spacing within an item and after the list.
+pub fn block_bottom_margin(blocks: &[MarkdownBlock], index: usize) -> f32 {
+    let block = &blocks[index];
+    let Some(next) = blocks.get(index + 1) else {
+        return 0.0;
+    };
+    if block.list_depth > 0 && next.list_depth > 0 && next.marker.is_some() {
+        return 0.0;
+    }
+    match block.kind {
+        BlockKind::Heading(1) => 8.0,
+        BlockKind::Heading(2) => 6.0,
+        BlockKind::Heading(_) => 4.0,
+        _ => 16.0,
+    }
+}
+
 #[derive(Clone)]
 struct ActiveInline {
     href: Option<String>,
@@ -196,7 +214,11 @@ pub fn blocks(source: &str) -> Vec<MarkdownBlock> {
                 if let CodeBlockKind::Fenced(language) = language
                     && !language.is_empty()
                 {
-                    builder.language = language.split_whitespace().next().unwrap_or_default().to_owned();
+                    builder.language = language
+                        .split_whitespace()
+                        .next()
+                        .unwrap_or_default()
+                        .to_owned();
                 }
             }
             Event::End(TagEnd::CodeBlock) => {
@@ -367,6 +389,28 @@ pub fn blocks(source: &str) -> Vec<MarkdownBlock> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn lists_keep_full_content_without_paragraph_gaps_between_items() {
+        let parsed = blocks(
+            "Intro\n\n- **first**\n- second\n  - nested\n\nAfter\n\n```js\nconst answer = 42;\n```",
+        );
+        assert_eq!(parsed.len(), 6);
+        assert_eq!(block_bottom_margin(&parsed, 0), 16.0);
+        assert_eq!(block_bottom_margin(&parsed, 1), 0.0);
+        assert_eq!(block_bottom_margin(&parsed, 2), 0.0);
+        assert_eq!(block_bottom_margin(&parsed, 3), 16.0);
+        assert_eq!(parsed[3].list_depth, 2);
+        assert!(
+            parsed[1]
+                .highlights
+                .iter()
+                .any(|h| h.kind == InlineKind::Strong)
+        );
+        let code = &parsed[5];
+        assert_eq!(code.text, "const answer = 42;");
+        assert!(code.syntax.iter().any(|token| token.color != 0xf5f5f5));
+    }
 
     #[test]
     fn code_panes_preserve_spaces_and_use_only_the_fence_language() {

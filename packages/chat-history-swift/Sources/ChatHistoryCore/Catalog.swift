@@ -124,13 +124,11 @@ private func catalogTimestamp(_ value: Any?) -> Double {
 private func isCodexSubagent(_ path: String) -> Bool {
   guard let handle = FileHandle(forReadingAtPath: path) else { return false }
   defer { try? handle.close() }
-  let data = try? handle.read(upToCount: 64 * 1_024)
-  guard let data, let source = String(data: data, encoding: .utf8) else { return false }
-  let firstLine =
-    source.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: false).first.map(
-      String.init) ?? source
-  guard let lineData = firstLine.data(using: .utf8),
-    let root = (try? JSONSerialization.jsonObject(with: lineData)) as? JSONObject,
+  guard let data = try? handle.read(upToCount: 64 * 1_024) else { return false }
+  // Only the first JSONL record is metadata. Slice bytes before decoding so
+  // subsequent message text (or a partial UTF-8 character) is never inspected.
+  let firstLine = data.prefix(upTo: data.firstIndex(of: 0x0a) ?? data.endIndex)
+  guard let root = (try? JSONSerialization.jsonObject(with: firstLine)) as? JSONObject,
     let payload = root["payload"] as? JSONObject,
     let sourceValue = payload["source"] as? JSONObject
   else { return false }

@@ -26,7 +26,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
       backing: .buffered,
       defer: false)
     window.title = "Legend Chat History"
-    window.subtitle = "AppKit"
+    window.subtitle = ""
     window.minSize = NSSize(width: 640, height: 460)
     window.titlebarAppearsTransparent = true
     window.titlebarSeparatorStyle = .shadow
@@ -90,6 +90,17 @@ private final class ChatSplitViewController: NSSplitViewController, NSToolbarDel
     let toolbar = NSToolbar(identifier: Self.toolbarIdentifier)
     toolbar.delegate = self
     toolbar.displayMode = .iconOnly
+    let menu = NSMenu()
+    let application = NSMenuItem()
+    let appMenu = NSMenu()
+    let settings = NSMenuItem(title: "Settings…", action: #selector(settingsPressed), keyEquivalent: ",")
+    settings.target = self
+    appMenu.addItem(settings)
+    appMenu.addItem(.separator())
+    appMenu.addItem(withTitle: "Quit Chat History", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+    application.submenu = appMenu
+    menu.addItem(application)
+    NSApp.mainMenu = menu
     return toolbar
   }
 
@@ -104,13 +115,7 @@ private final class ChatSplitViewController: NSSplitViewController, NSToolbarDel
   }
 
   func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-    [
-      .toggleSidebar,
-      .sidebarTrackingSeparator,
-      .flexibleSpace,
-      Self.catalogItemIdentifier,
-      Self.settingsItemIdentifier,
-    ]
+    [.sidebarTrackingSeparator, .flexibleSpace]
   }
 
   func toolbar(
@@ -162,8 +167,11 @@ private final class ChatSplitViewController: NSSplitViewController, NSToolbarDel
 
   private func loadCatalog(preferredId: String? = nil) async {
     let limit = benchmarkConfig == nil ? settings.recentChatLimit : Int.max
+    // Synthetic visual fixtures are isolated from the real history catalog.
+    let home = benchmarkConfig == nil ? NSHomeDirectory()
+      : ProcessInfo.processInfo.environment["CHAT_HISTORY_BENCHMARK_HOME"] ?? NSHomeDirectory()
     let discoveryStartedAt = ProcessInfo.processInfo.systemUptime * 1_000
-    let result = await Task.detached(priority: .userInitiated) { getRecentChats(limit: limit) }
+    let result = await Task.detached(priority: .userInitiated) { getRecentChats(limit: limit, home: home) }
       .value
     catalogLabel.stringValue = "catalog \(formatMs(result.nativeTotalMs)) ms"
     if let benchmarkConfig {
@@ -307,6 +315,7 @@ private final class SidebarViewController: NSViewController, NSTableViewDataSour
   private var lastSelectedRow = -1
   private var suppressSelection = false
   private let tableView = NSTableView()
+  private let scroll = NSScrollView()
   private let dateFormatter: DateFormatter = {
     let formatter = DateFormatter()
     formatter.setLocalizedDateFormatFromTemplate("MMMd")
@@ -317,18 +326,23 @@ private final class SidebarViewController: NSViewController, NSTableViewDataSour
     let root = NSVisualEffectView()
     root.material = .sidebar
     root.blendingMode = .behindWindow
+    root.wantsLayer = true
+    root.layer?.backgroundColor = TranscriptColors.surfaceMuted.cgColor
     let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("sidebar"))
     column.resizingMask = .autoresizingMask
     tableView.addTableColumn(column)
     tableView.headerView = nil
+    // Cell content owns the sidebar inset; automatic sidebar style adds it again.
+    tableView.style = .plain
     tableView.backgroundColor = .clear
     tableView.dataSource = self
     tableView.delegate = self
     tableView.focusRingType = .none
     tableView.intercellSpacing = .zero
     tableView.selectionHighlightStyle = .regular
-    let scroll = NSScrollView()
     scroll.documentView = tableView
+    scroll.automaticallyAdjustsContentInsets = false
+    scroll.contentInsets = NSEdgeInsets(top: 42, left: 0, bottom: 0, right: 0)
     scroll.drawsBackground = false
     scroll.hasVerticalScroller = true
     scroll.translatesAutoresizingMaskIntoConstraints = false
@@ -336,7 +350,7 @@ private final class SidebarViewController: NSViewController, NSTableViewDataSour
     NSLayoutConstraint.activate([
       scroll.leadingAnchor.constraint(equalTo: root.leadingAnchor),
       scroll.trailingAnchor.constraint(equalTo: root.trailingAnchor),
-      scroll.topAnchor.constraint(equalTo: root.safeAreaLayoutGuide.topAnchor),
+      scroll.topAnchor.constraint(equalTo: root.topAnchor),
       scroll.bottomAnchor.constraint(equalTo: root.bottomAnchor),
     ])
     view = root
@@ -349,6 +363,8 @@ private final class SidebarViewController: NSViewController, NSTableViewDataSour
     items.append(.header(.claude))
     items += summaries.filter { $0.provider == .claude }.map(Item.summary)
     tableView.reloadData()
+    scroll.contentView.scroll(to: NSPoint(x: 0, y: -42))
+    scroll.reflectScrolledClipView(scroll.contentView)
   }
 
   func summary(id: String) -> ChatSummary? {
@@ -368,7 +384,6 @@ private final class SidebarViewController: NSViewController, NSTableViewDataSour
     suppressSelection = true
     let previousRow = lastSelectedRow
     tableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
-    tableView.scrollRowToVisible(row)
     lastSelectedRow = row
     reloadSelectionRows(previousRow, row)
     suppressSelection = false
@@ -464,7 +479,7 @@ private final class SidebarViewController: NSViewController, NSTableViewDataSour
 private final class SidebarRowView: NSTableRowView {
   override func drawSelection(in dirtyRect: NSRect) {
     guard selectionHighlightStyle != .none else { return }
-    NSColor.controlAccentColor.setFill()
+    TranscriptColors.primary.setFill()
     NSBezierPath(roundedRect: bounds.insetBy(dx: 8, dy: 1), xRadius: 8, yRadius: 8).fill()
   }
 }
@@ -504,8 +519,8 @@ private final class SidebarSummaryCell: NSTableCellView {
   func configure(title: String, date: String, selected: Bool) {
     titleLabel.stringValue = title
     dateLabel.stringValue = date
-    titleLabel.textColor = selected ? .white : .labelColor
-    dateLabel.textColor = selected ? NSColor.white.withAlphaComponent(0.7) : .secondaryLabelColor
+    titleLabel.textColor = selected ? .white : TranscriptColors.foreground
+    dateLabel.textColor = selected ? NSColor.white.withAlphaComponent(0.7) : TranscriptColors.muted
   }
 }
 
@@ -519,7 +534,9 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
   private let demo = ChatDemo()
   private var rows: ChatRows? { document?.rows.appending(demo.rows) }
   private let composerInput = NSTextField()
-  private let composer = NSVisualEffectView()
+  private let composer = TranscriptGlassView()
+  private let titlebarGlass = TranscriptGlassView(titlebar: true)
+  private let send = NSButton()
   private var expandedRows = Set<String>()
   private var firstPaintMs: Double?
   private var renderedMarkdown: [String: NSAttributedString] = [:]
@@ -581,37 +598,49 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
     tableView.rowHeight = 96
     tableView.usesAutomaticRowHeights = true
     scroll.documentView = tableView
+    scroll.automaticallyAdjustsContentInsets = false
+    scroll.contentInsets = NSEdgeInsets(top: 64, left: 0, bottom: 0, right: 0)
     scroll.hasVerticalScroller = true
     scroll.isHidden = true
     scroll.translatesAutoresizingMaskIntoConstraints = false
     emptyLabel.textColor = .secondaryLabelColor
     emptyLabel.alignment = .center
     emptyLabel.translatesAutoresizingMaskIntoConstraints = false
-    composer.material = .contentBackground
-    composer.blendingMode = .withinWindow
-    composer.wantsLayer = true
-    composer.layer?.cornerRadius = 26
-    composer.layer?.borderWidth = 1
-    composer.layer?.borderColor = NSColor.separatorColor.cgColor
     composer.translatesAutoresizingMaskIntoConstraints = false
     composerInput.placeholderString = "Send a test message that doesn't actually do anything"
     composerInput.font = .systemFont(ofSize: 15)
+    composerInput.usesSingleLineMode = true
     composerInput.isBordered = false
     composerInput.drawsBackground = false
     composerInput.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
     composerInput.target = self
     composerInput.action = #selector(sendDemo)
     composerInput.translatesAutoresizingMaskIntoConstraints = false
-    let send = NSButton(
-      image: NSImage(systemSymbolName: "arrow.up", accessibilityDescription: "Send test message")!,
-      target: self, action: #selector(sendDemo))
+    send.title = "↑"
+    send.font = .systemFont(ofSize: 18, weight: .semibold)
+    send.contentTintColor = .white
+    send.wantsLayer = true
+    send.layer?.cornerRadius = 18
+    send.layer?.backgroundColor = TranscriptColors.primary.cgColor
+    send.alphaValue = 0.3
+    send.target = self
+    send.action = #selector(sendDemo)
+    send.setAccessibilityLabel("Send test message")
+    composerInput.focusRingType = .none
+    NotificationCenter.default.addObserver(self, selector: #selector(composerChanged),
+      name: NSControl.textDidChangeNotification, object: composerInput)
     send.isBordered = false
     send.translatesAutoresizingMaskIntoConstraints = false
-    composer.addSubview(composerInput)
-    composer.addSubview(send)
-    for child in [metricsLabel, scroll, emptyLabel, composer] { root.addSubview(child) }
+    composer.content.addSubview(composerInput)
+    composer.content.addSubview(send)
+    for child in [metricsLabel, scroll, emptyLabel, titlebarGlass, composer] { root.addSubview(child) }
+    titlebarGlass.translatesAutoresizingMaskIntoConstraints = false
     metricsHeight = metricsLabel.heightAnchor.constraint(equalToConstant: 0)
     NSLayoutConstraint.activate([
+      titlebarGlass.topAnchor.constraint(equalTo: root.topAnchor),
+      titlebarGlass.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+      titlebarGlass.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+      titlebarGlass.heightAnchor.constraint(equalToConstant: 52),
       metricsLabel.leadingAnchor.constraint(equalTo: root.leadingAnchor),
       metricsLabel.trailingAnchor.constraint(equalTo: root.trailingAnchor),
       metricsLabel.topAnchor.constraint(equalTo: root.safeAreaLayoutGuide.topAnchor),
@@ -624,7 +653,7 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
       composer.heightAnchor.constraint(equalToConstant: 60),
       composerInput.leadingAnchor.constraint(equalTo: composer.leadingAnchor, constant: 16),
       composerInput.centerYAnchor.constraint(equalTo: composer.centerYAnchor),
-      composerInput.heightAnchor.constraint(equalToConstant: 36),
+      composerInput.heightAnchor.constraint(equalToConstant: 21),
       composerInput.trailingAnchor.constraint(equalTo: send.leadingAnchor, constant: -12),
       send.trailingAnchor.constraint(equalTo: composer.trailingAnchor, constant: -16),
       send.widthAnchor.constraint(equalToConstant: 36),
@@ -632,7 +661,7 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
       send.centerYAnchor.constraint(equalTo: composer.centerYAnchor),
       scroll.leadingAnchor.constraint(equalTo: root.leadingAnchor),
       scroll.trailingAnchor.constraint(equalTo: root.trailingAnchor),
-      scroll.topAnchor.constraint(equalTo: metricsLabel.bottomAnchor),
+      scroll.topAnchor.constraint(equalTo: root.topAnchor),
       scroll.bottomAnchor.constraint(equalTo: root.bottomAnchor),
       emptyLabel.centerXAnchor.constraint(equalTo: root.centerXAnchor),
       emptyLabel.centerYAnchor.constraint(equalTo: root.centerYAnchor),
@@ -727,11 +756,21 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
     guard document != nil else { return }
     demo.send(composerInput.stringValue)
     composerInput.stringValue = ""
+    composerChanged()
+  }
+
+  @objc private func composerChanged() {
+    let enabled = !composerInput.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    send.isEnabled = enabled
+    send.alphaValue = enabled ? 1 : 0.3
   }
 
   func scrollToTop() -> Double {
     let startedAt = ProcessInfo.processInfo.systemUptime * 1_000
-    if tableView.numberOfRows > 0 { tableView.scrollRowToVisible(0) }
+    if tableView.numberOfRows > 0 {
+      scroll.contentView.scroll(to: NSPoint(x: 0, y: -scroll.contentInsets.top))
+      scroll.reflectScrolledClipView(scroll.contentView)
+    }
     tableView.layoutSubtreeIfNeeded()
     view.window?.displayIfNeeded()
     return ProcessInfo.processInfo.systemUptime * 1_000 - startedAt
@@ -799,6 +838,7 @@ private final class ContentViewController: NSViewController, NSTableViewDataSour
     let visible = document != nil && settings.showPerformanceMetrics
     metricsLabel.isHidden = !visible
     metricsHeight.constant = visible ? 34 : 0
+    scroll.contentInsets.top = 64 + (visible ? 34 : 0)
   }
 
   private func updateMetrics() {
@@ -924,8 +964,8 @@ private final class TranscriptCell: NSTableCellView {
     case .tool:
       stack.spacing = 16
       let status = row.toolStatus == .failed ? "  Failed" : ""
-      let button = disclosureButton("\(expanded ? "▾" : "▸") \(row.toolName)\(status)")
-      button.contentTintColor = row.toolStatus == .failed ? .systemRed : .secondaryLabelColor
+      let button = disclosureButton("\(row.toolName)\(status)  \(expanded ? "⌄" : "›")")
+      button.contentTintColor = row.toolStatus == .failed ? .systemRed : TranscriptColors.muted
       button.heightAnchor.constraint(equalToConstant: 44).isActive = true
       stack.addArrangedSubview(button)
       if expanded && !row.toolPreview.isEmpty {
@@ -1008,7 +1048,8 @@ private final class TranscriptCell: NSTableCellView {
     card.wantsLayer = true
     card.layer?.cornerRadius = 12
     card.layer?.borderWidth = 1
-    card.layer?.borderColor = NSColor.separatorColor.cgColor
+    card.layer?.borderColor = TranscriptColors.border.cgColor
+    card.layer?.backgroundColor = TranscriptColors.surface.cgColor
     stack.addArrangedSubview(card)
     card.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
     func label(
@@ -1046,8 +1087,8 @@ private final class TranscriptCell: NSTableCellView {
       "Edited \(row.fileChanges.count) \(row.fileChanges.count == 1 ? "file" : "files")", size: 16,
       weight: .semibold)
     let totals = NSStackView(views: [
-      label("+\(row.fileChanges.reduce(0) { $0 + $1.additions })", color: .systemGreen),
-      label("-\(row.fileChanges.reduce(0) { $0 + $1.deletions })", color: .systemRed),
+      label("+\(row.fileChanges.reduce(0) { $0 + $1.additions })", color: TranscriptColors.additions),
+      label("-\(row.fileChanges.reduce(0) { $0 + $1.deletions })", color: TranscriptColors.deletions),
     ])
     totals.spacing = 8
     let title = NSStackView(views: [heading, totals])
@@ -1064,8 +1105,8 @@ private final class TranscriptCell: NSTableCellView {
       path.setContentHuggingPriority(.defaultLow, for: .horizontal)
       _ = line(
         [
-          path, label("+\(file.additions)", color: .systemGreen),
-          label("-\(file.deletions)", color: .systemRed),
+          path, label("+\(file.additions)", color: TranscriptColors.additions),
+          label("-\(file.deletions)", color: TranscriptColors.deletions),
         ], height: 44)
     }
     if row.fileChanges.count > 3 {

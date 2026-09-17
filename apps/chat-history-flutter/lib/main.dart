@@ -1099,6 +1099,9 @@ class _MessageRow extends StatelessWidget {
             ),
         if (row.markdown.isNotEmpty)
           MarkdownBody(
+            fitContent: isUser,
+            bulletBuilder: transcriptBullet,
+            listItemCrossAxisAlignment: MarkdownListItemCrossAxisAlignment.start,
             data: row.markdown,
             builders: {'pre': CodePaneBuilder()},
             imageBuilder: (uri, title, alt) => loadImages

@@ -1,5 +1,5 @@
 import AppKit
-import ChatHistoryMarkdown
+@testable import ChatHistoryMarkdown
 import Testing
 
 @Test @MainActor
@@ -20,10 +20,11 @@ func rendersBlockAndInlineMarkdown() {
     ```
     """)
 
-  #expect(rendered.string.contains("Heading\n\nA bold paragraph"))
-  #expect(rendered.string.contains("• first\n• second"))
-  #expect(rendered.string.contains("│ quoted"))
-  #expect(rendered.string.contains("let value = 1"))
+  #expect(rendered.string.contains("Heading\nA bold paragraph"))
+  #expect(rendered.string.contains("first\nsecond"))
+  #expect(rendered.string.contains("quoted"))
+  let code = rendered.attribute(.transcriptCode, at: rendered.length - 1, effectiveRange: nil) as? CodePaneContent
+  #expect(code?.source == "let value = 1")
   #expect(
     rendered.attribute(
       .link, at: (rendered.string as NSString).range(of: "link").location, effectiveRange: nil)
@@ -63,4 +64,11 @@ func rendersBoundedLocalMarkdownImages() throws {
   #expect(
     RichMarkdownRenderer.render("![Preview](\(url.path))", imagePolicy: .omit).string
       == "Image or attachment omitted")
+}
+
+@Test @MainActor
+func codePanesPreserveSpacesWhileRemovingTerminalNewlines() {
+  let rendered = RichMarkdownRenderer.render("```swift\nlet x = 1;  \n\n```")
+  let code = rendered.attribute(.transcriptCode, at: 0, effectiveRange: nil) as? CodePaneContent
+  #expect(code?.source == "let x = 1;  ")
 }
