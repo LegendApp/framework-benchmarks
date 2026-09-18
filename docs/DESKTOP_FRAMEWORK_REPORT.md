@@ -49,7 +49,7 @@ Jump moves to the top of the initial transcript. Switch opens the second pinned 
 
 ## Hello World
 
-**Packaging audit (September 18):** React Native and the excluded Legend Shell binary are both ARM64-only. The standalone baseline retained executable and Hermes symbols that the product release pipeline strips. Its 16.3 MiB size below is the historical measurement, pending a rebuild with matching release postprocessing; do not use it as the optimized RN size. Timing and memory remain the original measurements.
+**Packaging audit (September 18):** React Native and the excluded Legend Shell binary are both ARM64-only. The standalone baseline retained executable and Hermes symbols that the product release pipeline strips. A standalone rebuild with symbol stripping, dead-code stripping, ThinLTO, and `-Oz` measures 7,499,962 bytes (7.2 MiB), replacing the historical 16.3 MiB size below. Timing and memory remain the original measurements. The applied settings and exploratory runtime checks are documented in the [optimization audit](REACT_NATIVE_HELLO_WORLD_OPTIMIZATION.md).
 
 The React Native row is the standalone baseline. Hello World apps require no grammar pack. The duplicate Legend Shell host is excluded from this framework comparison.
 
@@ -58,7 +58,7 @@ The React Native row is the standalone baseline. Hello World apps require no gra
 | AppKit | Swift | Native | 0.1 | 193.4 | 193.4 | 15.5 |
 | GPUI | Rust | Canvas | 5.3 | 210.7 | 226.5 | 56.3 |
 | SwiftUI | Swift | Native | 0.1 | 210.9 | 227.5 | 18.3 |
-| React Native | TypeScript / React | Native | 16.3 | 210.9 | 227.6 | 23.3 |
+| React Native | TypeScript / React | Native | 7.2 | 210.9 | 227.6 | 23.3 |
 | Flutter | Dart | Canvas | 17.0 | 234.4 | 259.2 | 55.0 |
 | Electron | TypeScript / React | Web | 285.1 | 277.6 | 344.5 | 83.4 |
 | Deno CEF | TypeScript / React | Web | 307.0 | 359.3 | 360.0 | 203.6 |

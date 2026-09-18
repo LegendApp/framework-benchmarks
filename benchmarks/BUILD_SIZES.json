@@ -161,24 +161,15 @@
       {
         "app": "react-native",
         "label": "React Native",
-        "appBytes": 17048794,
+        "appBytes": 7499962,
         "grammarPackBytes": 0,
-        "combinedInstalledBytes": 17048794,
+        "combinedInstalledBytes": 7499962,
         "architectures": "arm64",
-        "builtAt": "2026-09-17T15:26:17.435Z",
-        "gitCommit": "2d12fe530d5a2a4aa0223ea593bcce405a067d8a",
-        "gitDirty": true
-      },
-      {
-        "app": "legend-shell",
-        "label": "Legend Shell",
-        "appBytes": 9781088,
-        "grammarPackBytes": 0,
-        "combinedInstalledBytes": 9781088,
-        "architectures": "arm64",
-        "builtAt": "2026-09-17T15:27:07.340Z",
-        "gitCommit": "b371b339ac10de3050af162da4493a2d4f09cc23",
-        "gitDirty": true
+        "builtAt": "2026-09-18T09:06:55.299Z",
+        "gitCommit": "0674954dbadb35a2aef28ea9265c7a542bf0c132",
+        "gitDirty": true,
+        "measuredAt": "2026-09-18T09:07:54.496223+00:00",
+        "packaging": "ARM64; deployment postprocessing; Hermes symbol stripping; dead-code stripping; ThinLTO; -Oz"
       },
       {
         "app": "electron",

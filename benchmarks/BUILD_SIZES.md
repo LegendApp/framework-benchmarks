@@ -24,8 +24,7 @@ This updates sizes only. Startup and memory were not remeasured; the [September 
 
 | App | App MiB | Grammar pack MiB | Combined MiB | Executable architecture |
 | --- | ---: | ---: | ---: | --- |
-| React Native | 16.3 | 0.0 | 16.3 | arm64 |
-| Legend Shell | 9.3 | 0.0 | 9.3 | arm64 |
+| React Native | 7.2 | 0.0 | 7.2 | arm64 |
 | Electron | 285.1 | 0.0 | 285.1 | arm64 |
 | Tauri | 10.3 | 0.0 | 10.3 | arm64 |
 | Deno WebView | 65.0 | 0.0 | 65.0 | arm64 |
@@ -38,3 +37,11 @@ This updates sizes only. Startup and memory were not remeasured; the [September 
 React Native’s chat-history grammar library is external, so app-only size excludes it; combined size includes it. The HighlighterSwift pack includes its existing JavaScript engine and themes as well as grammars. Hello World apps do not require grammar packs.
 
 Both Flutter apps now contain only ARM64 code in the executable, Dart `App.framework`, and `FlutterMacOS.framework`; all six Mach-O binaries were checked. Their app sizes decreased from 42.9 to 21.6 MiB (chat history) and 33.6 to 17.0 MiB (Hello World).
+
+September 18 RN Hello World optimized rebuild: **7,499,962 bytes (7.2 MiB)**,
+ARM64 with executable/Hermes symbols stripped, dead-code stripping, ThinLTO,
+and `-Oz`. Other rows retain their existing measurement revisions. Legend Shell
+is excluded as a duplicate RN host. See
+[the optimization audit](../docs/REACT_NATIVE_HELLO_WORLD_OPTIMIZATION.md) for
+validation and experimental alternatives. Original cross-framework timings and
+memory measurements have not been replaced by the later RN-only runs.

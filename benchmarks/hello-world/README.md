@@ -2,12 +2,11 @@
 
 Latest: [September 16 final results for both workloads](../final-2026-09-16/RESULTS.md), with ten observations per app, built sizes, and the [100-video gallery](results/2026-09-16T21-25-32.060Z/videos.html).
 
-This is the minimal-project counterpart to the [full chat product benchmark](../chat-history/README.md). All ten apps display **Hello, world!** in centered 32-point text on white, in a 1280×720 content window. These are deliberately minimal apps rather than unmodified generator demos.
+This is the minimal-project counterpart to the [full chat product benchmark](../chat-history/README.md). All nine apps display **Hello, world!** in centered 32-point text on white, in a 1280×720 content window. These are deliberately minimal apps rather than unmodified generator demos.
 
 | Runtime | Baseline source | Runtime dependencies |
 | --- | --- | --- |
 | React Native macOS | `apps/hello-world-react-native` | React Native macOS 0.81.7, React Native 0.81.6, React 19.1.4; Fabric and Hermes |
-| Legend shell | `../legend-apps/apps/hello-world` | Shared React Native shell, React Compiler, and Uniwind; no app-specific native modules |
 | Electron | `apps/hello-world-electron` | Electron 44, React and ReactDOM 19.1.4 |
 | Tauri | `apps/hello-world-tauri` | Tauri 2.11.5, React and ReactDOM 19.1.4 |
 | Deno WebView / CEF | `apps/hello-world-deno` | Installed Deno Desktop toolchain, React and ReactDOM 19.1.4 |
@@ -16,7 +15,7 @@ This is the minimal-project counterpart to the [full chat product benchmark](../
 | SwiftUI | `apps/hello-world-swiftui` | System SwiftUI |
 | AppKit | `apps/hello-world-appkit` | System AppKit |
 
-The three web hosts bundle the same `packages/hello-world-web` view. The baseline includes React because the corresponding products use React. It does not include LegendList, Markdown, settings, transcript parsers, workers, custom native modules, or history-store access. React Native has a standalone stock macOS host in this repository and does not use the sibling product exporter. The separate Legend shell entry builds the new Hello World app through `legend-apps` infrastructure. Set `LEGEND_APPS_REPO` or pass `--legend-apps-repo` if that repository is not at `../legend-apps`.
+The three web hosts bundle the same `packages/hello-world-web` view. The baseline includes React because the corresponding products use React. It does not include LegendList, Markdown, settings, transcript parsers, workers, custom native modules, or history-store access. React Native has a standalone stock macOS host in this repository and does not use the sibling product exporter. The historical Legend shell entry is excluded as a duplicate React Native host. Archived runs retain its original measurements.
 
 See [the September 11 measured results](RESULTS.md) for the complete run and saved video gallery.
 
@@ -90,6 +89,6 @@ Harness regression checks: `bun test benchmarks/hello-world/benchmark.test.ts`.
 
 Both suites now launch apps with process-local `-NSAutomaticWindowAnimationsEnabled NO`. This does not write system or user preferences. See [the fairness report](../chat-history/FAIRNESS_RESULTS.md) for the controlled validation and current results. `CHAT_HISTORY_BENCHMARK_SYSTEM_ANIMATIONS=1` retains system behavior for diagnostic comparisons; result metadata records the policy.
 
-Select several apps with `--app appkit,swiftui,react-native`. The default still selects all ten. `--allow-locked-session` explicitly allows the existing locked-console workflow; timing and companion memory launches both retain their lock state. Such runs describe that session condition, not verified unlocked foreground behavior.
+Select several apps with `--app appkit,swiftui,react-native`. The default selects all nine. `--allow-locked-session` explicitly allows the existing locked-console workflow; timing and companion memory launches both retain their lock state. Such runs describe that session condition, not verified unlocked foreground behavior.
 
 Settled OCR screenshots are extracted by recorded frame index. This avoids EOF-seek failures when a ScreenCaptureKit video has a positive timestamp origin; it does not change the three-frame startup OCR rule.
