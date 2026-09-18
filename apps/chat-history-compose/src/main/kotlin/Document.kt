@@ -1,6 +1,11 @@
+import com.fasterxml.jackson.core.JsonFactory
+import com.fasterxml.jackson.core.JsonToken
+import kotlinx.serialization.decodeFromString
 import java.io.File
 import java.time.Instant
 import kotlinx.serialization.json.*
+
+private val jsonValidator = JsonFactory()
 
 // Keep the UTF-8 document once. Object/array indexing skips string contents;
 // large message and tool strings are decoded only when a row is requested.
@@ -8,10 +13,16 @@ class JsonRange(val bytes: ByteArray, val start: Int, val end: Int) {
     val kind: Char
         get() = bytes[start].toInt().toChar()
 
-    fun string(): String =
-        if (kind == '"')
-            Json.parseToJsonElement(bytes.decodeToString(start, end)).jsonPrimitive.content
-        else ""
+    fun string(): String {
+        if (kind != '"') return ""
+        // Most field names and metadata are unescaped: decode UTF-8 once,
+        // without allocating a JSON tree or decoder state for every key.
+        for (i in start + 1 until end - 1) {
+            if (bytes[i] == '\\'.code.toByte())
+                return Json.decodeFromString<String>(bytes.decodeToString(start, end))
+        }
+        return bytes.decodeToString(start + 1, end - 1)
+    }
 
     fun text(): DeferredText = DeferredText(kind == '"' && end - start > 2) { string() }
 
@@ -62,7 +73,13 @@ class JsonRange(val bytes: ByteArray, val start: Int, val end: Int) {
         return out
     }
 
-    fun valid() = runCatching { kind == '{' && skip(start) == end }.getOrDefault(false)
+    fun valid() = runCatching {
+        jsonValidator.createParser(bytes, start, end - start).use { parser ->
+            if (parser.nextToken() != JsonToken.START_OBJECT) return@use false
+            parser.skipChildren()
+            parser.nextToken() == null
+        }
+    }.getOrDefault(false)
 
     private fun space(from: Int): Int {
         var i = from
@@ -582,8 +599,12 @@ fun contentDigest(rows: List<ChatRow>): String {
     var hash = 0xcbf29ce484222325UL
     fun field(s: String) {
         val b = s.toByteArray()
-        for (v in ("${b.size}:".toByteArray() + b + byteArrayOf(59))) hash =
-            (hash xor v.toUByte().toULong()) * 0x100000001b3UL
+        fun feed(bytes: ByteArray) {
+            for (v in bytes) hash = (hash xor v.toUByte().toULong()) * 0x100000001b3UL
+        }
+        feed("${b.size}:".toByteArray())
+        feed(b)
+        hash = (hash xor 59UL) * 0x100000001b3UL
     }
     field(rows.size.toString())
     for (r in rows) {

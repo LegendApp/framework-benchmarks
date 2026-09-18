@@ -12,6 +12,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.10.2")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
     implementation("org.commonmark:commonmark:0.24.0")
+    implementation("com.fasterxml.jackson.core:jackson-core:2.18.5")
     implementation("org.commonmark:commonmark-ext-gfm-tables:0.24.0")
     implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.24.0")
     implementation("org.commonmark:commonmark-ext-task-list-items:0.24.0")

@@ -148,7 +148,7 @@ fun Markdown(node: Node, dark: Boolean, cache: MarkdownCache) {
     val color = if (dark) Color(0xfff5f5f5) else Color(0xff111827)
     val border = if (dark) Color(0xff3e4042) else Color(0xffd1d5db)
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        for (child in node.children()) when (child) {
+        for (child in node.children().filterNot { it is TaskListItemMarker }) when (child) {
             is org.commonmark.node.Paragraph,
             is Heading -> {
                 val text = remember(child, dark) { inline(child, dark) }

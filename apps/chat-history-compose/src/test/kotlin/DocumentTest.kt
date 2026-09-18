@@ -2,6 +2,22 @@ import kotlin.test.*
 
 class DocumentTest {
     @Test
+    fun validatesIgnoredValuesWithoutBuildingTheirTrees() {
+        for (source in listOf(
+            """{"skip":[1,]}""", """{"skip":"\q"}""", """{"skip":01}""",
+            """{"skip":[true}}""", """{"skip":"unterminated}""", "{} {}"
+        )) {
+            val bytes = source.toByteArray()
+            assertFalse(JsonRange(bytes, 0, bytes.size).valid(), source)
+        }
+        val source = """{"z":"a\nb","a":[true,{"unused":"\u263a"}]}""".toByteArray()
+        val value = JsonRange(source, 0, source.size)
+        assertTrue(value.valid())
+        assertEquals(listOf("z", "a"), value.entries().keys.toList())
+        assertEquals("a\nb", value["z"]!!.string())
+    }
+
+    @Test
     fun codexParity() {
         val d = openDocument("codex", "packages/chat-history/tests/fixtures/codex.jsonl")
         assertEquals(14, d.recordCount)
