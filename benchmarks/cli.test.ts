@@ -7,10 +7,10 @@ import { parseArgs, plan, preflightBuilds } from "./cli";
 const jobs = (mode: "build" | "run", args: string[] = []) => plan(mode, parseArgs(mode, args));
 
 describe("benchmark CLI", () => {
-  test("defaults select 9 product and 9 baseline apps with separate build/run scripts", () => {
+  test("defaults select 10 product and 10 baseline apps with separate build/run scripts", () => {
     for (const mode of ["build", "run"] as const) {
       const selected = jobs(mode);
-      expect(selected.map(job => job.apps.length)).toEqual([9, 9]);
+      expect(selected.map(job => job.apps.length)).toEqual([10, 10]);
       expect(selected.every(job => job.args[0].endsWith(`/${mode}.ts`))).toBe(true);
     }
     const options = parseArgs("run", []);
@@ -47,7 +47,7 @@ describe("benchmark CLI", () => {
       for (const arg of ["--help", "--dry-run"]) {
         const result = Bun.spawnSync([process.execPath, resolve(import.meta.dir, `${mode}.ts`), arg], { stdin: "pipe" });
         expect(result.exitCode).toBe(0);
-        expect(result.stdout.toString()).toContain(arg === "--help" ? "Usage:" : "plan (18 apps)");
+        expect(result.stdout.toString()).toContain(arg === "--help" ? "Usage:" : "plan (20 apps)");
       }
     }
     if (process.platform === "darwin") {

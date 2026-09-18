@@ -39,6 +39,7 @@ type AppName =
   | "deno-webview"
   | "electron"
   | "flutter"
+  | "compose"
   | "gpui"
   | "react-native"
   | "swiftui"
@@ -151,6 +152,10 @@ const apps: Record<AppName, { bundle: string; executable: string }> = {
       "Chat History — Flutter.app/Contents/MacOS/Chat History - Flutter",
     ),
   },
+  compose: {
+    bundle: resolve(buildRoot, "Chat History — Compose Multiplatform.app"),
+    executable: resolve(buildRoot, "Chat History — Compose Multiplatform.app/Contents/MacOS/ChatHistoryCompose"),
+  },
   gpui: {
     bundle: resolve(buildRoot, "Chat History — GPUI.app"),
     executable: resolve(
@@ -191,6 +196,7 @@ function selectedApps(): AppName[] {
       "deno-cef",
       "flutter",
       "gpui",
+      "compose",
       "swiftui",
       "appkit",
     ];

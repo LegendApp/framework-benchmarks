@@ -4,7 +4,7 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
 export const grammarPackVersion = "v1";
-export const grammarEngines = ["tree-sitter", "highlight-js", "highlighter-swift", "syntect", "dart-highlighting"] as const;
+export const grammarEngines = ["tree-sitter", "highlight-js", "highlighter-swift", "syntect", "dart-highlighting", "compose-syntax"] as const;
 export type GrammarEngine = typeof grammarEngines[number];
 export type GrammarPack = { version: 1; engine: GrammarEngine; bytes: number; files: Record<string, { bytes: number; sha256: string }> };
 export function grammarPackRoot(root: string) {
@@ -49,6 +49,7 @@ export function prepareGrammarPack(root: string, engine: GrammarEngine) {
 export function grammarEngineForApp(app: string): GrammarEngine {
   if (app === "react-native") return "tree-sitter";
   if (app === "appkit" || app === "swiftui") return "highlighter-swift";
+  if (app === "compose") return "compose-syntax";
   if (app === "gpui") return "syntect";
   if (app === "flutter") return "dart-highlighting";
   if (["electron", "tauri", "deno", "deno-webview", "deno-cef"].includes(app)) return "highlight-js";

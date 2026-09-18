@@ -221,3 +221,17 @@ A Swift application built directly with AppKit’s macOS views, text system, and
 - [External grammar validation](../benchmarks/chat-history/EXTERNAL_GRAMMARS_VALIDATION.md). The report screenshots are copied beside this document so they remain available when the repository is cloned; the original videos and raw benchmark files referenced by the validation documents remain local, ignored evidence.
 
 The full benchmark uses local pinned histories, which are not distributed with these apps. The screenshots’ synthetic transcript is a visual validation fixture, not the corpus used to produce the timing tables. Equivalent workloads and enabled parsing/highlighting do not imply identical tokenization, layout, pixels, or engine internals.
+
+## Additional candidate: Compose Multiplatform
+
+Hello World and Chat History implementations now exist under `apps/hello-world-compose` and `apps/chat-history-compose`. They use Kotlin/JVM with canvas-rendered Compose/Skia UI, a trimmed bundled JVM and ProGuard release builds. Kotlin file discovery and lazy document parsing follow the existing normalized-content policy; CommonMark and an external JVM syntax pack provide rich rendering. Compose's normal lazy-list prefetch and a conventional composer backdrop blur are retained.
+
+**Pros:** shared Kotlin/Compose development across desktop platforms, access to the JVM ecosystem, and reuse of Kotlin/Android expertise.
+
+**Cons:** the desktop distribution includes a JVM and Skia runtime; custom-rendered widgets need deliberate macOS integration. The current benchmark implementation targets text-only histories and uses conventional blur rather than Liquid Glass.
+
+This candidate is not part of the historical tables above. See [build, optimization and fairness notes](COMPOSE_MULTIPLATFORM.md); a fresh full measurement run is needed before adding it to a published ranking.
+
+![Compose Multiplatform rendering the shared long-chat fixture](report-assets/compose.png)
+
+[Light-mode composer](report-assets/compose-light.png). Both are actual frames from the packaged app, with content behind its conventional backdrop blur.

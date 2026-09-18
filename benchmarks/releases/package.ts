@@ -10,7 +10,7 @@ import { buildKey, bundleHash, bundleName, cleanCommit, command, hashFile, manif
 async function main() {
   const args = options(process.argv.slice(2), ["--tag", "--output", "--legend-apps-repo"]);
   if (args["--help"]) {
-    console.log("Usage: bun run benchmark:release:package --tag <tag> [--output <new-directory>] [--legend-apps-repo <path>]\nPackages all 19 existing builds. Requires clean source checkouts and matching clean build provenance. Does not build or publish. Default output: .build/releases/<tag>-macos-<arch>."); return;
+    console.log("Usage: bun run benchmark:release:package --tag <tag> [--output <new-directory>] [--legend-apps-repo <path>]\nPackages all 20 existing builds. Requires clean source checkouts and matching clean build provenance. Does not build or publish. Default output: .build/releases/<tag>-macos-<arch>."); return;
   }
   if (process.platform !== "darwin") throw new Error("Packaging requires macOS.");
   const releaseTag = tag(args["--tag"]);

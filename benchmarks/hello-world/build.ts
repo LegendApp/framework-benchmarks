@@ -77,6 +77,10 @@ async function build(app: AppName) {
       nativeBundle(join(appRoot, `.build/release/HelloWorld${labels[app]}`), app);
       break;
     }
+    case "compose": {
+      run("bun", ["packages/compose-desktop/package.ts", "hello-world"]);
+      break;
+    }
     case "gpui": {
       run(resolve(repositoryRoot, "scripts/with-local-rust.sh"), ["cargo", "build", "--release", "--locked", "--manifest-path", join(appRoot, "Cargo.toml")]);
       nativeBundle(join(appRoot, "target/release/hello-world-gpui"), app);

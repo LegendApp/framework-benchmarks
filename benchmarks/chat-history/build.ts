@@ -12,6 +12,7 @@ type BuildTarget =
   | "deno"
   | "electron"
   | "flutter"
+  | "compose"
   | "gpui"
   | "react-native"
   | "swiftui"
@@ -37,6 +38,7 @@ const allTargets: BuildTarget[] = [
   "deno",
   "flutter",
   "gpui",
+  "compose",
   "swiftui",
   "appkit",
 ];
@@ -172,6 +174,7 @@ const commands: Record<Exclude<BuildTarget, "react-native">, [string, string[]]>
   deno: ["bun", ["--cwd", "apps/chat-history-deno", "build:benchmark"]],
   electron: ["bun", ["--cwd", "apps/chat-history-electron", "build:benchmark"]],
   flutter: ["bun", ["run", "chat-history:flutter:build-benchmark"]],
+  compose: ["bun", ["packages/compose-desktop/package.ts", "chat-history"]],
   gpui: ["bun", ["run", "chat-history:gpui:build-benchmark"]],
   swiftui: ["bun", ["run", "chat-history:swiftui:build-benchmark"]],
   tauri: ["bun", ["--cwd", "apps/chat-history-tauri", "build:benchmark"]],

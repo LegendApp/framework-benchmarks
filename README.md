@@ -1,8 +1,8 @@
 # Desktop Framework Comparison
 
-Release-mode macOS apps in React Native, Electron, Tauri, Deno Desktop (WebView and CEF), Flutter, GPUI, SwiftUI, and AppKit. Two workloads separate framework overhead from product behavior:
+Release-mode macOS apps in React Native, Electron, Tauri, Deno Desktop (WebView and CEF), Flutter, GPUI, Compose Multiplatform, SwiftUI, and AppKit. Two workloads separate framework overhead from product behavior:
 
-- **Chat history:** nine apps browse pinned transcripts with Markdown and syntax highlighting.
+- **Chat history:** ten apps browse pinned transcripts with Markdown and syntax highlighting.
 - **Hello World:** ten apps display the same greeting, including both standalone React Native and the Legend Apps shell.
 
 The latest measured [September 17 results](benchmarks/final-2026-09-17/RESULTS.md), from before external grammar packs, contain separate tables for startup, memory, and built app size, including the latest [Flutter/GPUI rendering changes](benchmarks/chat-history/FLUTTER_GPUI_OUTPUT_ALIGNMENT.md). All 19 bundles were rebuilt from clean committed source and validated against their recordings. Comparable features do not imply identical rendering engines or pixels; see the [fairness standard](benchmarks/chat-history/FAIRNESS_STANDARD.md) and the report’s conditions and limitations. The earlier [September 16 results](benchmarks/final-2026-09-16/RESULTS.md) remain available for historical context.
@@ -34,7 +34,7 @@ bun run benchmark:fixtures
 bun run benchmark:run
 ```
 
-With no arguments, both commands select **all 19 apps across both workloads**, sequentially. Building replaces selected bundles under `.build/chat-history-benchmarks/` and `.build/hello-world-benchmarks/` and writes provenance manifests there. There is no implicit build during benchmarking. `bun run benchmark` is an alias for `benchmark:run`; unlike the old command, it no longer builds or selects only chat history.
+With no arguments, both commands select **all 20 apps across both workloads**, sequentially. Building replaces selected bundles under `.build/chat-history-benchmarks/` and `.build/hello-world-benchmarks/` and writes provenance manifests there. There is no implicit build during benchmarking. `bun run benchmark` is an alias for `benchmark:run`; unlike the old command, it no longer builds or selects only chat history.
 
 The fixture selector uses your local Codex/Claude histories, choosing two large histories inactive for at least eight days. Paths and hashes stay in ignored `benchmarks/chat-history/fixtures.local.json`. The runner verifies those files before measurement. Do not repin between comparative runs. Another person's corpus may produce different results. Hello World needs no history files; use `--suite hello-world` if you do not have a suitable corpus.
 
@@ -74,7 +74,7 @@ Both scripts accept `--name value` or `--name=value`. Unknown options and invali
 | `--iterations <N>` | Run | `10` measured rounds per app; minimum `1` |
 | `--settle-ms <N>` | Run | Hello World only: `5000` ms reference wait; minimum `1000`. With both suites, applies only to Hello World |
 
-App names: `react-native`, `legend-shell`, `electron`, `tauri`, `deno-webview`, `deno-cef`, `flutter`, `gpui`, `swiftui`, `appkit`. `deno` selects both backends. `legend-shell` only exists in Hello World. Selecting a technology without `--suite` selects its apps in both workloads. The chat-history Deno exporter always builds **both backends**, even when only one is requested; the preview shows this. Benchmarking still runs only the requested backend.
+App names: `react-native`, `electron`, `tauri`, `deno-webview`, `deno-cef`, `flutter`, `gpui`, `compose`, `swiftui`, `appkit`. `deno` selects both backends. Selecting a technology without `--suite` selects its apps in both workloads. The chat-history Deno exporter always builds **both backends**, even when only one is requested; the preview shows this. Benchmarking still runs only the requested backend.
 
 Suite-specific aliases are available: `benchmark:chat-history:build`, `benchmark:chat-history:run`, `benchmark:hello-world:build`, and `benchmark:hello-world:run`. Build aliases have the same confirmation. `benchmark:chat-history` and `benchmark:hello-world` are run-only aliases. Lower-level suite scripts are implementation/diagnostic entry points; use the commands above for normal builds and measurements.
 
@@ -108,7 +108,7 @@ bun run benchmark:compare \
 
 ## Prebuilt releases
 
-The release tooling packages all 19 apps and lets benchmark users download either the complete set or selected apps. A release must be published before downloads can work; setting up these scripts does not itself create one.
+The release tooling packages all 20 apps and lets benchmark users download either the complete set or selected apps. A release must be published before downloads can work; setting up these scripts does not itself create one.
 
 Install the GitHub CLI (`gh`), authenticate with `gh auth login`, and have Python 3 available alongside the measurement prerequisites above. You do **not** need Flutter, Rust, Deno, CocoaPods, or the sibling repository to benchmark downloaded apps. Xcode command-line tools are still required for measurement helpers. Download into a clean checkout of this repository at the release's tag; the downloader checks the exact source commit.
 
@@ -150,7 +150,7 @@ bun run benchmark:release:publish \
   --directory .build/releases/bench-v1-macos-arm64
 ```
 
-Packaging never builds or publishes. It requires all 19 apps and writes one `.tar.gz` per app, `benchmark-release.json`, and `SHA256SUMS`. Archives preserve executables and framework symlinks and exclude filesystem owner names and extended attributes. The manifest includes both source commits, per-app build-time tool versions, packaging-host tool versions, rendering policy, architecture, and signing limitations. Personal histories, local fixture manifests, videos, credentials, and source checkout paths are not added as release assets. Matching harness source is available through the release tag.
+Packaging never builds or publishes. It requires all 20 apps and writes one `.tar.gz` per app, `benchmark-release.json`, and `SHA256SUMS`. Archives preserve executables and framework symlinks and exclude filesystem owner names and extended attributes. The manifest includes both source commits, per-app build-time tool versions, packaging-host tool versions, rendering policy, architecture, and signing limitations. Personal histories, local fixture manifests, videos, credentials, and source checkout paths are not added as release assets. Matching harness source is available through the release tag.
 
 Publishing verifies the package checksums and requires the existing remote tag to point to the packaged comparison commit. It creates a draft, uploads the entire set, then publishes it as latest. Use `--draft` to leave the completed release unpublished for review. Existing releases are never overwritten. If uploading fails, the incomplete draft remains unpublished; inspect and remove that draft before retrying the command. Ensure the pinned `legend-apps` commit is also retained in its source repository.
 
@@ -171,3 +171,18 @@ Release regression checks: `bun test benchmarks/releases/releases.test.ts` and `
 `bun run chat-history:<framework>` starts the selected product (`deno:webview` or `deno:cef` for Deno). `bun run hello-world:<framework>` builds and opens one baseline directly; these are developer shortcuts, not the confirmed batch builder. See the workload READMEs for individual commands and architecture.
 
 CLI checks: `bun test benchmarks/cli.test.ts`; TypeScript validation: `bun run typecheck`.
+
+## Compose Multiplatform
+
+Both workloads are available as `--app compose`:
+
+```sh
+bun run benchmark:build --app compose
+bun run benchmark:run --app compose
+```
+
+The builder installs a checksum-pinned ARM64 JDK and Gradle under `.toolchains/compose`, runs Compose's ProGuard release build, and packages a trimmed JVM. No system Java installation is needed to run the exported apps. First build downloads approximately a gigabyte of toolchains and dependencies; allow several gigabytes for caches and build outputs. The build monitors the machine's 50 GB disk reserve.
+
+Chat History uses Kotlin/JVM file discovery and lazy UTF-8 transcript parsing, CommonMark, native Compose text, a lazy list, and an external JVM syntax pack. It shares benchmark fixtures, normalization semantics, and highlighting policy with the other apps. No Rust parser or WebView is embedded. See [implementation and fairness notes](docs/COMPOSE_MULTIPLATFORM.md).
+
+The existing published performance tables predate Compose. Adding it to the harness does not establish a new performance ranking; run the documented full protocol on a quiet machine for publication.

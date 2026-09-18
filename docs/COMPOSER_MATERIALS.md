@@ -43,3 +43,7 @@ The report uses a long synthetic chat, scrolled to the top so that real rendered
 The native sizing/lifecycle regression check is [composer_glass_test.m](../apps/chat-history-gpui/tests/composer_glass_test.m); its header includes the command to run it.
 
 Sources in this repository: [web CSS](../apps/chat-history-electron/src/styles.css), [Flutter widgets](../apps/chat-history-flutter/lib/main.dart), [GPUI renderer](../apps/chat-history-gpui/src/main.rs), and [shared native glass view](../packages/chat-history-swift/Sources/ChatHistoryMarkdown/TranscriptGlassView.swift). RN uses the sibling Legend Apps `glass-effect-view` package.
+
+## Compose Multiplatform addition
+
+The Compose chat app uses its own Skia graphics layer to sample the transcript behind the composer, with a 10-point Gaussian blur, 40% dark / 44% light tint, and the shared dimensions. This is conventional backdrop blur, not Liquid Glass. The existing report screenshots and historical measurements predate this candidate. See [Compose notes](COMPOSE_MULTIPLATFORM.md).

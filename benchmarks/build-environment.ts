@@ -9,5 +9,6 @@ export function buildEnvironment(repositoryRoot: string, target: string): BuildE
   if (target.startsWith("deno")) tools.deno = run(resolve(repositoryRoot, "scripts/with-local-deno.sh"), ["deno", "--version"]);
   if (target === "flutter") tools.flutter = run(resolve(repositoryRoot, "scripts/with-local-flutter.sh"), ["flutter", "--version"]);
   if (["react-native", "legend-shell"].includes(target)) tools.cocoapods = run("pod", ["--version"]);
+  if (target === "compose") tools.composeToolchain = "Compose 1.10.3; Kotlin 2.3.10; Gradle 8.14.3; Temurin 21.0.8+9 ARM64 (pinned local toolchain)";
   return { architecture: process.arch, macOS: run("/usr/bin/sw_vers", ["-productVersion"]), tools };
 }

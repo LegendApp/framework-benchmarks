@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { closeSync, lstatSync, openSync, readFileSync, readdirSync, readlinkSync, readSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { labels, type AppName } from "../hello-world/config";
+import { allApps, labels, type AppName } from "../hello-world/config";
 import type { Suite } from "../cli";
 import type { RenderingInputs } from "../chat-history/fairness";
 
@@ -79,7 +79,8 @@ export function validateManifest(value: unknown): Manifest {
       if (!pack || JSON.stringify(pack.pack) !== JSON.stringify(asset.build.grammarPack)) throw new Error(`Missing or mismatched grammar asset for ${asset.app}`);
     } else if (asset.build.grammarPack) throw new Error("Grammar provenance without release assets");
   }
-  if (keys.size !== 19) throw new Error("A release must contain all 19 apps");
+  const expectedKeys = ["chat-history", "hello-world"].flatMap(suite => allApps.map(app => `${suite}/${app}`));
+  if (keys.size !== expectedKeys.length || expectedKeys.some(key => !keys.has(key))) throw new Error(`A release must contain all ${expectedKeys.length} current apps`);
   return data;
 }
 export function assertReleaseSet(records: { app: string; bundle: string; build: BuildRecord }[], root?: string) {

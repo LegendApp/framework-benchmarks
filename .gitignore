@@ -25,3 +25,9 @@ apps/hello-world-tauri/src-tauri/gen/
 apps/hello-world-react-native/macos/Pods/
 benchmarks/hello-world/results/
 apps/hello-world-react-native/macos/build/
+
+# Compose/JVM build outputs
+apps/chat-history-compose/build/
+packages/compose-desktop/.gradle/
+packages/compose-desktop/.kotlin/
+packages/compose-syntax/build/

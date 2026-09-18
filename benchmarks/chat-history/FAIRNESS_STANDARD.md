@@ -43,3 +43,7 @@ Use native split-view presentation in the native UI stacks. The current Electron
 ## Composer materials
 
 The [composer audit](../../docs/COMPOSER_MATERIALS.md) distinguishes native Liquid Glass and conventional backdrop blur. RN/AppKit/SwiftUI use native glass on macOS 26; GPUI now uses a macOS-native glass overlay above its rendered transcript. The web apps and Flutter use reduced-strength backdrop blur and lighter tint. All composers now blur underlying content, but their algorithms and compositor work are not identical. Earlier performance numbers predate GPUI's native overlay and must not be presented as measurements of the new build.
+
+## Compose Multiplatform candidate
+
+The Kotlin/JVM implementation follows the same lazy document and normalized-row policy, uses CommonMark with GFM extensions, and highlights explicit languages from the shared policy through an external JVM syntax pack. It retains Compose LazyColumn's default prefetch rather than forcing a synthetic row count. Its composer performs a conventional 10-point backdrop blur; it is not native Liquid Glass. Images are placeholders under the text-only benchmark contract. See [implementation and validation notes](../../docs/COMPOSE_MULTIPLATFORM.md). Existing nine-framework published tables do not include this candidate.

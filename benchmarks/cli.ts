@@ -101,7 +101,7 @@ export function help(mode: Mode) {
   return `Usage: bun run benchmark:${mode} [options]
 
 ${mode === "build" ? "Build release apps after showing the plan and asking for confirmation." : "Benchmark existing release apps; never build application bundles."}
-No arguments selects both workloads and all 19 apps.
+No arguments selects both workloads and all 20 apps.
 
   --suite all|chat-history|hello-world   Default: all
   --app all|<comma-separated apps>      Default: all
@@ -113,7 +113,7 @@ ${mode === "build" ? `  --yes                                Skip interactive co
   --settle-ms <N>                      Hello World reference wait (default: 5000, min: 1000)`}
 
 Apps: ${allApps.join(", ")}
-Alias: deno selects both backends. Legend Shell only has a Hello World app.
+Alias: deno selects both backends.
 Chat-history Deno builds always produce both backends.
 `;
 }

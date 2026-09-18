@@ -92,3 +92,5 @@ Both suites now launch apps with process-local `-NSAutomaticWindowAnimationsEnab
 Select several apps with `--app appkit,swiftui,react-native`. The default selects all nine. `--allow-locked-session` explicitly allows the existing locked-console workflow; timing and companion memory launches both retain their lock state. Such runs describe that session condition, not verified unlocked foreground behavior.
 
 Settled OCR screenshots are extracted by recorded frame index. This avoids EOF-seek failures when a ScreenCaptureKit video has a positive timestamp origin; it does not change the three-frame startup OCR rule.
+
+Compose Multiplatform is selected with `--app compose`. Its minimal app uses a white 1280×720 window with centered 32-point text and includes no chat parser, Markdown, highlighting, or chat resources. Build using `bun run benchmark:build --suite hello-world --app compose`; run using the corresponding `benchmark:run` command. Development: `bun run hello-world:compose`.

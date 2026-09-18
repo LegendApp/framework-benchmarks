@@ -44,7 +44,9 @@
     "benchmark:chat-history:run": "bun benchmarks/run.ts --suite chat-history",
     "benchmark:download": "bun benchmarks/releases/download.ts",
     "benchmark:release:package": "bun benchmarks/releases/package.ts",
-    "benchmark:release:publish": "bun benchmarks/releases/publish.ts"
+    "benchmark:release:publish": "bun benchmarks/releases/publish.ts",
+    "chat-history:compose": "scripts/with-local-compose.sh :chat:run",
+    "hello-world:compose": "scripts/with-local-compose.sh :hello:run"
   },
   "devDependencies": {
     "@types/bun": "^1.3.5",

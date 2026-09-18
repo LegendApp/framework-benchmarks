@@ -18,7 +18,7 @@ function manifest(): Manifest {
 }
 
 test("release manifest requires a complete, clean, pinned set and safe asset names", () => {
-  expect(validateManifest(manifest()).assets).toHaveLength(19);
+  expect(validateManifest(manifest()).assets).toHaveLength(20);
   for (const mutate of [
     (m: Manifest) => { m.assets.pop(); },
     (m: Manifest) => { m.assets[0].name = "../escape"; },
@@ -88,7 +88,7 @@ test("release grammar assets must match every chat app's engine and pinned pack"
   const value = manifest();
   value.grammarAssets = grammarEngines.map(engine => ({ name: `grammars-${engine}-v1-macos-arm64.tar.gz`, bytes: 10, sha256: sha, treeSha256: sha, pack: { engine, version: "v1", bytes: 20, manifestSha256: sha } }));
   for (const asset of value.assets) if (asset.suite === "chat-history") asset.build.grammarPack = { ...value.grammarAssets.find(pack => pack.pack.engine === grammarEngineForApp(asset.app))!.pack };
-  expect(validateManifest(value).grammarAssets).toHaveLength(5);
+  expect(validateManifest(value).grammarAssets).toHaveLength(6);
   const missing = structuredClone(value); missing.grammarAssets!.pop();
   expect(() => validateManifest(missing)).toThrow("Missing or mismatched");
   const mismatch = structuredClone(value); mismatch.assets[0].build.grammarPack!.manifestSha256 = "f".repeat(64);

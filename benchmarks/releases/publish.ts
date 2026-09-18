@@ -25,7 +25,7 @@ async function main() {
   const temp = mkdtempSync(resolve(tmpdir(), "benchmark-release-notes-"));
   try {
     const notes = resolve(temp, "notes.md");
-    writeFileSync(notes, `Prebuilt desktop benchmarks: all 19 apps, macOS ${manifest.minimumMacOS}+ (${manifest.arch}).\n\nComparison source: ${manifest.comparisonCommit}\nLegend Apps source: ${manifest.legendAppsCommit}\n\nUse the harness at this tag. Run \`bun run benchmark:download --repo ${repo} --release ${manifest.tag}\`, then \`bun run benchmark:run\`.\n\nThese are benchmark builds; notarization is not verified. Private histories are not included. See the README for measurement prerequisites and fixture selection.\n`);
+    writeFileSync(notes, `Prebuilt desktop benchmarks: all ${manifest.assets.length} apps, macOS ${manifest.minimumMacOS}+ (${manifest.arch}).\n\nComparison source: ${manifest.comparisonCommit}\nLegend Apps source: ${manifest.legendAppsCommit}\n\nUse the harness at this tag. Run \`bun run benchmark:download --repo ${repo} --release ${manifest.tag}\`, then \`bun run benchmark:run\`.\n\nThese are benchmark builds; notarization is not verified. Private histories are not included. See the README for measurement prerequisites and fixture selection.\n`);
     // Create first: an existing release fails here before any upload can overwrite it.
     command("gh", ["release", "create", manifest.tag, "--repo", repo, "--verify-tag", "--draft", "--title", `Desktop benchmarks ${manifest.tag}`, "--notes-file", notes]);
     command("gh", ["release", "upload", manifest.tag, "--repo", repo, resolve(directory, manifestName), resolve(directory, "SHA256SUMS"), ...[...manifest.assets, ...(manifest.grammarAssets ?? [])].map(asset => resolve(directory, asset.name))]);

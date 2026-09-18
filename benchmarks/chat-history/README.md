@@ -384,3 +384,9 @@ Fairness completion: [implementation changes, common presentation policy, and ma
 The September 13 [other-app alignment report](ALL_APPS_ALIGNMENT.md) documents deferred document loading, rendering/chrome corrections, visual evidence and remaining platform differences. These changes require fresh scored benchmarks; prior performance tables describe earlier builds.
 
 Syntax highlighting is now enabled across all nine targets. See [the highlighting policy and validation](SYNTAX_HIGHLIGHTING.md). Existing performance tables predate this change and require a complete rerun for the highlighted workload.
+
+## Running Compose Multiplatform
+
+Build the self-contained release with `bun run benchmark:build --suite chat-history --app compose`; run the same foreground/video and separate-memory protocol with `bun run benchmark:run --suite chat-history --app compose`. Development: `bun run chat-history:compose` after building its external syntax pack. `BENCHMARK_GRAMMAR_ROOT` can override the common grammar-pack root; otherwise development uses `.build/chat-history-benchmarks/grammar-packs/v1` relative to the working directory. Kotlin parser and syntax policy tests: `scripts/with-local-compose.sh :chat:test`.
+
+See [Compose implementation notes](../../docs/COMPOSE_MULTIPLATFORM.md). The macOS ARM64 exports contain their own trimmed Java runtime; users do not need a separate Java install. Benchmark timings include normal JVM startup and JIT behavior.

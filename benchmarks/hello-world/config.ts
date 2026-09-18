@@ -11,6 +11,7 @@ export const labels = {
   "deno-cef": "Deno CEF",
   flutter: "Flutter",
   gpui: "GPUI",
+  compose: "Compose Multiplatform",
   swiftui: "SwiftUI",
   appkit: "AppKit",
 } as const;

@@ -148,5 +148,37 @@
     "appearance": "light",
     "sourceDirectory": "benchmarks/chat-history/results/blur-gpui-final-2026-09-17-light",
     "file": "gpui-light.png"
+  },
+  {
+    "app": "compose",
+    "material": "Compose Gaussian backdrop blur",
+    "videoSecond": 3.50221533203125,
+    "phase": "top",
+    "timestampMs": 1789760420107,
+    "appearance": "dark",
+    "sourceDirectory": "benchmarks/chat-history/results/compose-visual-1789760416410-dark",
+    "file": "compose.png",
+    "crop": {
+      "height": 720,
+      "width": 1280,
+      "x": 48,
+      "y": 78
+    }
+  },
+  {
+    "app": "compose",
+    "material": "Compose Gaussian backdrop blur",
+    "videoSecond": 3.533253173828125,
+    "phase": "top",
+    "timestampMs": 1789760437038,
+    "appearance": "light",
+    "sourceDirectory": "benchmarks/chat-history/results/compose-visual-1789760433315-light",
+    "file": "compose-light.png",
+    "crop": {
+      "height": 720,
+      "width": 1280,
+      "x": 48,
+      "y": 78
+    }
   }
 ]
