@@ -2,7 +2,7 @@
 
 September 17, 2026 · macOS · Apple M4 · ARM64
 
-This project compares nine implementations of a chat-history browser and ten Hello World apps. The chat workload browses the same pinned transcripts with Markdown and syntax highlighting; Hello World isolates the overhead of opening a window and showing a greeting. These results describe the implementations in this repository, rather than a universal ranking of frameworks.
+This project compares nine implementations of a chat-history browser and nine Hello World apps. The chat workload browses the same pinned transcripts with Markdown and syntax highlighting; Hello World isolates the overhead of opening a window and showing a greeting. These results describe the implementations in this repository, rather than a universal ranking of frameworks.
 
 ## How to read the numbers
 
@@ -49,13 +49,14 @@ Jump moves to the top of the initial transcript. Switch opens the second pinned 
 
 ## Hello World
 
-Legend Shell is the greeting app hosted by the Legend Apps React Native shell; the other React Native row is the standalone baseline. Neither requires a grammar pack. All Hello World app sizes therefore equal their combined installed sizes.
+**Packaging audit (September 18):** React Native and the excluded Legend Shell binary are both ARM64-only. The standalone baseline retained executable and Hermes symbols that the product release pipeline strips. Its 16.3 MiB size below is the historical measurement, pending a rebuild with matching release postprocessing; do not use it as the optimized RN size. Timing and memory remain the original measurements.
+
+The React Native row is the standalone baseline. Hello World apps require no grammar pack. The duplicate Legend Shell host is excluded from this framework comparison.
 
 | App | App language | UI | App MiB | Window ms | First content ms | Memory MiB |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
 | AppKit | Swift | Native | 0.1 | 193.4 | 193.4 | 15.5 |
 | GPUI | Rust | Canvas | 5.3 | 210.7 | 226.5 | 56.3 |
-| Legend Shell (RN) | TypeScript / React | Native | 9.3 | 218.3 | 227.5 | 23.9 |
 | SwiftUI | Swift | Native | 0.1 | 210.9 | 227.5 | 18.3 |
 | React Native | TypeScript / React | Native | 16.3 | 210.9 | 227.6 | 23.3 |
 | Flutter | Dart | Canvas | 17.0 | 234.4 | 259.2 | 55.0 |

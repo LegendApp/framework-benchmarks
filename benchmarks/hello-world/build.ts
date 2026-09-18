@@ -108,8 +108,10 @@ async function build(app: AppName) {
       run("pod", ["install"], join(appRoot, "macos"), env);
       const derived = join(appRoot, "build");
       run("xcodebuild", ["-workspace", "macos/HelloWorld.xcworkspace", "-scheme", "HelloWorld-macOS", "-configuration", "Release",
-        "-derivedDataPath", derived, "-destination", "platform=macOS", "ONLY_ACTIVE_ARCH=YES", "CODE_SIGNING_ALLOWED=NO", "build"], appRoot, env);
+        "-derivedDataPath", derived, "-destination", "platform=macOS,arch=arm64", "ARCHS=arm64", "ONLY_ACTIVE_ARCH=NO", "DEPLOYMENT_POSTPROCESSING=YES", "CODE_SIGNING_ALLOWED=NO", "build"], appRoot, env);
       copyApp(join(derived, "Build/Products/Release/HelloWorld.app"), app);
+      // Match the product release packaging: strip local Hermes symbols before signing.
+      run("strip", ["-S", "-x", join(bundlePath(app), "Contents/Frameworks/hermes.framework/Versions/Current/hermes")]);
       break;
     }
   }

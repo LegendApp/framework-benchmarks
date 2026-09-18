@@ -15,7 +15,8 @@ export const labels = {
   appkit: "AppKit",
 } as const;
 export type AppName = keyof typeof labels;
-export const allApps = Object.keys(labels) as AppName[];
+// Retain the legacy label for archived results, but exclude the duplicate RN host.
+export const allApps: AppName[] = (Object.keys(labels) as AppName[]).filter(app => app !== "legend-shell");
 export const bundlePath = (app: AppName) => resolve(buildRoot, `Hello World — ${labels[app]}.app`);
 
 export function option(name: string, args = process.argv.slice(2)) {

@@ -7,18 +7,18 @@ import { parseArgs, plan, preflightBuilds } from "./cli";
 const jobs = (mode: "build" | "run", args: string[] = []) => plan(mode, parseArgs(mode, args));
 
 describe("benchmark CLI", () => {
-  test("defaults select 9 product and 10 baseline apps with separate build/run scripts", () => {
+  test("defaults select 9 product and 9 baseline apps with separate build/run scripts", () => {
     for (const mode of ["build", "run"] as const) {
       const selected = jobs(mode);
-      expect(selected.map(job => job.apps.length)).toEqual([9, 10]);
+      expect(selected.map(job => job.apps.length)).toEqual([9, 9]);
       expect(selected.every(job => job.args[0].endsWith(`/${mode}.ts`))).toBe(true);
     }
     const options = parseArgs("run", []);
     expect([options.warmups, options.iterations, options.settleMs]).toEqual([2, 10, 5000]);
   });
-  test("app and suite filters, Deno grouping, and shell-only baseline", () => {
+  test("app and suite filters, Deno grouping, and rejection of the duplicate shell", () => {
     expect(jobs("run", ["--app=gpui"]).map(job => job.apps)).toEqual([["gpui"], ["gpui"]]);
-    expect(jobs("build", ["--app", "legend-shell"]).map(job => job.suite)).toEqual(["hello-world"]);
+    expect(() => jobs("build", ["--app", "legend-shell"])).toThrow("Unknown app");
     expect(jobs("build", ["--suite", "chat-history", "--app", "electron,deno-cef"])[0].args[2]).toBe("electron,deno");
     expect(jobs("build", ["--suite", "chat-history", "--app", "deno-cef"])[0].apps).toEqual(["deno-cef", "deno-webview"]);
     expect(jobs("run", ["--suite", "chat-history", "--app", "deno-cef"])[0].apps).toEqual(["deno-cef"]);
@@ -47,7 +47,7 @@ describe("benchmark CLI", () => {
       for (const arg of ["--help", "--dry-run"]) {
         const result = Bun.spawnSync([process.execPath, resolve(import.meta.dir, `${mode}.ts`), arg], { stdin: "pipe" });
         expect(result.exitCode).toBe(0);
-        expect(result.stdout.toString()).toContain(arg === "--help" ? "Usage:" : "plan (19 apps)");
+        expect(result.stdout.toString()).toContain(arg === "--help" ? "Usage:" : "plan (18 apps)");
       }
     }
     if (process.platform === "darwin") {

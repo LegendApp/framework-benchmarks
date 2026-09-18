@@ -37,7 +37,7 @@ bun run hello-world:gpui
 bun run hello-world:swiftui
 bun run hello-world:appkit
 bun run hello-world:react-native
-bun benchmarks/hello-world/build.ts --app legend-shell --launch
+# Legend Shell is excluded: use --app react-native for the RN baseline.
 ```
 
 Each `hello-world:*` command builds and opens that runtime's release app. To build one without opening it, use `bun run benchmark:hello-world:build --app electron`. Both Deno backends can be selected with `--app deno`. Deno Desktop uses local port 8000, so close another Deno app before launching one. React Native builds its embedded JavaScript bundle with Metro during Xcode's Release build; it needs no running development server.

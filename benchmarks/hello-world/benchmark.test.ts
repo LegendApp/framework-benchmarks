@@ -8,8 +8,8 @@ import { median, percentile } from "./macos";
 import { writeReferenceScreenshot } from "./video";
 
 describe("baseline benchmark configuration", () => {
-  test("selects all ten apps and both Deno backends", () => {
-    expect(selectedApps([])).toHaveLength(10);
+  test("selects all nine frameworks and both Deno backends", () => {
+    expect(selectedApps([])).toHaveLength(9);
     expect(selectedApps(["--app=deno"])).toEqual(["deno-webview", "deno-cef"]);
     expect(selectedApps(["--app", "react-native"])).toEqual(["react-native"]);
     expect(selectedApps(["--app=appkit,swiftui,appkit"])).toEqual(["appkit", "swiftui"]);
