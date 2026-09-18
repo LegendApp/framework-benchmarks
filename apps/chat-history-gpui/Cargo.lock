@@ -2976,6 +2976,7 @@ dependencies = [
  "chrono",
  "gpui",
  "pulldown-cmark",
+ "raw-window-handle",
  "serde",
  "serde_json",
  "syntect",

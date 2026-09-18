@@ -2,64 +2,151 @@
   {
     "app": "react-native",
     "material": "Native Liquid Glass",
-    "videoSecond": 2.439114501953125,
+    "videoSecond": 2.455971435546875,
     "phase": "top",
-    "timestampMs": 1789661182145
+    "timestampMs": 1789663667103,
+    "appearance": "dark",
+    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-dark",
+    "file": "react-native.png"
   },
   {
     "app": "electron",
     "material": "CSS backdrop blur",
-    "videoSecond": 2.993107421875,
+    "videoSecond": 4.895664794921875,
     "phase": "top",
-    "timestampMs": 1789661188249
+    "timestampMs": 1789663674859,
+    "appearance": "dark",
+    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-dark",
+    "file": "electron.png"
   },
   {
     "app": "tauri",
     "material": "CSS backdrop blur",
-    "videoSecond": 2.891762939453125,
+    "videoSecond": 3.188800537109375,
     "phase": "top",
-    "timestampMs": 1789661194181
+    "timestampMs": 1789663680975,
+    "appearance": "dark",
+    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-dark",
+    "file": "tauri.png"
   },
   {
     "app": "deno-webview",
     "material": "CSS backdrop blur",
-    "videoSecond": 2.703416748046875,
+    "videoSecond": 3.427930908203125,
     "phase": "top",
-    "timestampMs": 1789661199926
+    "timestampMs": 1789663687436,
+    "appearance": "dark",
+    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-dark",
+    "file": "deno-webview.png"
   },
   {
     "app": "deno-cef",
     "material": "CSS backdrop blur",
-    "videoSecond": 3.17673876953125,
+    "videoSecond": 4.994950927734375,
     "phase": "top",
-    "timestampMs": 1789661206166
+    "timestampMs": 1789663695490,
+    "appearance": "dark",
+    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-dark",
+    "file": "deno-cef.png"
   },
   {
     "app": "flutter",
     "material": "Gaussian backdrop blur",
-    "videoSecond": 2.982726806640625,
+    "videoSecond": 2.85040771484375,
     "phase": "top",
-    "timestampMs": 1789661212222
+    "timestampMs": 1789663701365,
+    "appearance": "dark",
+    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-dark",
+    "file": "flutter.png"
   },
   {
     "app": "gpui",
-    "material": "Transparency only (no backdrop blur)",
-    "videoSecond": 2.767051513671875,
+    "material": "Native Liquid Glass overlay",
+    "videoSecond": 2.866666015625,
     "phase": "top",
-    "timestampMs": 1789661218173
+    "timestampMs": 1789663902255,
+    "appearance": "dark",
+    "sourceDirectory": "benchmarks/chat-history/results/blur-gpui-final-2026-09-17-dark",
+    "file": "gpui.png"
   },
   {
     "app": "appkit",
     "material": "Native Liquid Glass",
-    "videoSecond": 2.419231201171875,
+    "videoSecond": 2.516185791015625,
     "phase": "top",
-    "timestampMs": 1789661223641.858
+    "timestampMs": 1789663712699.769,
+    "appearance": "dark",
+    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-dark",
+    "file": "appkit.png"
   },
   {
     "app": "swiftui",
     "material": "Native Liquid Glass",
-    "videoSecond": 2.83105126953125,
+    "videoSecond": 2.86566943359375,
     "phase": "top",
-    "timestampMs": 1789661229387.0222
+    "timestampMs": 1789663718566.5762,
+    "appearance": "dark",
+    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-dark",
+    "file": "swiftui.png"
+  },
+  {
+    "app": "electron",
+    "material": "CSS backdrop blur",
+    "videoSecond": 2.892693115234375,
+    "phase": "top",
+    "timestampMs": 1789663742095,
+    "appearance": "light",
+    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-light",
+    "file": "electron-light.png"
+  },
+  {
+    "app": "tauri",
+    "material": "CSS backdrop blur",
+    "videoSecond": 2.69384765625,
+    "phase": "top",
+    "timestampMs": 1789663747763,
+    "appearance": "light",
+    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-light",
+    "file": "tauri-light.png"
+  },
+  {
+    "app": "deno-webview",
+    "material": "CSS backdrop blur",
+    "videoSecond": 2.66303125,
+    "phase": "top",
+    "timestampMs": 1789663753499,
+    "appearance": "light",
+    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-light",
+    "file": "deno-webview-light.png"
+  },
+  {
+    "app": "deno-cef",
+    "material": "CSS backdrop blur",
+    "videoSecond": 2.660235107421875,
+    "phase": "top",
+    "timestampMs": 1789663759263,
+    "appearance": "light",
+    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-light",
+    "file": "deno-cef-light.png"
+  },
+  {
+    "app": "flutter",
+    "material": "Gaussian backdrop blur",
+    "videoSecond": 2.515788818359375,
+    "phase": "top",
+    "timestampMs": 1789663764702,
+    "appearance": "light",
+    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-light",
+    "file": "flutter-light.png"
+  },
+  {
+    "app": "gpui",
+    "material": "Native Liquid Glass overlay",
+    "videoSecond": 2.567567626953125,
+    "phase": "top",
+    "timestampMs": 1789663908556,
+    "appearance": "light",
+    "sourceDirectory": "benchmarks/chat-history/results/blur-gpui-final-2026-09-17-light",
+    "file": "gpui-light.png"
   }
 ]

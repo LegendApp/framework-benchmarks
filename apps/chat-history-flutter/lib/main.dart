@@ -767,15 +767,15 @@ class _Content extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(26),
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
                     height: 60,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
                       color: (Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xff252528)
+                              ? const Color(0xff202124)
                               : const Color(0xfff5f5f7))
-                          .withValues(alpha: 0.78),
+                          .withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.4 : 0.44),
                       borderRadius: BorderRadius.circular(26),
                       border: Border.all(color: Theme.of(context).dividerColor),
                     ),

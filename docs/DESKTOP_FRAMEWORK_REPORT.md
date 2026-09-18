@@ -6,7 +6,7 @@ This project compares nine implementations of a chat-history browser and nine He
 
 ## How to read the numbers
 
-**The size and performance columns describe different build revisions.** Sizes are from the latest rebuilds, with external grammar packs and ARM64-only Flutter binaries. Timing and memory are from the last complete controlled benchmark, before those packaging changes and the plain-sidebar styling update. They are presented together for reference; the current builds still need a full timing and memory rerun. The later one-iteration smoke checks are not substituted for that benchmark.
+**The size and performance columns describe different build revisions.** Sizes are from the latest rebuilds, with external grammar packs and ARM64-only Flutter binaries. Timing and memory are from the last complete controlled benchmark, before those packaging changes, the sidebar styling update, and the composer blur changes (including GPUI’s native overlay). They are presented together for reference; the current builds still need a full timing and memory rerun. The later one-iteration smoke checks are not substituted for that benchmark.
 
 - **Times:** median milliseconds across ten measured rounds after two discarded warmup rounds, with rotating app order. Window and first-content times start at process launch; jump and switch times start at their respective actions. Visible timings come from recordings, not app-reported completion events.
 - **Memory:** median settled physical footprint in MiB, from separate unrecorded launches, including attributed helper processes. This is not RSS or peak memory.
@@ -22,7 +22,7 @@ Current sizes are paired with the earlier controlled performance measurements as
 | App | App language | UI | App MiB | Pack MiB | Total MiB | Window ms | First content ms | Initial memory MiB |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | AppKit | Swift | Native | 3.2 | 1.3 | 4.5 | 226.9 | 318.9 | 42.4 |
-| GPUI | Rust | Canvas | 9.9 | 0.8 | 10.7 | 226.4 | 335.5 | 289.0 |
+| GPUI | Rust + Objective-C composer | Canvas + native composer | 9.9 | 0.8 | 10.7 | 226.4 | 335.5 | 289.0 |
 | React Native | TypeScript / React; C++ native modules | Native | 17.8 | 22.5 | 40.3 | 243.4 | 406.3 | 52.8 |
 | Tauri | TypeScript / React + Rust | Web | 11.5 | 0.1 | 11.6 | 244.0 | 544.0 | 363.5 |
 | SwiftUI | Swift | Native | 3.7 | 1.3 | 5.0 | 268.7 | 668.8 | 82.6 |
@@ -75,20 +75,20 @@ Small Hello World differences near the recording cadence should be treated as ef
 
 ## Screenshots and framework tradeoffs
 
-These are actual September 17 recordings of a long synthetic chat scrolled to the top, with text continuing behind the composer. Each frame is taken 600 ms after the top-viewport event. The same prose, lists, and TypeScript code appear in all nine apps; this is visual evidence, not the private benchmark corpus. Flutter is ARM64-only. The web/canvas apps have plain sidebars; native stacks retain their split-view treatment.
+These are actual September 17 recordings after the composer blur update of a long synthetic chat scrolled to the top, with text continuing behind the composer. Each frame is taken 600 ms after the top-viewport event. The same prose, lists, and TypeScript code appear in all nine apps; this is visual evidence, not the private benchmark corpus. Flutter is ARM64-only. The web/canvas apps have plain sidebars; native stacks retain their split-view treatment.
 
 ### Composer material comparison
 
 | Apps | Composer effect | Blurs the chat beneath it? |
 | --- | --- | --- |
 | React Native, AppKit, SwiftUI | Native Liquid Glass, regular style (`NSGlassEffectView`) | Yes |
-| Electron, Tauri, Deno WebView, Deno CEF | CSS backdrop blur, 24 px, saturation 1.4 | Yes |
-| Flutter | Gaussian `BackdropFilter`, sigma 24 | Yes |
-| GPUI 0.2.2 | Translucent tint only | **No** |
+| Electron, Tauri, Deno WebView, Deno CEF | CSS backdrop blur, 10 px, saturation 1.2 | Yes |
+| Flutter | Gaussian `BackdropFilter`, sigma 10 | Yes |
+| GPUI 0.2.2 | Native Liquid Glass overlay above the GPU-rendered chat | Yes |
 
 Native Liquid Glass is more than Gaussian blur. Conventional web and Flutter blur can soften underlying text but do not reproduce the system material's full behavior. Static dark-mode images may make these differences subtle, so each screenshot is labeled by its actual implementation.
 
-**Remaining equivalence limitation:** GPUI's pinned renderer lacks per-element backdrop blur, so its composer does less compositor work. A native overlay or renderer extension would be needed to remove this difference. The current presentation is therefore not identical rendering work across frameworks. See the [material audit](COMPOSER_MATERIALS.md) for exact settings and limits.
+**Rendering distinction:** GPUI now hosts a native glass composer; its transcript remains canvas-rendered. All apps blur the text beneath the composer, but CSS/Flutter Gaussian blur and native Liquid Glass have different rendering behavior and costs. The earlier timing tables predate the new GPUI overlay. See the [material audit](COMPOSER_MATERIALS.md) for settings and validation.
 
 The short pros and cons below are engineering assessments, informed by the implementation and linked framework documentation; they are not additional benchmark measurements.
 
@@ -110,6 +110,8 @@ The React interface renders in bundled Chromium, with a Node.js host. [Electron 
 
 ![Electron chat-history app showing a long synthetic chat behind the composer](report-assets/electron.png)
 
+[View the light-mode composer](report-assets/electron-light.png)
+
 *Composer: CSS backdrop blur. Long chat shown behind the input surface.*
 
 **Pros:** A bundled browser gives developers control over the rendering version; HTML/CSS and the JavaScript ecosystem support complex interfaces and shared web code.
@@ -121,6 +123,8 @@ The React interface renders in bundled Chromium, with a Node.js host. [Electron 
 The React interface renders in the system WebView, with a Rust host; on this Mac the renderer is WebKit. [Tauri architecture](https://v2.tauri.app/concept/architecture/) and [WebView versions](https://v2.tauri.app/reference/webview-versions/).
 
 ![Tauri chat-history app showing a long synthetic chat behind the composer](report-assets/tauri.png)
+
+[View the light-mode composer](report-assets/tauri-light.png)
 
 *Composer: CSS backdrop blur. Long chat shown behind the input surface.*
 
@@ -134,6 +138,8 @@ This repository’s Deno Desktop build pairs a TypeScript backend and React fron
 
 ![Deno Desktop — WebView chat-history app showing a long synthetic chat behind the composer](report-assets/deno-webview.png)
 
+[View the light-mode composer](report-assets/deno-webview-light.png)
+
 *Composer: CSS backdrop blur. Long chat shown behind the input surface.*
 
 **Pros:** TypeScript on both sides of the application; avoids bundling Chromium and is substantially smaller than the CEF variant here.
@@ -145,6 +151,8 @@ This repository’s Deno Desktop build pairs a TypeScript backend and React fron
 The same Deno/React application runs with a bundled Chromium Embedded Framework renderer. [Implementation notes](../benchmarks/chat-history/README.md#running-deno-desktop).
 
 ![Deno Desktop — CEF chat-history app showing a long synthetic chat behind the composer](report-assets/deno-cef.png)
+
+[View the light-mode composer](report-assets/deno-cef-light.png)
 
 *Composer: CSS backdrop blur. Long chat shown behind the input surface.*
 
@@ -158,6 +166,8 @@ Dart widgets draw through Flutter’s rendering engine rather than mapping the c
 
 ![Flutter chat-history app showing a long synthetic chat behind the composer](report-assets/flutter.png)
 
+[View the light-mode composer](report-assets/flutter-light.png)
+
 *Composer: Gaussian backdrop blur. Long chat shown behind the input surface.*
 
 **Pros:** A composable widget system and framework-owned rendering support consistent custom UI across platforms. The ARM64-only bundles are much smaller than the earlier universal builds.
@@ -166,11 +176,13 @@ Dart widgets draw through Flutter’s rendering engine rather than mapping the c
 
 ### GPUI
 
-Rust application code uses GPUI’s GPU-rendered elements; this benchmark uses GPUI 0.2.2. It is categorized as canvas because the content is custom rendered, despite being compiled native code. [GPUI documentation](https://github.com/zed-industries/zed/blob/main/crates/gpui/README.md).
+Rust application code uses GPUI’s GPU-rendered elements; this benchmark uses GPUI 0.2.2. Its transcript and sidebar are canvas-rendered; its composer now uses a macOS-native Liquid Glass overlay. [GPUI documentation](https://github.com/zed-industries/zed/blob/main/crates/gpui/README.md).
 
 ![GPUI chat-history app showing a long synthetic chat behind the composer](report-assets/gpui.png)
 
-*Composer: Transparency only (no backdrop blur). Long chat shown behind the input surface.*
+[View the light-mode composer](report-assets/gpui-light.png)
+
+*Composer: Native Liquid Glass overlay. Long chat shown behind the input surface.*
 
 **Pros:** Direct control over layout, rendering, and data structures without a browser runtime. This implementation has a small bundle and competitive measured first-content time.
 

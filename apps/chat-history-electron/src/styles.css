@@ -7,6 +7,7 @@
   --background: #f5f6f8;
   --surface: #fff;
   --glass: rgb(245 245 247 / 78%);
+  --composer-glass: rgb(245 245 247 / 44%);
   --bubble: #f3f4f6;
   --line: #d1d5db;
   --secondary: #6b7280;
@@ -27,6 +28,7 @@
     --background: #191a1b;
     --surface: #242526;
     --glass: rgb(37 37 40 / 78%);
+  --composer-glass: rgb(32 33 36 / 40%);
     --bubble: #2d2e30;
     --line: #3e4042;
     --secondary: #a3a3a3;
@@ -46,6 +48,7 @@
   --background: #191a1b;
   --surface: #242526;
   --glass: rgb(37 37 40 / 78%);
+  --composer-glass: rgb(32 33 36 / 40%);
   --bubble: #2d2e30;
   --line: #3e4042;
   --secondary: #a3a3a3;
@@ -494,9 +497,9 @@ main {
   height: 60px;
   border-radius: 26px;
   border: 1px solid var(--line);
-  background: var(--glass);
-  backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  background: var(--composer-glass);
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
   display: flex;
   align-items: center;
   justify-content: space-between;
