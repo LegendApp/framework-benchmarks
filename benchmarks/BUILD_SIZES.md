@@ -10,7 +10,7 @@ This updates sizes only. Startup and memory were not remeasured; the [September 
 
 | App | App MiB | Grammar pack MiB | Combined MiB | Executable architecture |
 | --- | ---: | ---: | ---: | --- |
-| React Native | 19.7 | 22.5 | 42.2 | arm64 |
+| React Native | 17.8 | 22.5 | 40.3 | arm64 |
 | Electron | 285.6 | 0.1 | 285.7 | arm64 |
 | Tauri | 11.5 | 0.1 | 11.6 | arm64 |
 | Deno WebView | 65.8 | 0.1 | 65.9 | arm64 |
@@ -45,3 +45,8 @@ is excluded as a duplicate RN host. See
 [the optimization audit](../docs/REACT_NATIVE_HELLO_WORLD_OPTIMIZATION.md) for
 validation and experimental alternatives. Original cross-framework timings and
 memory measurements have not been replaced by the later RN-only runs.
+
+September 18: the shared Legend Apps release builder now uses the same native
+compiler optimizations. Chat History measures **18,629,704 app bytes**, plus
+**23,617,711 grammar-pack bytes**, totaling **42,247,415 bytes (40.3 MiB)**.
+The later RN-only smoke runs do not replace the original performance ranking.

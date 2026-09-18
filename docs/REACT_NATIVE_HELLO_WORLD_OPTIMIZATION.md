@@ -178,14 +178,48 @@ difference from the experimental copy reflects packaging identity/signature.
 Public RN imports and default Hermes bundling remain unchanged. Original
 cross-framework timing/memory numbers remain historical, not candidate results.
 
-Legend Apps uses `scripts/build-app.ts` for macOS releases; Chat History's
-benchmark exporter invokes that same builder. It already sets architecture and
-release postprocessing and strips Hermes symbols, but does not explicitly set
-these three compiler flags. Apply and validate them in that shared release path
-rather than maintaining a separate benchmark-only optimization. First check
-Chat History scrolling, conversation switching, markdown parsing, and native
-modules. In particular, qualify `-Oz` against CPU-heavy real workloads before
-making it the default for every app. This audit does not change that pipeline.
+## Shared Legend Apps rollout
+
+The shared `legend-apps/scripts/build-app.ts` macOS release path now enables
+all three native settings for every app, including the Chat History benchmark
+exporter. Debug, iOS, and Android builds are unchanged. Source-built Pods receive
+the flags; prebuilt Hermes and the separately built grammar pack do not.
+
+Chat History's app bundle changed from 20,614,246 to **18,629,704 bytes** (9.6%
+smaller). With its unchanged 23,617,711-byte grammar pack, total installed size
+is **42,247,415 bytes (40.3 MiB)**. ARM64 and deep code-signature checks pass.
+
+One warmup and three measured runs on each side passed visible phase checks,
+with matching normalized transcript digests and no discarded attempts:
+
+| Metric | Existing build | Optimized rebuild |
+| --- | ---: | ---: |
+| First content p50 / p90, ms | 386.2 / 1518.5 | 416.7 / 461.2 |
+| Jump to top p50, ms | 43.2 | 35.9 |
+| Conversation switch p50, ms | 181.4 | 189.4 |
+| Initial native work p50, ms | 44.2 | 35.1 |
+| Switch native work p50, ms | 26.7 | 28.4 |
+| Initial footprint, MiB | 52.4 | 52.8 |
+| Switched footprint, MiB | 65.2 | 65.3 |
+
+These are regression smoke checks on a shared machine, not a controlled
+same-source compiler A/B: the baseline was the existing exported build, while
+the optimized binary was rebuilt from the current working tree. Startup has
+substantial variance. The data establish smaller artifacts and functional
+parity, not a speed gain or proof that small regressions are absent. Retain
+`-Oz` as the requested size-oriented release default; qualify CPU-heavy app
+workloads before interpreting it as a performance improvement.
+
+Evidence: `benchmarks/chat-history/results/2026-09-18T09-10-00.961Z.{json,md}`
+and `2026-09-18T09-15-55.170Z.{json,md}`, with their companion video directories.
+All-app configuration verification, workspace typecheck, and six release-profile
+and signing tests pass in Legend Apps. Test Kitchen Sink also builds with these
+settings; ARM64 and deep signing checks pass. Its exact release executable
+remained alive for a 15-second launch smoke check before being terminated.
+App-scoped UI snapshot automation timed out, so full native-feature interaction
+coverage is not claimed. Compiler response files confirm `-Oz` and ThinLTO for
+audio, Markdown parsing, and window management. The additional Kitchen Sink
+build tree occupies about 3.6 GiB and is retained locally.
 
 ## Validation and retained artifacts
 

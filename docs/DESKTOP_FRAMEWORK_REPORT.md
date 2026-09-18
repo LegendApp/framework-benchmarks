@@ -23,7 +23,7 @@ Current sizes are paired with the earlier controlled performance measurements as
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | AppKit | Swift | Native | 3.2 | 1.3 | 4.5 | 226.9 | 318.9 | 42.4 |
 | GPUI | Rust | Canvas | 9.9 | 0.8 | 10.7 | 226.4 | 335.5 | 289.0 |
-| React Native | TypeScript / React; C++ native modules | Native | 19.7 | 22.5 | 42.2 | 243.4 | 406.3 | 52.8 |
+| React Native | TypeScript / React; C++ native modules | Native | 17.8 | 22.5 | 40.3 | 243.4 | 406.3 | 52.8 |
 | Tauri | TypeScript / React + Rust | Web | 11.5 | 0.1 | 11.6 | 244.0 | 544.0 | 363.5 |
 | SwiftUI | Swift | Native | 3.7 | 1.3 | 5.0 | 268.7 | 668.8 | 82.6 |
 | Flutter | Dart | Canvas | 21.6 | 0.6 | 22.1 | 244.3 | 1094.0 | 340.7 |
@@ -69,7 +69,7 @@ The React Native row is the standalone baseline. Hello World apps require no gra
 
 In the controlled chat run, AppKit had the lowest median first-content time and initial memory footprint. GPUI was close on first content but used substantially more memory. React Native opened the transcript ahead of the web stacks and had the lowest median jump time; AppKit had the lowest switch time. These observations do not establish that one framework is intrinsically faster for other applications.
 
-Current app-only sizes favor frameworks that rely on system components. Externalizing assets changes where their bytes are counted: React Native’s 19.7 MiB app still needs a 22.5 MiB grammar pack. Flutter’s ARM64-only rebuild reduced its chat bundle from 42.9 to 21.6 MiB and Hello World from 33.6 to 17.0 MiB. Rounding individual columns can make their displayed sum differ by 0.1 MiB from the separately rounded total.
+Current app-only sizes favor frameworks that rely on system components. Externalizing assets changes where their bytes are counted: React Native’s 17.8 MiB app still needs a 22.5 MiB grammar pack. Flutter’s ARM64-only rebuild reduced its chat bundle from 42.9 to 21.6 MiB and Hello World from 33.6 to 17.0 MiB. Rounding individual columns can make their displayed sum differ by 0.1 MiB from the separately rounded total.
 
 Small Hello World differences near the recording cadence should be treated as effectively tied. The [full performance report](../benchmarks/final-2026-09-17/RESULTS.md) includes p90 values and measurement limitations.
 
