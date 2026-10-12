@@ -31,8 +31,6 @@ Apple M4, ARM64, macOS 26.6.1; medians of ten fresh-process observations after t
 
 ![Chat history · installed app size (MiB, lower is better)](ChatHistory/assets/chat-history-app-size.png)
 
-![Chat history · load time, memory, and app size grouped by leading group](ChatHistory/assets/chat-history-three-metrics.png)
-
 ### Hello World — September 17–18, 2026
 
 [Results and raw data](HelloWorld/results/). September 17 timings and later app sizes, with Compose measured September 18; mixed revisions. Hello World was not rerun in the chat refresh.
