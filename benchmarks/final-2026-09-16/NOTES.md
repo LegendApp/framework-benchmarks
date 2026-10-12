@@ -1,4 +1,4 @@
-> **Subsequent rendering change:** Flutter and GPUI list density and related layout now match RN more closely. Their rows below describe the pre-change builds; see the [output alignment and verification](../chat-history/FLUTTER_GPUI_OUTPUT_ALIGNMENT.md). No replacement repeated timing run has been published.
+> **Subsequent rendering change:** Flutter and GPUI list density and related layout now match RN more closely. Their rows below describe the pre-change builds; see the [output alignment and verification](../../ChatHistory/benchmark/FLUTTER_GPUI_OUTPUT_ALIGNMENT.md). No replacement repeated timing run has been published.
 
 AppKit has the lowest median first-content time and memory in both workloads. In chat history, React Native reaches first content in 442.7 ms versus GPUI's 426.6 ms and SwiftUI's 742.9 ms. RN's 16.1 ms gap behind GPUI is approximately one 60 Hz frame; do not portray it as a large or universal difference. RN uses 52.3 MiB initially versus GPUI's 303.6 MiB and SwiftUI's 82.5 MiB. AppKit uses 41.9 MiB and reaches content in 375.9 ms. RN has the lowest median jump-to-top time in this run.
 

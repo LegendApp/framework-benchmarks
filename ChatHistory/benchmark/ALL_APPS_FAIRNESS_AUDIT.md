@@ -32,7 +32,7 @@ In `_TranscriptState.build`, `ScrollablePositionedList.builder` uses `initialScr
 
 This is a source-confirmed workload mismatch, not a claim inferred from startup numbers. A matching digest cannot detect it because the digest uses the model array, not the displayed order. Fix chronological presentation and the bottom/top anchor together; merely changing an index or adding `reverse` without revalidating positioning is insufficient. Test short, long and over-one-screen final messages, then capture the same first/last visible row IDs as RN.
 
-Source: [Flutter transcript](../../apps/chat-history-flutter/lib/main.dart), `_TranscriptState`, around lines 786–859. Installed dependency: `scrollable_positioned_list` 0.3.8, constructor defaults.
+Source: [Flutter transcript](../apps/chat-history-flutter/lib/main.dart), `_TranscriptState`, around lines 786–859. Installed dependency: `scrollable_positioned_list` 0.3.8, constructor defaults.
 
 ### 2. GPUI performs materially different Markdown and collapsed-row rendering
 
@@ -44,7 +44,7 @@ Collapsed tools display a 180-character preview, while RN displays only the labe
 
 Required correction: retain a structured Markdown model and render actual table cells, proper nested blocks, matching code panes, and the same collapsed contents. Keep ordinary GPUI text/layout primitives and lazy list behavior. A painted imitation of a table is not an equivalent workload.
 
-Sources: [GPUI Markdown](../../apps/chat-history-gpui/src/markdown.rs), `blocks`; [GPUI UI](../../apps/chat-history-gpui/src/main.rs), `render_row`, `render_markdown`, `styled_markdown_text`.
+Sources: [GPUI Markdown](../apps/chat-history-gpui/src/markdown.rs), `blocks`; [GPUI UI](../apps/chat-history-gpui/src/main.rs), `render_row`, `render_markdown`, `styled_markdown_text`.
 
 ### 3. The non-Swift comparison backends still do substantially more eager document work
 
@@ -58,7 +58,7 @@ These implementations do unnecessary work for the stated large-history initial-v
 
 Required correction: equivalent selective indexing and deferred message/preview materialization in the normal language of each app. For hosts with process boundaries, retain document ownership in the worker/backend and expose metadata plus bounded, batched row requests. Avoid one IPC round trip per field. Release prior documents/caches on switch consistently. Retain full-source validation/semantic correctness; do not shortcut known fixture IDs or omit validation for speed. Use ordinary buffering/async scheduling; a shared C++ backend is not required for fairness.
 
-Sources: [TypeScript parser](../../apps/chat-history-electron/src/parser.ts), `openChatFile`, `parseCodex`, `parseClaude`; [Electron worker/IPC](../../apps/chat-history-electron/src/main.ts); [Deno runtime](../../apps/chat-history-deno/src/runtime.ts); [Rust parser](../../packages/chat-history-rust/src/parser.rs), `open_chat_file`; [Tauri commands](../../apps/chat-history-tauri/src-tauri/src/lib.rs); [Dart parser](../../apps/chat-history-flutter/lib/parser.dart); [Dart worker](../../apps/chat-history-flutter/lib/parser_worker.dart); [Swift document](../../packages/chat-history-swift/Sources/ChatHistoryCore/SwiftDocument.swift).
+Sources: [TypeScript parser](../apps/chat-history-electron/src/parser.ts), `openChatFile`, `parseCodex`, `parseClaude`; [Electron worker/IPC](../apps/chat-history-electron/src/main.ts); [Deno runtime](../apps/chat-history-deno/src/runtime.ts); [Rust parser](../packages/chat-history-rust/src/parser.rs), `open_chat_file`; [Tauri commands](../apps/chat-history-tauri/src-tauri/src/lib.rs); [Dart parser](../apps/chat-history-flutter/lib/parser.dart); [Dart worker](../apps/chat-history-flutter/lib/parser_worker.dart); [Swift document](../packages/chat-history-swift/Sources/ChatHistoryCore/SwiftDocument.swift).
 
 ### 4. Shared web UI and Flutter do not match the reference style or visible content area
 
@@ -68,7 +68,7 @@ Web Markdown already has real semantic tables and GFM parsing, and unhighlighted
 
 Flutter uses the same 860-point outer cap, hardcoded 705/790 message limits, a 46-point header and Material-derived colors/Markdown defaults. Its installed Markdown package provides horizontal code scrolling and real tables, but the default table columns are `FlexColumnWidth`, not the reference's content-driven width policy. Code headers/copy controls are absent. `SelectionArea` is present and no syntax highlighter is configured. It needs explicit style/table/code builders and responsive message widths, not a reduced Markdown renderer.
 
-Sources: [Shared web renderer](../../apps/chat-history-electron/src/renderer.tsx), [CSS](../../apps/chat-history-electron/src/styles.css), [Tauri import](../../apps/chat-history-tauri/src/bootstrap.ts), [Deno import](../../apps/chat-history-deno/src/bootstrap.ts), [Flutter UI](../../apps/chat-history-flutter/lib/main.dart), `_Content`, `_MessageRow`. Dependency behavior checked in installed `flutter_markdown_plus` 1.0.12 `widget.dart`, `style_sheet.dart`, and `builder.dart`.
+Sources: [Shared web renderer](../apps/chat-history-electron/src/renderer.tsx), [CSS](../apps/chat-history-electron/src/styles.css), [Tauri import](../apps/chat-history-tauri/src/bootstrap.ts), [Deno import](../apps/chat-history-deno/src/bootstrap.ts), [Flutter UI](../apps/chat-history-flutter/lib/main.dart), `_Content`, `_MessageRow`. Dependency behavior checked in installed `flutter_markdown_plus` 1.0.12 `widget.dart`, `style_sheet.dart`, and `builder.dart`.
 
 ### 5. Native window chrome and discovery still need cross-app acceptance
 
@@ -80,7 +80,7 @@ Use genuine native material where the platform integration supports it, and a do
 
 Catalog discovery should remain idiomatic, as previously agreed, with matching inclusion/filtering semantics. One specific correctness issue remains in Rust: `is_codex_subagent` reads a capped 64 KiB prefix into a UTF-8 String before selecting its first line. A cap that bisects a later multibyte character causes `read_to_string` to fail and returns “not a subagent,” even if the first metadata line was valid. The current Swift code already isolates the first line before decoding. TS/Dart also decode the entire prefix unnecessarily, though their replacement-decoding behavior avoids that exact failure. Standardize byte-first first-line extraction and add the boundary regression across implementations.
 
-Sources: [Rust catalog](../../packages/chat-history-rust/src/catalog.rs), `is_codex_subagent`; [TS catalog](../../apps/chat-history-electron/src/catalog.ts); [Dart catalog](../../apps/chat-history-flutter/lib/catalog.dart); [Native alignment status](RN_VISUAL_ALIGNMENT.md).
+Sources: [Rust catalog](../packages/chat-history-rust/src/catalog.rs), `is_codex_subagent`; [TS catalog](../apps/chat-history-electron/src/catalog.ts); [Dart catalog](../apps/chat-history-flutter/lib/catalog.dart); [Native alignment status](RN_VISUAL_ALIGNMENT.md).
 
 ## Acceptance contract for the correction pass
 

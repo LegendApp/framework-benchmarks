@@ -118,6 +118,6 @@ The same process-local window policy was rerun across nine baseline apps, includ
 | Deno WebView | 376.9 | 411.8 | 82.5 | 65.0 |
 | Deno CEF | 375.2 | 380.0 | 202.4 | 307.0 |
 
-[Hello World report and validation](../hello-world/RESULTS.md) · [Launch-aligned video gallery](../hello-world/results/2026-09-12T15-34-04.820Z/videos.html)
+[Hello World report and validation](../../HelloWorld/benchmark/RESULTS.md) · [Launch-aligned video gallery](../../HelloWorld/benchmark/results/2026-09-12T15-34-04.820Z/videos.html)
 
 All 45 retained videos pass OCR and frame/timestamp verification; all timing and memory launches began unlocked. Seven invalid artifact attempts were retried under the existing policy. The subsequent fix extracts settled screenshots by recorded frame index, avoiding EOF-seek failures with positive video timestamp origins. Its regression test passes; startup OCR analysis is unchanged and retained timings were not recomputed. The activity log saw no competing test/compiler job above 30% during the measured Hello World period, though normal macOS activity remained.

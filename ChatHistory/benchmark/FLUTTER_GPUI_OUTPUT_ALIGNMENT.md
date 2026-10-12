@@ -10,7 +10,7 @@ Both applications retain full Markdown parsing and their real syntax highlighter
 - Flutter assistant Markdown fills the content column, including the blockquote background. Short user bubbles continue to fit their contents.
 - GPUI code panes now include the header divider present in RN and the other renderers.
 
-Flutter's upstream library has one `blockSpacing` applied to list items as well as paragraphs. The app uses a documented, local copy of flutter_markdown_plus 1.0.12 with a narrow layout patch. This preserves its entire Markdown visitor, table layout, links, inline styles, and code-builder integration, without separately reparsing list items. See [vendoring notes](../../packages/flutter-markdown-plus/VENDORED.md).
+Flutter's upstream library has one `blockSpacing` applied to list items as well as paragraphs. The app uses a documented, local copy of flutter_markdown_plus 1.0.12 with a narrow layout patch. This preserves its entire Markdown visitor, table layout, links, inline styles, and code-builder integration, without separately reparsing list items. See [vendoring notes](../packages/flutter-markdown-plus/VENDORED.md).
 
 ## Parsing and highlighting verification
 

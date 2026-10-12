@@ -1,4 +1,4 @@
-> **Latest results:** [September 16 final chat-history and Hello World tables](../final-2026-09-16/RESULTS.md) — 10 observations per app after 2 warmups, videos, separate memory launches, and built app sizes. Earlier tables below are historical.
+> **Latest results:** [September 16 final chat-history and Hello World tables](../../benchmarks/final-2026-09-16/RESULTS.md) — 10 observations per app after 2 warmups, videos, separate memory launches, and built app sizes. Earlier tables below are historical.
 
 # Hello World framework baseline — September 12, 2026
 

@@ -1,6 +1,6 @@
 > Flutter/GPUI rendering has changed after the latest measured table. See [output alignment](FLUTTER_GPUI_OUTPUT_ALIGNMENT.md); affected timings await a repeated rerun.
 
-> **Latest results:** [September 16 final chat-history and Hello World tables](../final-2026-09-16/RESULTS.md) — 10 observations per app after 2 warmups, videos, separate memory launches, and built app sizes. Earlier tables below are historical.
+> **Latest results:** [September 16 final chat-history and Hello World tables](../../benchmarks/final-2026-09-16/RESULTS.md) — 10 observations per app after 2 warmups, videos, separate memory launches, and built app sizes. Earlier tables below are historical.
 
 > **Latest measured results:** [September 15 highlighted nine-app benchmark](HIGHLIGHTED_RESULTS_2026-09-15.md) — ten observations per app after two warmups, all unlocked, with recordings and separate memory launches. Earlier tables below are historical.
 
@@ -78,7 +78,7 @@ Tauri was not rerun. Its September 6 values below used earlier fixture bytes and
 - Tauri previously stopped executing JavaScript in an unrecorded locked-session run. Temporary tracing showed a hidden page whose heartbeat stopped, while native threads were idle. The issue also reproduced without memory sampling. That evidence does not establish the same failure in other frameworks.
 - The same two history IDs were retained, but their bytes had changed since the historical benchmark. No end-to-end speedup against the old report is claimed. Every app in this run used the refreshed, hash-verified corpus.
 - All 80 observations agree on the initial digest `3a290b9eb53fa834` and switched digest `c27e9dc5a848d7f6`. Images are disabled. Startup includes native catalog discovery and path resolution.
-- The Swift package’s 13 tests passed, including lazy decoding, retained-row lifetime, serialization, errors, and full-corpus parity against the Swift reference parser. The core is pinned to the sibling repository revision recorded in [PROVENANCE.json](../../packages/chat-history-swift/Sources/ChatHistoryNative/PROVENANCE.json).
+- The Swift package’s 13 tests passed, including lazy decoding, retained-row lifetime, serialization, errors, and full-corpus parity against the Swift reference parser. The core is pinned to the sibling repository revision recorded in [PROVENANCE.json](../packages/chat-history-swift/Sources/ChatHistoryNative/PROVENANCE.json).
 - AppKit and SwiftUI keep their existing UI implementations; the optimization changes their document-loading architecture. Shared parsing removes that architectural mismatch with React Native, but does not make list layout, text rendering, startup, or window presentation identical.
 - The shared web renderer also resets transcript-local readiness state on each open. The React Native build required repairing its existing generated Markdown event-emitter patch; this is recorded in the dirty build provenance.
 - App surfaces are captured at a requested 60 fps. Each visual boundary requires three matching frames. The report retains internal readiness separately, and each measured video has frame-selection evidence. Physical footprint includes attributable helper processes; RSS remains a secondary diagnostic in the raw report.

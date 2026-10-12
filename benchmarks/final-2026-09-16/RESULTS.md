@@ -1,10 +1,10 @@
-> **Subsequent rendering change:** Flutter and GPUI list density and related layout now match RN more closely. Their rows below describe the pre-change builds; see the [output alignment and verification](../chat-history/FLUTTER_GPUI_OUTPUT_ALIGNMENT.md). No replacement repeated timing run has been published.
+> **Subsequent rendering change:** Flutter and GPUI list density and related layout now match RN more closely. Their rows below describe the pre-change builds; see the [output alignment and verification](../../ChatHistory/benchmark/FLUTTER_GPUI_OUTPUT_ALIGNMENT.md). No replacement repeated timing run has been published.
 
 # Final desktop application benchmarks — September 16, 2026
 
 Apple M4 (10 cores), arm64, macOS 26.6.1. Two discarded warmup rounds and ten measured rounds per app, rotating launch order. Fresh processes with warm filesystem caches. Timing comes from screen recordings; physical footprint comes from separate unrecorded launches.
 
-Times below are median milliseconds. Memory and uncompressed built app bundles are MiB (1,048,576 bytes). Bundle sizes exclude symlink duplicates and do not include OS-provided frameworks. These are application-stack comparisons under the [fairness standard](../chat-history/FAIRNESS_STANDARD.md), not isolated framework-overhead measurements.
+Times below are median milliseconds. Memory and uncompressed built app bundles are MiB (1,048,576 bytes). Bundle sizes exclude symlink duplicates and do not include OS-provided frameworks. These are application-stack comparisons under the [fairness standard](../../ChatHistory/benchmark/FAIRNESS_STANDARD.md), not isolated framework-overhead measurements.
 
 ## Chat history
 
@@ -82,10 +82,10 @@ Separate preflight: ten seconds to settle, then twenty seconds measured using pr
 
 ## Evidence
 
-- [Chat raw results](../chat-history/results/2026-09-16T20-35-45.623Z.json) and [generated detail](../chat-history/results/2026-09-16T20-35-45.623Z.md).
-- [Hello World raw results](../hello-world/results/2026-09-16T21-25-32.060Z/results.json) and [generated detail](../hello-world/results/2026-09-16T21-25-32.060Z/results.md).
-- [Chat video viewer](../chat-history/results/2026-09-16T20-35-45.623Z-videos/index.html).
-- [Hello World video viewer](../hello-world/results/2026-09-16T21-25-32.060Z/videos.html).
+- [Chat raw results](../../ChatHistory/benchmark/results/2026-09-16T20-35-45.623Z.json) and [generated detail](../../ChatHistory/benchmark/results/2026-09-16T20-35-45.623Z.md).
+- [Hello World raw results](../../HelloWorld/benchmark/results/2026-09-16T21-25-32.060Z/results.json) and [generated detail](../../HelloWorld/benchmark/results/2026-09-16T21-25-32.060Z/results.md).
+- [Chat video viewer](../../ChatHistory/benchmark/results/2026-09-16T20-35-45.623Z-videos/index.html).
+- [Hello World video viewer](../../HelloWorld/benchmark/results/2026-09-16T21-25-32.060Z/videos.html).
 - [Validation](validation.json), [builds before](builds-before.json), [builds after](builds-after.json), [host CPU and thermal samples](host-monitor.jsonl), [idle CPU samples](idle-cpu.jsonl).
 
 ## Interpretation and limitations
