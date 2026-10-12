@@ -10,22 +10,17 @@ Each suite is a self-contained folder with its own apps, packages, and build/run
 ## Layout
 
 ```
-ChatHistory/          apps/ (10) + packages/ + benchmark/ (harness, gitignored results/) + assets/ (charts)
-HelloWorld/           apps/ (10) + packages/ + benchmark/ (harness, gitignored results/) + assets/ (charts)
-shared/               capture helpers, video analysis, and the Gradle root both suites build through
-benchmarks/           unified build/run/fixtures/download/release dispatcher, archived result sets
+ChatHistory/          apps/ (10) + packages/ + benchmark/ (harness) + results/ (latest data) + assets/ (charts)
+HelloWorld/           apps/ (10) + packages/ + benchmark/ (harness) + results/ (latest data) + assets/ (charts)
+shared/               benchmark dispatcher/release tools, capture helpers, video analysis, and Gradle root
 docs/                 long-form reports and methodology notes
 assets/               shared build assets (app icon)
 .build/               built .app bundles, grammar packs, and toolchains (gitignored)
 ```
 
-To add a suite: create `<Benchmark>/{apps,packages,benchmark}`, give `benchmark/` the same `build.ts` / `run.ts` / `benchmark.ts` entry points, and add the suite to `suiteDirectories` in `benchmarks/cli.ts`. Root `bun run benchmark:build` / `benchmark:run` then dispatch `--suite <name>` to it.
+To add a suite: create `<Benchmark>/{apps,packages,benchmark}`, give `benchmark/` the same `build.ts` / `run.ts` / `benchmark.ts` entry points, and add the suite to `suiteDirectories` in `shared/benchmark/cli.ts`. Root `bun run benchmark:build` / `benchmark:run` then dispatch `--suite <name>` to it.
 
-The [September 23–24 chat-history refresh](benchmarks/chat-refresh-2026-09-23/RESULTS.md) contains updated measurements and app sizes for all ten frameworks after rebuilding the current apps. All 100 scored videos and content checks passed. Hello World was not rerun; its table including Compose is in the [September 18 report](docs/COMPOSE_BENCHMARK_RESULTS.md#hello-world).
-
-The earlier [September 17 results](benchmarks/final-2026-09-17/RESULTS.md), from before external grammar packs, contain separate tables for startup, memory, and built app size, including the latest [Flutter/GPUI rendering changes](ChatHistory/benchmark/FLUTTER_GPUI_OUTPUT_ALIGNMENT.md). All 19 bundles were rebuilt from clean committed source and validated against their recordings. Comparable features do not imply identical rendering engines or pixels; see the [fairness standard](ChatHistory/benchmark/FAIRNESS_STANDARD.md) and the report’s conditions and limitations. The earlier [September 16 results](benchmarks/final-2026-09-16/RESULTS.md) remain available for historical context.
-
-The latest [built app sizes](benchmarks/BUILD_SIZES.md) come from a subsequent rebuild of all 19 apps with external grammar packs. They separate app, grammar-pack, and combined installed sizes; startup and memory were not rerun.
+The [September 23–24 chat-history refresh](ChatHistory/results/results.md) contains updated measurements and app sizes for all ten frameworks after rebuilding the current apps. All 100 scored videos and content checks passed. Hello World was not rerun; its table including Compose is in the [September 18 report](docs/COMPOSE_BENCHMARK_RESULTS.md#hello-world).
 
 The illustrated [framework comparison report](docs/DESKTOP_FRAMEWORK_REPORT.md) combines the size tables, benchmark results, UI architectures, and framework tradeoffs with screenshots of all nine chat-history apps.
 
@@ -106,7 +101,7 @@ Chat-history grammars are installed in a shared folder beside the built apps. Bu
 
 ### Chat history — latest numbers (September 23–24 refresh)
 
-Medians over ten measured fresh-process launches per app; memory is settled physical footprint in MiB from separate unrecorded launches; sizes exclude external grammar packs. Full validation, spread, and conditions: [September 23–24 report](benchmarks/chat-refresh-2026-09-23/RESULTS.md).
+Medians over ten measured fresh-process launches per app; memory is settled physical footprint in MiB from separate unrecorded launches; sizes exclude external grammar packs. Full validation, spread, and conditions: [September 23–24 report](ChatHistory/results/results.md).
 
 | App | Window ms | First content ms | Jump ms | Switch ms | Initial MiB | App MiB | Grammar MiB |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -154,8 +149,6 @@ Hello World was not rerun in the September 23–24 refresh. This is the referenc
 
 ![Hello World · memory (settled physical footprint, MiB, lower is better)](HelloWorld/assets/hello-world-memory.png)
 
-Older synchronized full-suite tables live in [September 17 results](benchmarks/final-2026-09-17/RESULTS.md) and [September 16 results](benchmarks/final-2026-09-16/RESULTS.md); per-app installed sizes with grammar packs are in [built app sizes](benchmarks/BUILD_SIZES.md).
-
 [Latest RN measurements and full chat-history reference table](docs/REACT_NATIVE_BENCHMARK_RESULTS.md) include the September 19 ten-run baseline/update comparison. Other framework rows retain their earlier measurements.
 
 The runner checks that all selected bundles and provenance records exist before starting either workload. It validates chat rendering-policy provenance; each suite performs its additional fixture/content checks. It stops on failure, preserving completed observations. Fix the cause and rerun; it does not automatically resume or rebuild. Source edits do not update existing bundles—rebuild changed apps explicitly.
@@ -164,17 +157,17 @@ Defaults are two discarded warmup rounds and ten measured rounds with rotating a
 
 Each workload produces its own JSON and Markdown results table:
 
-- Chat history: `ChatHistory/benchmark/results/<timestamp>.json`, `.md`, observation journal, and `<timestamp>-videos/`.
-- Hello World: `HelloWorld/benchmark/results/<timestamp>/results.json`, `results.md`, observation journal, videos, and `videos.html`.
+- Chat history: `ChatHistory/results/{summary.json,raw.json,results.md}`; recordings and observation journal in `.build/chat-history-benchmarks/runs/<timestamp>/`.
+- Hello World: `HelloWorld/results/{summary.json,raw.json,results.md}`; recordings, journal, and gallery in `.build/hello-world-benchmarks/runs/<timestamp>/`.
 
-Keep the full result directories to review recordings later. These generated artifacts are gitignored. App-reported stages are diagnostics; use the video-derived columns for comparisons. See the [chat-history methodology](ChatHistory/benchmark/README.md) and [Hello World methodology](HelloWorld/benchmark/README.md) for detection, sampling, retries, and limitations. The unified runner does not automate the additional idle-CPU, thermal, bundle-hash, and visual-review audit used for the September 17 report (which does not include fresh per-app idle CPU measurements); review machine conditions and evidence before publishing results.
+Latest data replaces the published files on each successful run; recordings remain gitignored under `.build/`. App-reported stages are diagnostics; use the video-derived columns for comparisons. See the [chat-history methodology](ChatHistory/benchmark/README.md) and [Hello World methodology](HelloWorld/benchmark/README.md) for detection, sampling, retries, and limitations. The unified runner does not automate the additional idle-CPU, thermal, bundle-hash, and visual-review audit used for the September 17 report (which does not include fresh per-app idle CPU measurements); review machine conditions and evidence before publishing results.
 
 An optional paired report can be generated from two completed runs:
 
 ```sh
 bun run benchmark:compare \
-  --product ChatHistory/benchmark/results/<timestamp>.json \
-  --hello-world HelloWorld/benchmark/results/<timestamp>/results.json \
+  --product ChatHistory/results/raw.json \
+  --hello-world HelloWorld/results/summary.json \
   --output comparison.md
 ```
 
@@ -236,13 +229,13 @@ Every command supports `--help`. Package output defaults to `.build/releases/<ta
 
 Enable [GitHub release immutability](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/establish-provenance-and-integrity/prevent-release-changes) in the destination repository before publishing. This prevents later replacement of published assets and tags. The tools verify digests even without that setting, but do not enable it automatically. Before advertising a release, validate launch behavior on a second Mac and run the default benchmark suite; publishing itself does not perform performance or visual validation.
 
-Release regression checks: `bun test benchmarks/releases/releases.test.ts` and `python3 benchmarks/releases/archive_test.py`.
+Release regression checks: `bun test shared/benchmark/releases/releases.test.ts` and `python3 shared/benchmark/releases/archive_test.py`.
 
 ## Develop an app
 
 `bun run chat-history:<framework>` starts the selected product (`deno:webview` or `deno:cef` for Deno). `bun run hello-world:<framework>` builds and opens one baseline directly; these are developer shortcuts, not the confirmed batch builder. See the workload READMEs for individual commands and architecture.
 
-CLI checks: `bun test benchmarks/cli.test.ts`; TypeScript validation: `bun run typecheck`.
+CLI checks: `bun test shared/benchmark/cli.test.ts`; TypeScript validation: `bun run typecheck`.
 
 ## Compose Multiplatform
 

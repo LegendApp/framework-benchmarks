@@ -25,7 +25,7 @@ Rust mappings are released when their final owning reference is dropped. JVM map
 
 ## Completed full-suite rerun — September 23–24
 
-The earlier build-tool blocker is resolved. All ten chat apps were rebuilt, including the final JavaScript and Dart readers. The full run completed ten measured timing/memory pairs per app and validated all 100 videos, matching content digests, and unchanged bundle hashes. See the [updated table and conditions](../benchmarks/chat-refresh-2026-09-23/RESULTS.md). The partial September 19 checks below are historical.
+The earlier build-tool blocker is resolved. All ten chat apps were rebuilt, including the final JavaScript and Dart readers. The full run completed ten measured timing/memory pairs per app and validated all 100 videos, matching content digests, and unchanged bundle hashes. See the [updated table and conditions](../ChatHistory/results/results.md). The partial September 19 checks below are historical.
 
 ## September 19 validation
 
@@ -40,4 +40,4 @@ The final Rust implementation has passing tests and release/runtime checks. Comp
 | GPUI | 76.2 MiB | 96.7 MiB |
 | Tauri | 136.2 MiB | 166.7 MiB |
 
-Raw reports: `benchmarks/chat-history/results/2026-09-19T22-55-03.534Z.json` (GPUI) and `2026-09-19T22-55-55.543Z.json` (Tauri). These are single exploratory measurements, not replacements for the published ten-run benchmark. Some current builds include independent window/composer changes; comparisons to older reports cannot isolate storage alone.
+Raw reports: `ChatHistory/benchmark/results/2026-09-19T22-55-03.534Z.json` (GPUI) and `2026-09-19T22-55-55.543Z.json` (Tauri). These are single exploratory measurements, not replacements for the published ten-run benchmark. Some current builds include independent window/composer changes; comparisons to older reports cannot isolate storage alone.

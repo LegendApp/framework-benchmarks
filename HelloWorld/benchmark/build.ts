@@ -1,4 +1,4 @@
-import { buildEnvironment, type BuildEnvironment } from "../../benchmarks/build-environment";
+import { buildEnvironment, type BuildEnvironment } from "../../shared/benchmark/build-environment";
 import { execFileSync, spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";

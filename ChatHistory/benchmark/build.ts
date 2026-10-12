@@ -1,7 +1,7 @@
 import { buildWebGrammarPack, buildSyntectGrammarPack } from "./build-grammar-packs";
 import { buildTreeSitterPack } from "./build-tree-sitter-pack";
 import { grammarPackRecord, prepareGrammarPack, sealGrammarPack, type GrammarPackRecord } from "./grammar-packs";
-import { buildEnvironment, type BuildEnvironment } from "../../benchmarks/build-environment";
+import { buildEnvironment, type BuildEnvironment } from "../../shared/benchmark/build-environment";
 import { renderingInputs, verifyRenderingInputs, type RenderingInputs } from "./fairness";
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";

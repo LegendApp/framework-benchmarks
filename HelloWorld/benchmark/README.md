@@ -1,6 +1,6 @@
 # Hello World framework baseline
 
-Latest: [September 16 final results for both workloads](../../benchmarks/final-2026-09-16/RESULTS.md), with ten observations per app, built sizes, and the [100-video gallery](results/2026-09-16T21-25-32.060Z/videos.html).
+Latest: [September 17–18 reference](../results/results.md), including Compose, with [summary](../results/summary.json) and [raw data](../results/raw.json).
 
 This is the minimal-project counterpart to the [full chat product benchmark](../../ChatHistory/benchmark/README.md). All nine apps display **Hello, world!** in centered 32-point text on white, in a 1280×720 content window. These are deliberately minimal apps rather than unmodified generator demos.
 
@@ -68,7 +68,7 @@ Measurements are:
 
 Every process is fresh. Warmups are discarded, app order rotates each round, and invalid launches are retried at most twice before the suite fails. The default reference wait is five seconds after window discovery (`--settle-ms` can increase it). The runner rejects missing builds, invalid iteration counts, absent text, failed recordings, and missing footprint samples. It does not accept `--no-video`, since app callbacks do not validate visible Hello World content.
 
-Timestamped JSON and Markdown reports, videos, central text screenshots, OCR results, capture timestamp arrays, and frame sidecars live in ignored `HelloWorld/benchmark/results/`. A one-iteration smoke run verifies the pipeline; use the default run for performance conclusions. No transcript fixtures or content-digest configuration is required. Each completed run includes `videos.html` with launch-aligned playback and a selector for every measured recording, plus `videos.md` with direct MP4 links. Capture timestamps and frame-selection metadata are retained beside every video.
+Latest JSON data and a Markdown summary replace `HelloWorld/results/{summary.json,raw.json,results.md}`. Videos, text screenshots, OCR results, timestamps, frame sidecars, and the journal are ignored under `.build/hello-world-benchmarks/runs/<timestamp>/`. A one-iteration smoke run verifies the pipeline; use the default run for performance conclusions. No transcript fixtures or content-digest configuration is required. Each completed run includes `videos.html` with launch-aligned playback and a selector for every measured recording, plus `videos.md` with direct MP4 links. Capture timestamps and frame-selection metadata are retained beside every video.
 
 ## Compare the two workloads
 
@@ -76,8 +76,8 @@ The root `bun run benchmark` now measures existing builds in both workloads; it 
 
 ```sh
 bun run benchmark:compare \
-  --product ChatHistory/benchmark/results/<product-run>.json \
-  --hello-world HelloWorld/benchmark/results/<baseline-run>/results.json \
+  --product ChatHistory/results/raw.json \
+  --hello-world HelloWorld/results/summary.json \
   --output comparison.md
 ```
 

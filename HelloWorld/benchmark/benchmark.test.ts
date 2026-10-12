@@ -1,15 +1,16 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, test } from "bun:test";
 import { selectedApps, option } from "./config";
 import { median, percentile } from "./macos";
 import { writeReferenceScreenshot } from "./video";
+import { writeGallery } from "./gallery";
 
 describe("baseline benchmark configuration", () => {
-  test("selects all nine frameworks and both Deno backends", () => {
-    expect(selectedApps([])).toHaveLength(9);
+  test("selects all ten apps including both Deno backends", () => {
+    expect(selectedApps([])).toHaveLength(10);
     expect(selectedApps(["--app=deno"])).toEqual(["deno-webview", "deno-cef"]);
     expect(selectedApps(["--app", "react-native"])).toEqual(["react-native"]);
     expect(selectedApps(["--app=appkit,swiftui,appkit"])).toEqual(["appkit", "swiftui"]);
@@ -94,6 +95,34 @@ test("reference screenshots select the actual frame with a positive video time o
     expect(pixels.length).toBe(16 * 8 * 3);
     expect(pixels[0]).toBeLessThan(15);
     expect(pixels[2]).toBeGreaterThan(240);
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+});
+
+test("gallery outside published results keeps video and report links valid", () => {
+  const temp = mkdtempSync(join(tmpdir(), "hello-world-gallery-test-"));
+  try {
+    const results = join(temp, "HelloWorld/results");
+    const recordings = join(temp, ".build/hello-world-benchmarks/runs/run");
+    mkdirSync(results, { recursive: true });
+    mkdirSync(recordings, { recursive: true });
+    const report = join(results, "raw.json");
+    writeFileSync(report, JSON.stringify({
+      measuredAt: "2026-09-18", warmups: 2, iterations: 1,
+      results: [{ app: "appkit", median: { firstContentMs: 200, physicalFootprintBytes: 1024 },
+        iterations: [{ firstContentMs: 200, videoEvidence: {
+          video: "../../.build/hello-world-benchmarks/runs/run/appkit.mp4", videoLaunchOffsetMs: 100,
+        } }],
+      }],
+    }));
+    const gallery = writeGallery(report, recordings);
+    const html = readFileSync(gallery, "utf8");
+    expect(html).toContain('"video":"appkit.mp4"');
+    expect(html).toContain('href="../../../../HelloWorld/results/raw.json"');
+    expect(html).toContain('href="../../../../HelloWorld/results/results.md"');
+    expect(existsSync(join(recordings, "videos.md"))).toBe(true);
+    expect(existsSync(join(results, "videos.html"))).toBe(false);
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }

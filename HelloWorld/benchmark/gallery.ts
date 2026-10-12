@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { labels, option, type AppName } from "./config";
 
 type GalleryReport = {
@@ -16,7 +16,7 @@ type GalleryReport = {
   }>;
 };
 
-export function writeGallery(reportPath: string) {
+export function writeGallery(reportPath: string, outputDirectory = dirname(reportPath)) {
   const report = JSON.parse(readFileSync(reportPath, "utf8")) as GalleryReport;
   const apps = report.results.map((result) => {
     const samples = result.iterations.map((iteration, index) => {
@@ -25,7 +25,7 @@ export function writeGallery(reportPath: string) {
       }
       return {
         number: index + 1,
-        video: iteration.videoEvidence.video,
+        video: relative(outputDirectory, resolve(dirname(reportPath), iteration.videoEvidence.video)),
         offset: Math.max(0, iteration.videoEvidence.videoLaunchOffsetMs / 1000),
         contentMs: iteration.firstContentMs,
       };
@@ -39,7 +39,7 @@ export function writeGallery(reportPath: string) {
     };
   });
   const data = JSON.stringify(apps).replaceAll("<", "\\u003c");
-  const output = join(dirname(reportPath), "videos.html");
+  const output = join(outputDirectory, "videos.html");
   writeFileSync(output, `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Hello World startup videos</title>
@@ -55,7 +55,7 @@ video{width:100%;display:block;background:#111;aspect-ratio:16/9}footer{display:
 <h1>Hello World startup videos</h1>
 <p>${report.iterations} measured recordings per app, after ${report.warmups} discarded warmups. Run completed ${report.measuredAt}.</p>
 <p>Each app initially selects the recording closest to its median first-content time. Playback starts at the launch request using the saved capture timestamps. Choose any measured iteration below. The numeric report is authoritative; browser playback synchronization is approximate.</p>
-<nav><button id="play">Play all from launch</button><button id="pause">Pause all</button><button id="reset">Reset to launch</button><a href="results.md">Summary</a><a href="results.json">Raw results</a><a href="videos.md">All recording links</a></nav>
+<nav><button id="play">Play all from launch</button><button id="pause">Pause all</button><button id="reset">Reset to launch</button><a href="${relative(outputDirectory, join(dirname(reportPath), "results.md"))}">Summary</a><a href="${relative(outputDirectory, reportPath)}">Raw results</a><a href="videos.md">All recording links</a></nav>
 <div id="grid"></div>
 <script>
 const apps=${data};
@@ -88,7 +88,7 @@ document.getElementById('reset').onclick=()=>players.forEach(reset);
     }
     lines.push("");
   }
-  writeFileSync(join(dirname(reportPath), "videos.md"), lines.join("\n"));
+  writeFileSync(join(outputDirectory, "videos.md"), lines.join("\n"));
   return output;
 }
 

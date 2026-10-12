@@ -52,7 +52,7 @@ Against the older published RN row (406.3 ms), the updated first-content median 
 
 ## Evidence
 
-[Portable summary, individual timings, and bundle hashes](../benchmarks/rn-startup-2026-09-19/summary.json). Raw reports/videos below are ignored machine-local artifacts, not included in a fresh clone. The paired-run scripts and validation logs are under `.build/rn-startup-audit/`.
+The portable summary, individual timings, and bundle hashes for this historical run remain in Git history. Raw reports/videos below are ignored machine-local artifacts, not included in a fresh clone. The paired-run scripts and validation logs are under `.build/rn-startup-audit/`.
 
 - baseline 01: [report and video](../ChatHistory/benchmark/results/2026-09-19T07-40-00.255Z.md) · [raw JSON](../ChatHistory/benchmark/results/2026-09-19T07-40-00.255Z.json)
 - baseline 02: [report and video](../ChatHistory/benchmark/results/2026-09-19T07-42-50.666Z.md) · [raw JSON](../ChatHistory/benchmark/results/2026-09-19T07-42-50.666Z.json)

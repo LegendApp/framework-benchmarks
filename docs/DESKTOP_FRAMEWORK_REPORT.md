@@ -1,6 +1,6 @@
 # Desktop framework comparison report
 
-**Updated chat measurements:** [September 23–24 full ten-framework rerun](../benchmarks/chat-refresh-2026-09-23/RESULTS.md). The tables and screenshots below retain their stated historical dates; use the linked refresh for current chat timings, memory, and sizes.
+**Updated chat measurements:** [September 23–24 full ten-framework rerun](../ChatHistory/results/results.md). The tables and screenshots below retain their stated historical dates; use the linked refresh for current chat timings, memory, and sizes.
 
 September 17, 2026 · macOS · Apple M4 · ARM64
 
@@ -75,7 +75,7 @@ In the controlled chat run, AppKit had the lowest median first-content time and 
 
 Current app-only sizes favor frameworks that rely on system components. Externalizing assets changes where their bytes are counted: React Native’s 17.8 MiB app still needs a 22.5 MiB grammar pack. Flutter’s ARM64-only rebuild reduced its chat bundle from 42.9 to 21.6 MiB and Hello World from 33.6 to 17.0 MiB. Rounding individual columns can make their displayed sum differ by 0.1 MiB from the separately rounded total.
 
-Small Hello World differences near the recording cadence should be treated as effectively tied. The [full performance report](../benchmarks/final-2026-09-17/RESULTS.md) includes p90 values and measurement limitations.
+Small Hello World differences near the recording cadence should be treated as effectively tied. The [Hello World reference data](../HelloWorld/results/) includes p90 values and measurement limitations.
 
 ## Screenshots and framework tradeoffs
 
@@ -219,8 +219,8 @@ A Swift application built directly with AppKit’s macOS views, text system, and
 ## Reproduction and evidence
 
 - [Build and benchmark instructions](../README.md#build-then-benchmark).
-- [Latest build-size table](../benchmarks/BUILD_SIZES.md) and [exact bytes/build provenance](../benchmarks/BUILD_SIZES.json).
-- [Controlled timing/memory results, p90, and conditions](../benchmarks/final-2026-09-17/RESULTS.md).
+- Latest sizes and exact bytes: [Chat History](../ChatHistory/results/) and [Hello World](../HelloWorld/results/).
+- Timing, memory, p90, and conditions: [Chat History refresh](../ChatHistory/results/results.md) and [Hello World reference](../HelloWorld/results/results.md).
 - [Fairness standard](../ChatHistory/benchmark/FAIRNESS_STANDARD.md) and [external grammar design](../ChatHistory/benchmark/EXTERNAL_GRAMMARS.md).
 - [External grammar validation](../ChatHistory/benchmark/EXTERNAL_GRAMMARS_VALIDATION.md). The report screenshots are copied beside this document so they remain available when the repository is cloned; the original videos and raw benchmark files referenced by the validation documents remain local, ignored evidence.
 

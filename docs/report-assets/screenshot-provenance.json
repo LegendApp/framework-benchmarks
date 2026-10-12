@@ -6,7 +6,7 @@
     "phase": "top",
     "timestampMs": 1789663667103,
     "appearance": "dark",
-    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-dark",
+    "sourceDirectory": "ChatHistory/benchmark/results/blur-updated-2026-09-17-dark",
     "file": "react-native.png"
   },
   {
@@ -16,7 +16,7 @@
     "phase": "top",
     "timestampMs": 1789663674859,
     "appearance": "dark",
-    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-dark",
+    "sourceDirectory": "ChatHistory/benchmark/results/blur-updated-2026-09-17-dark",
     "file": "electron.png"
   },
   {
@@ -26,7 +26,7 @@
     "phase": "top",
     "timestampMs": 1789663680975,
     "appearance": "dark",
-    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-dark",
+    "sourceDirectory": "ChatHistory/benchmark/results/blur-updated-2026-09-17-dark",
     "file": "tauri.png"
   },
   {
@@ -36,7 +36,7 @@
     "phase": "top",
     "timestampMs": 1789663687436,
     "appearance": "dark",
-    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-dark",
+    "sourceDirectory": "ChatHistory/benchmark/results/blur-updated-2026-09-17-dark",
     "file": "deno-webview.png"
   },
   {
@@ -46,7 +46,7 @@
     "phase": "top",
     "timestampMs": 1789663695490,
     "appearance": "dark",
-    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-dark",
+    "sourceDirectory": "ChatHistory/benchmark/results/blur-updated-2026-09-17-dark",
     "file": "deno-cef.png"
   },
   {
@@ -56,7 +56,7 @@
     "phase": "top",
     "timestampMs": 1789663701365,
     "appearance": "dark",
-    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-dark",
+    "sourceDirectory": "ChatHistory/benchmark/results/blur-updated-2026-09-17-dark",
     "file": "flutter.png"
   },
   {
@@ -66,7 +66,7 @@
     "phase": "top",
     "timestampMs": 1789663902255,
     "appearance": "dark",
-    "sourceDirectory": "benchmarks/chat-history/results/blur-gpui-final-2026-09-17-dark",
+    "sourceDirectory": "ChatHistory/benchmark/results/blur-gpui-final-2026-09-17-dark",
     "file": "gpui.png"
   },
   {
@@ -76,7 +76,7 @@
     "phase": "top",
     "timestampMs": 1789663712699.769,
     "appearance": "dark",
-    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-dark",
+    "sourceDirectory": "ChatHistory/benchmark/results/blur-updated-2026-09-17-dark",
     "file": "appkit.png"
   },
   {
@@ -86,7 +86,7 @@
     "phase": "top",
     "timestampMs": 1789663718566.5762,
     "appearance": "dark",
-    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-dark",
+    "sourceDirectory": "ChatHistory/benchmark/results/blur-updated-2026-09-17-dark",
     "file": "swiftui.png"
   },
   {
@@ -96,7 +96,7 @@
     "phase": "top",
     "timestampMs": 1789663742095,
     "appearance": "light",
-    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-light",
+    "sourceDirectory": "ChatHistory/benchmark/results/blur-updated-2026-09-17-light",
     "file": "electron-light.png"
   },
   {
@@ -106,7 +106,7 @@
     "phase": "top",
     "timestampMs": 1789663747763,
     "appearance": "light",
-    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-light",
+    "sourceDirectory": "ChatHistory/benchmark/results/blur-updated-2026-09-17-light",
     "file": "tauri-light.png"
   },
   {
@@ -116,7 +116,7 @@
     "phase": "top",
     "timestampMs": 1789663753499,
     "appearance": "light",
-    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-light",
+    "sourceDirectory": "ChatHistory/benchmark/results/blur-updated-2026-09-17-light",
     "file": "deno-webview-light.png"
   },
   {
@@ -126,7 +126,7 @@
     "phase": "top",
     "timestampMs": 1789663759263,
     "appearance": "light",
-    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-light",
+    "sourceDirectory": "ChatHistory/benchmark/results/blur-updated-2026-09-17-light",
     "file": "deno-cef-light.png"
   },
   {
@@ -136,7 +136,7 @@
     "phase": "top",
     "timestampMs": 1789663764702,
     "appearance": "light",
-    "sourceDirectory": "benchmarks/chat-history/results/blur-updated-2026-09-17-light",
+    "sourceDirectory": "ChatHistory/benchmark/results/blur-updated-2026-09-17-light",
     "file": "flutter-light.png"
   },
   {
@@ -146,7 +146,7 @@
     "phase": "top",
     "timestampMs": 1789663908556,
     "appearance": "light",
-    "sourceDirectory": "benchmarks/chat-history/results/blur-gpui-final-2026-09-17-light",
+    "sourceDirectory": "ChatHistory/benchmark/results/blur-gpui-final-2026-09-17-light",
     "file": "gpui-light.png"
   },
   {
@@ -156,7 +156,7 @@
     "phase": "top",
     "timestampMs": 1789803028175,
     "appearance": "dark",
-    "sourceDirectory": "benchmarks/chat-history/results/compose-visual-1789803022833-dark",
+    "sourceDirectory": "ChatHistory/benchmark/results/compose-visual-1789803022833-dark",
     "file": "compose.png",
     "crop": {
       "height": 720,
@@ -172,7 +172,7 @@
     "phase": "top",
     "timestampMs": 1789803051333,
     "appearance": "light",
-    "sourceDirectory": "benchmarks/chat-history/results/compose-visual-1789803047566-light",
+    "sourceDirectory": "ChatHistory/benchmark/results/compose-visual-1789803047566-light",
     "file": "compose-light.png",
     "crop": {
       "height": 720,

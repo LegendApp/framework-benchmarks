@@ -10,11 +10,11 @@ Run from the comparison repository. Choose a fresh scratch directory; preparatio
 
 ```sh
 export CHAT_PLATFORM_PROFILE_ROOT=/tmp/chat-platform-profile-repro
-python3 benchmarks/chat-history/experiments/platform-profile/prepare.py
+python3 ChatHistory/benchmark/experiments/platform-profile/prepare.py
 swift build -c release -debug-info-format none --package-path "$CHAT_PLATFORM_PROFILE_ROOT/source/apps/chat-history-appkit"
 swift build -c release -debug-info-format none --package-path "$CHAT_PLATFORM_PROFILE_ROOT/source/apps/chat-history-swiftui"
 cp "$CHAT_PLATFORM_PROFILE_ROOT/source/apps/chat-history-swiftui/.build/release/ChatHistorySwiftUI" "$CHAT_PLATFORM_PROFILE_ROOT/SwiftUI-baseline"
-python3 benchmarks/chat-history/experiments/platform-profile/run.py --rounds 4
+python3 ChatHistory/benchmark/experiments/platform-profile/run.py --rounds 4
 ```
 
 The runner copies existing production bundles into scratch space and replaces only their executables with diagnostic builds. RN runs its unchanged production bundle. It launches the existing pinned benchmark workload, retains events and traces, and terminates only the PIDs it launched. The initial pass is a warm-up and must be excluded. No production bundle is overwritten.
@@ -38,9 +38,9 @@ The detailed report uses the original baseline traces, the fixed-row traces and 
 ## RN native hooks
 
 ```sh
-clang++ -std=c++17 -dynamiclib -fobjc-arc -framework AppKit benchmarks/chat-history/experiments/platform-profile/NativeTrace.mm -o "$CHAT_PLATFORM_PROFILE_ROOT/NativeTrace.dylib"
+clang++ -std=c++17 -dynamiclib -fobjc-arc -framework AppKit ChatHistory/benchmark/experiments/platform-profile/NativeTrace.mm -o "$CHAT_PLATFORM_PROFILE_ROOT/NativeTrace.dylib"
 codesign --force --sign - "$CHAT_PLATFORM_PROFILE_ROOT/NativeTrace.dylib"
-python3 benchmarks/chat-history/experiments/platform-profile/run.py --apps react-native --rounds 4 --variant segmented-hooks --native-trace
+python3 ChatHistory/benchmark/experiments/platform-profile/run.py --apps react-native --rounds 4 --variant segmented-hooks --native-trace
 ```
 
 The injected library restricts itself to the `Legend Chat History` process. It hooks the actual segmented GitHub Markdown component, its parser, and `NSLayoutManager`. Records contain timings, character lengths and thread identifiers, not message contents. The launch helper is not instrumented. An app-side readiness event can precede native Markdown presentation: the report separately analyzes the interval ending 150 ms after that callback. Hooks are partial coverage and durations can nest.
@@ -50,12 +50,12 @@ The injected library restricts itself to the `Legend Chat History` process. It h
 Copy `catalog-probe` and `text-probe` into `$CHAT_PLATFORM_PROFILE_ROOT/source/apps/`, then build with the same release command. Their manifests resolve the instrumented core relative to that location.
 
 ```sh
-cp -R benchmarks/chat-history/experiments/platform-profile/catalog-probe "$CHAT_PLATFORM_PROFILE_ROOT/source/apps/"
-cp -R benchmarks/chat-history/experiments/platform-profile/text-probe "$CHAT_PLATFORM_PROFILE_ROOT/source/apps/"
+cp -R ChatHistory/benchmark/experiments/platform-profile/catalog-probe "$CHAT_PLATFORM_PROFILE_ROOT/source/apps/"
+cp -R ChatHistory/benchmark/experiments/platform-profile/text-probe "$CHAT_PLATFORM_PROFILE_ROOT/source/apps/"
 swift build -c release -debug-info-format none --package-path "$CHAT_PLATFORM_PROFILE_ROOT/source/apps/catalog-probe"
 CHAT_PLATFORM_TRACE="$CHAT_PLATFORM_PROFILE_ROOT/results/catalog-detail.trace.json" "$CHAT_PLATFORM_PROFILE_ROOT/source/apps/catalog-probe/.build/release/CatalogProbe"
 swift build -c release -debug-info-format none --package-path "$CHAT_PLATFORM_PROFILE_ROOT/source/apps/text-probe"
-"$CHAT_PLATFORM_PROFILE_ROOT/source/apps/text-probe/.build/release/TextProbe" benchmarks/chat-history/fixtures.local.json > "$CHAT_PLATFORM_PROFILE_ROOT/results/text-probe.json"
+"$CHAT_PLATFORM_PROFILE_ROOT/source/apps/text-probe/.build/release/TextProbe" ChatHistory/benchmark/fixtures.local.json > "$CHAT_PLATFORM_PROFILE_ROOT/results/text-probe.json"
 ```
 
 The text probe excludes Markdown conversion, creates fresh measurement objects, and retains measured sizes as well as timings. It intentionally exposes height differences; it does not assert renderer equivalence. The catalog probe’s round 0 is discarded.

@@ -3,7 +3,7 @@ from pathlib import Path
 import subprocess,json,os,time,urllib.parse,shutil,signal,argparse
 repo=Path(__file__).resolve().parents[4]; root=Path(os.environ.get("CHAT_PLATFORM_PROFILE_ROOT", "/tmp/chat-platform-profile"))
 build=repo/'.build/chat-history-benchmarks'; out=root/'results';out.mkdir(exist_ok=True)
-manifest=json.loads((repo/'benchmarks/chat-history/fixtures.local.json').read_text())
+manifest=json.loads((repo/'ChatHistory/benchmark/fixtures.local.json').read_text())
 config={'version':2,'loadImages':False,'topDelayMs':3000,'switchDelayMs':3000,'targets':[{k:f[k] for k in ['id','provider']} for f in manifest['fixtures']]}
 (root/'config.json').write_text(json.dumps(config))
 names={'appkit':('Chat History — AppKit.app','ChatHistoryAppKit'),'swiftui':('Chat History — SwiftUI.app','ChatHistorySwiftUI'),'react-native':('Chat History — React Native.app','Legend Chat History')}

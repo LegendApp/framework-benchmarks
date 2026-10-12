@@ -110,7 +110,7 @@ type AppResult = {
 const repositoryRoot = resolve(import.meta.dir, "../..");
 const buildRoot = resolve(repositoryRoot, ".build/chat-history-benchmarks");
 const manifestPath = resolve(import.meta.dir, "fixtures.local.json");
-const resultsRoot = resolve(import.meta.dir, "results");
+const resultsRoot = resolve(import.meta.dir, "../results");
 const windowInfoExecutable = resolve(buildRoot, "chat-history-window-info");
 const windowInfoSource = resolve(import.meta.dir, "../../shared/capture/window-info.swift");
 const launchAppExecutable = resolve(buildRoot, "chat-history-launch-app");
@@ -852,9 +852,10 @@ async function main() {
   const grammarPacks = Object.fromEntries(requestedApps.map(app => [app, verifyAppGrammarPack(repositoryRoot, app, buildManifest.builds[app.startsWith("deno-") ? "deno" : app]?.grammarPack)]));
   process.env.BENCHMARK_GRAMMAR_ROOT = installRuntimeGrammarPacks(repositoryRoot, requestedApps);
   const timestamp = new Date().toISOString().replaceAll(":", "-");
-  const videoDirectory = join(resultsRoot, `${timestamp}-videos`);
-  mkdirSync(resultsRoot, { recursive: true });
-  const observationsPath = join(resultsRoot, `${timestamp}.observations.jsonl`);
+  const artifactDirectory = join(buildRoot, "runs", timestamp);
+  const videoDirectory = join(artifactDirectory, "videos");
+  mkdirSync(artifactDirectory, { recursive: true });
+  const observationsPath = join(artifactDirectory, "observations.jsonl");
   for (const app of requestedApps) {
     const definition = apps[app];
     if (!existsSync(definition.executable)) {
@@ -983,8 +984,9 @@ async function main() {
     },
     warmups,
   };
-  const jsonPath = join(resultsRoot, `${timestamp}.json`);
-  const markdownPath = join(resultsRoot, `${timestamp}.md`);
+  const jsonPath = join(resultsRoot, "raw.json");
+  const markdownPath = join(resultsRoot, "results.md");
+  writeFileSync(join(resultsRoot, "summary.json"), `${JSON.stringify({ measuredAt: result.measuredAt, machine: result.machine, iterations, warmups, apps: results.map(({ iterations, executable, ...summary }) => summary) }, null, 2)}\n`);
   writeFileSync(jsonPath, `${JSON.stringify(result, null, 2)}\n`);
   writeFileSync(markdownPath, markdown(results));
   console.log(markdown(results));

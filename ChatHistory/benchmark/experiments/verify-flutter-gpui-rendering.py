@@ -3,7 +3,7 @@
 Run under the macOS capture preparation helper after exporting both apps.
 """
 import pathlib,json,os,subprocess,time,signal
-root=pathlib.Path(__file__).resolve().parents[3];out=root/'benchmarks/chat-history/results/layout-alignment-2026-09-16';out.mkdir(exist_ok=True);home=pathlib.Path('/tmp/chat-layout-rich-home');sessions=home/'.codex/sessions/2026/09/16';sessions.mkdir(parents=True,exist_ok=True)
+root=pathlib.Path(__file__).resolve().parents[3];out=root/'ChatHistory/benchmark/results/layout-alignment-2026-09-16';out.mkdir(exist_ok=True);home=pathlib.Path('/tmp/chat-layout-rich-home');sessions=home/'.codex/sessions/2026/09/16';sessions.mkdir(parents=True,exist_ok=True)
 texts=['# Markdown rendering\n\n**Bold**, *italic*, ~~strike~~ and [a link](https://example.com).\n\n- first\n- second\n  - nested\n\n> A quote with **formatting**.\n\n| Name | Value |\n| --- | --- |\n| answer | `42` |\n\n```javascript\n// Full code is retained\nfunction greet(name) {\n  return "Hello " + name;\n}\n```', '## Syntax highlighting\n\n```swift\nlet message = "Hello"\nfunc greet() -> String { return message }\n```\n\n```cpp\n// C++ grammar\nint main() { return 42; }\n```\n\n```ruby\ndef greet(name)\n  puts "Hello #{name}"\nend\n```']
 ids=['11111111-1111-1111-1111-111111111111','22222222-2222-2222-2222-222222222222']
 for ident,body in zip(ids,texts):

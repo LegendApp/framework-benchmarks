@@ -52,8 +52,8 @@ Local smoke evidence: `ChatHistory/benchmark/results/2026-09-18T19-38-46.335Z.js
 Repeat the synthetic lifecycle/visual check after building and preparing the standard runner's capture helpers:
 
 ```sh
-bun benchmarks/compose-visual.ts dark
-bun benchmarks/compose-visual.ts light
+bun shared/benchmark/compose-visual.ts dark
+bun shared/benchmark/compose-visual.ts light
 ```
 
 The check uses synthetic cached histories, captures initial/top/switch phases, and saves recordings, events and window bounds under the ignored results directory. [Dark screenshot](report-assets/compose.png), [light screenshot](report-assets/compose-light.png), and [frame provenance](report-assets/screenshot-provenance.json) are included with the report.

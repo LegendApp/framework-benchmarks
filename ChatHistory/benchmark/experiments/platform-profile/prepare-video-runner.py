@@ -7,7 +7,7 @@ repo = Path(__file__).resolve().parents[4]
 root = Path(os.environ.get('CHAT_PLATFORM_PROFILE_ROOT', '/tmp/chat-platform-profile'))
 runner = Path('/tmp/chat-native-benchmark-runner')
 runner.mkdir(exist_ok=True)
-benchmark = repo / 'benchmarks/chat-history'
+benchmark = repo / 'ChatHistory/benchmark'
 s = (benchmark / 'run.ts').read_text().replace('import.meta.dir', json.dumps(str(benchmark)))
 for platform, executable in [('AppKit', 'ChatHistoryAppKit'), ('SwiftUI', 'ChatHistorySwiftUI')]:
     bundle = f'Chat History — {platform}.app'

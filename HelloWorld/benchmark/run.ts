@@ -27,7 +27,8 @@ process.once("exit", () => displayAssertion.kill());
 buildHelpers();
 await Bun.sleep(1000);
 const stamp = new Date().toISOString().replaceAll(":", "-");
-const resultsRoot = resolve(import.meta.dir, "results", stamp);
+const resultsRoot = resolve(buildRoot, "runs", stamp);
+const publishedResultsRoot = resolve(import.meta.dir, "../results");
 mkdirSync(resultsRoot, { recursive: true });
 
 type DesktopSession = { locked: boolean; onConsole: boolean };
@@ -73,7 +74,7 @@ async function observe(app: AppName, name: string): Promise<Observation> {
     await stopApp(pid);
     pid = undefined;
     const evidence = await analyzeHelloWorld({
-      recordingPath, timestampPath, artifactPath: join(resultsRoot, `${name}.mp4`), resultsRoot,
+      recordingPath, timestampPath, artifactPath: join(resultsRoot, `${name}.mp4`), resultsRoot: publishedResultsRoot,
       launchTimestampMs: timing.launchStartedTimestampMs, window,
     });
     const firstContentMs = evidence.firstContentTimestampMs - timing.launchStartedTimestampMs;
@@ -150,7 +151,9 @@ const report = {
     comparison: "Compare Hello World startup, settled footprint, and bundle size with product initial-content metrics from the same machine/build conditions. Parsing/jump/switch metrics do not apply to Hello World.",
   }, results,
 };
-writeFileSync(join(resultsRoot, "results.json"), JSON.stringify(report, null, 2) + "\n");
+mkdirSync(publishedResultsRoot, { recursive: true });
+writeFileSync(join(publishedResultsRoot, "summary.json"), JSON.stringify({ workload: report.workload, measuredAt: report.measuredAt, machine: report.machine, warmups, iterations, results: results.map(({ iterations, ...summary }) => summary) }, null, 2) + "\n");
+writeFileSync(join(publishedResultsRoot, "raw.json"), JSON.stringify(report, null, 2) + "\n");
 const mb = (v: number) => (v / 1048576).toFixed(1);
 const pair = (a: number, b: number) => `${a.toFixed(1)} / ${b.toFixed(1)}`;
 const markdown = [
@@ -162,7 +165,7 @@ const markdown = [
   "Hello World and the full chat product are distinct workloads. No transcript fixtures, parsing, chat switching, or list work runs in these apps. These are explicit minimal apps, not untouched generator templates.", "",
   "Raw observations, build provenance, OCR text, cropped videos, text images, and frame timestamps accompany this report. RSS is retained only in JSON as a diagnostic.", "",
 ];
-writeFileSync(join(resultsRoot, "results.md"), markdown.join("\n"));
+writeFileSync(join(publishedResultsRoot, "results.md"), markdown.join("\n"));
 console.log(markdown.join("\n"));
-console.log(`Video gallery: ${writeGallery(join(resultsRoot, "results.json"))}`);
-console.log(`Results: ${resultsRoot}`);
+console.log(`Video gallery: ${writeGallery(join(publishedResultsRoot, "raw.json"), resultsRoot)}`);
+console.log(`Results: ${publishedResultsRoot}`);

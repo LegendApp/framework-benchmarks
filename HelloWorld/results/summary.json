@@ -1,0 +1,215 @@
+{
+  "workload": "hello-world",
+  "machine": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "os": "26.6.1",
+    "hardware": "Apple M4"
+  },
+  "warmups": 2,
+  "iterations": 10,
+  "note": "September 17 timing/memory; later packaging sizes; Compose measured September 18. Mixed revisions, not a synchronized rerun. Legend Shell excluded as a duplicate RN host.",
+  "results": [
+    {
+      "app": "react-native",
+      "measuredAt": "2026-09-17T12:19:06.591Z",
+      "buildSizeBytes": 7499962,
+      "sizeMeasuredAt": "2026-09-18T09:07:54.496223+00:00",
+      "median": {
+        "windowOpenMs": 210.896484375,
+        "firstContentMs": 227.563232421875,
+        "physicalFootprintBytes": 24396772,
+        "residentSetBytes": 96575488,
+        "processCount": 1
+      },
+      "p90": {
+        "windowOpenMs": 226.46142578125,
+        "firstContentMs": 243.1279296875,
+        "physicalFootprintBytes": 24527880,
+        "residentSetBytes": 96681984,
+        "processCount": 1
+      }
+    },
+    {
+      "app": "electron",
+      "measuredAt": "2026-09-17T12:19:06.591Z",
+      "buildSizeBytes": 298947547,
+      "sizeMeasuredAt": "2026-09-17T15:34:18.387Z",
+      "median": {
+        "windowOpenMs": 277.5677490234375,
+        "firstContentMs": 344.4923095703125,
+        "physicalFootprintBytes": 87421584,
+        "residentSetBytes": 388980736,
+        "processCount": 4
+      },
+      "p90": {
+        "windowOpenMs": 278.079345703125,
+        "firstContentMs": 359.907958984375,
+        "physicalFootprintBytes": 87610072,
+        "residentSetBytes": 389054464,
+        "processCount": 4
+      }
+    },
+    {
+      "app": "tauri",
+      "measuredAt": "2026-09-17T12:19:06.591Z",
+      "buildSizeBytes": 10775687,
+      "sizeMeasuredAt": "2026-09-17T15:34:18.387Z",
+      "median": {
+        "windowOpenMs": 377.45361328125,
+        "firstContentMs": 409.750244140625,
+        "physicalFootprintBytes": 76508124,
+        "residentSetBytes": 187211776,
+        "processCount": 4
+      },
+      "p90": {
+        "windowOpenMs": 410.857666015625,
+        "firstContentMs": 410.85791015625,
+        "physicalFootprintBytes": 76614632,
+        "residentSetBytes": 187465728,
+        "processCount": 4
+      }
+    },
+    {
+      "app": "deno-webview",
+      "measuredAt": "2026-09-17T12:19:06.591Z",
+      "buildSizeBytes": 68173135,
+      "sizeMeasuredAt": "2026-09-17T15:34:18.387Z",
+      "median": {
+        "windowOpenMs": 360.9130859375,
+        "firstContentMs": 394.06689453125,
+        "physicalFootprintBytes": 86995228,
+        "residentSetBytes": 211509248,
+        "processCount": 4
+      },
+      "p90": {
+        "windowOpenMs": 361.2841796875,
+        "firstContentMs": 410.70361328125,
+        "physicalFootprintBytes": 87183656,
+        "residentSetBytes": 211746816,
+        "processCount": 4
+      }
+    },
+    {
+      "app": "deno-cef",
+      "measuredAt": "2026-09-17T12:19:06.591Z",
+      "buildSizeBytes": 321879995,
+      "sizeMeasuredAt": "2026-09-17T15:34:18.387Z",
+      "median": {
+        "windowOpenMs": 359.316162109375,
+        "firstContentMs": 360.028076171875,
+        "physicalFootprintBytes": 213508628,
+        "residentSetBytes": 717193216,
+        "processCount": 6
+      },
+      "p90": {
+        "windowOpenMs": 361.097412109375,
+        "firstContentMs": 377.841552734375,
+        "physicalFootprintBytes": 214344128,
+        "residentSetBytes": 718061568,
+        "processCount": 6
+      }
+    },
+    {
+      "app": "flutter",
+      "measuredAt": "2026-09-17T12:19:06.591Z",
+      "buildSizeBytes": 17844664,
+      "sizeMeasuredAt": "2026-09-17T15:34:18.387Z",
+      "median": {
+        "windowOpenMs": 234.398681640625,
+        "firstContentMs": 259.2059326171875,
+        "physicalFootprintBytes": 57713624,
+        "residentSetBytes": 109944832,
+        "processCount": 1
+      },
+      "p90": {
+        "windowOpenMs": 244.097900390625,
+        "firstContentMs": 275.250244140625,
+        "physicalFootprintBytes": 58000344,
+        "residentSetBytes": 110133248,
+        "processCount": 1
+      }
+    },
+    {
+      "app": "gpui",
+      "measuredAt": "2026-09-17T12:19:06.591Z",
+      "buildSizeBytes": 5572322,
+      "sizeMeasuredAt": "2026-09-17T15:34:18.387Z",
+      "median": {
+        "windowOpenMs": 210.68994140625,
+        "firstContentMs": 226.4962158203125,
+        "physicalFootprintBytes": 59073436,
+        "residentSetBytes": 91512832,
+        "processCount": 1
+      },
+      "p90": {
+        "windowOpenMs": 226.919677734375,
+        "firstContentMs": 227.791259765625,
+        "physicalFootprintBytes": 59163584,
+        "residentSetBytes": 91586560,
+        "processCount": 1
+      }
+    },
+    {
+      "app": "swiftui",
+      "measuredAt": "2026-09-17T12:19:06.591Z",
+      "buildSizeBytes": 89979,
+      "sizeMeasuredAt": "2026-09-17T15:34:18.387Z",
+      "median": {
+        "windowOpenMs": 210.901123046875,
+        "firstContentMs": 227.4835205078125,
+        "physicalFootprintBytes": 19162024,
+        "residentSetBytes": 85123072,
+        "processCount": 1
+      },
+      "p90": {
+        "windowOpenMs": 211.21337890625,
+        "firstContentMs": 227.8798828125,
+        "physicalFootprintBytes": 19252136,
+        "residentSetBytes": 85245952,
+        "processCount": 1
+      }
+    },
+    {
+      "app": "appkit",
+      "measuredAt": "2026-09-17T12:19:06.591Z",
+      "buildSizeBytes": 81096,
+      "sizeMeasuredAt": "2026-09-17T15:34:18.387Z",
+      "median": {
+        "windowOpenMs": 193.38671875,
+        "firstContentMs": 193.38671875,
+        "physicalFootprintBytes": 16294752,
+        "residentSetBytes": 80109568,
+        "processCount": 1
+      },
+      "p90": {
+        "windowOpenMs": 210.906005859375,
+        "firstContentMs": 227.572509765625,
+        "physicalFootprintBytes": 16483216,
+        "residentSetBytes": 80281600,
+        "processCount": 1
+      }
+    },
+    {
+      "app": "compose",
+      "measuredAt": "2026-09-18T21:51:33.203Z",
+      "buildSizeBytes": 118827892,
+      "sizeMeasuredAt": "2026-09-18T21:51:33.203Z",
+      "median": {
+        "windowOpenMs": 593.7890625,
+        "firstContentMs": 600.5172119140625,
+        "physicalFootprintBytes": 225027464,
+        "residentSetBytes": 178593792,
+        "processCount": 1
+      },
+      "p90": {
+        "windowOpenMs": 633.407958984375,
+        "firstContentMs": 633.407958984375,
+        "physicalFootprintBytes": 226936128,
+        "residentSetBytes": 180207616,
+        "processCount": 1
+      }
+    }
+  ],
+  "measuredAt": "2026-09-18T21:51:33.203Z"
+}

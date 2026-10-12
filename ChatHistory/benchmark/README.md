@@ -5,7 +5,7 @@ WebView, Deno Desktop CEF, Flutter, GPUI, SwiftUI, and AppKit. React Native is
 maintained in the sibling `legend-apps` repository and exported into this
 repository's common production-build directory by the build command. Benchmark runs use existing builds.
 
-For the latest chat run, see the [September 23–24 refresh of all ten frameworks](../../benchmarks/chat-refresh-2026-09-23/RESULTS.md). The historical [September 16 final results for both workloads](../../benchmarks/final-2026-09-16/RESULTS.md) and the [90-video viewer](results/2026-09-16T20-35-45.623Z-videos/index.html). The earlier parser/layout checkpoint is in [Swift/native parity results](SWIFT_PARITY_RESULTS.md). The prior production comparison is in [responsive AppKit results and SwiftUI diagnosis](RESPONSIVE_LAYOUT_RESULTS.md). The earlier detector correction and causal experiments are in [CAUSAL_ANALYSIS.md](CAUSAL_ANALYSIS.md). The earlier eight-app run and memory measurements are in [RESULTS.md](RESULTS.md).
+For the latest chat run, see the [September 23–24 refresh of all ten frameworks](../results/results.md). Older full-suite runs remain in Git history. The earlier parser/layout checkpoint is in [Swift/native parity results](SWIFT_PARITY_RESULTS.md). The prior production comparison is in [responsive AppKit results and SwiftUI diagnosis](RESPONSIVE_LAYOUT_RESULTS.md). The earlier detector correction and causal experiments are in [CAUSAL_ANALYSIS.md](CAUSAL_ANALYSIS.md). The earlier eight-app run and memory measurements are in [RESULTS.md](RESULTS.md).
 [PERFORMANCE_ANALYSIS.md](PERFORMANCE_ANALYSIS.md) preserves the historical
 September 4 analysis and its earlier implementation/corpus.
 
@@ -203,8 +203,7 @@ reports. Framework callbacks generally precede WindowServer presentation, so
 adding artificial delays to make the two boundaries agree would reduce rather
 than improve measurement accuracy.
 
-Machine-readable JSON, a Markdown summary, cropped videos, and frame sidecars
-are written under the ignored `ChatHistory/benchmark/results/` directory. Building and measuring are separate commands; `bun run benchmark` runs existing builds across both workloads.
+Latest JSON data and a Markdown summary replace `ChatHistory/results/{summary.json,raw.json,results.md}`. Cropped videos, frame sidecars, and the observation journal are ignored under `.build/chat-history-benchmarks/runs/<timestamp>/`. Building and measuring are separate commands; `bun run benchmark` runs existing builds across both workloads.
 
 ## Modes
 

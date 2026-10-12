@@ -12,7 +12,7 @@
     "target": "ES2022",
     "types": ["bun", "jest", "node"]
   },
-  "include": ["ChatHistory", "HelloWorld", "benchmarks", "shared", "scripts"],
+  "include": ["ChatHistory", "HelloWorld", "shared", "scripts"],
   "exclude": [
     "*/benchmark/results",
     "**/.build",
