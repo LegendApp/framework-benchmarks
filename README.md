@@ -10,12 +10,12 @@ Each suite is a self-contained folder with its own apps, packages, and build/run
 ## Layout
 
 ```
-ChatHistory/          apps/ (10) + packages/ + benchmark/ (harness, gitignored results/)
-HelloWorld/           apps/ (10) + packages/ + benchmark/ (harness, gitignored results/)
+ChatHistory/          apps/ (10) + packages/ + benchmark/ (harness, gitignored results/) + assets/ (charts)
+HelloWorld/           apps/ (10) + packages/ + benchmark/ (harness, gitignored results/) + assets/ (charts)
 shared/               capture helpers, video analysis, and the Gradle root both suites build through
 benchmarks/           unified build/run/fixtures/download/release dispatcher, archived result sets
 docs/                 long-form reports and methodology notes
-assets/               app icon and the benchmark chart images below
+assets/               shared build assets (app icon)
 .build/               built .app bundles, grammar packs, and toolchains (gitignored)
 ```
 
@@ -104,23 +104,7 @@ Chat-history grammars are installed in a shared folder beside the built apps. Bu
 
 ## Results and recordings
 
-![Chat history · first content (median ms, lower is better)](assets/chat-history-first-content.png)
-
-![Chat history · initial memory (settled physical footprint, MiB, lower is better)](assets/chat-history-memory.png)
-
-![Chat history · jump to top (median ms, lower is better)](assets/chat-history-jump-to-top.png)
-
-![Chat history · installed app size (MiB, lower is better)](assets/chat-history-app-size.png)
-
-![Chat history · load time, memory, and app size grouped by leading group](assets/chat-history-three-metrics.png)
-
-![Hello World · first content (median ms, lower is better)](assets/hello-world-first-content.png)
-
-![Hello World · installed size (MiB, lower is better)](assets/hello-world-installed-size.png)
-
-![Hello World · memory (settled physical footprint, MiB, lower is better)](assets/hello-world-memory.png)
-
-### Latest chat-history numbers (September 23–24 refresh)
+### Chat history — latest numbers (September 23–24 refresh)
 
 Medians over ten measured fresh-process launches per app; memory is settled physical footprint in MiB from separate unrecorded launches; sizes exclude external grammar packs. Full validation, spread, and conditions: [September 23–24 report](benchmarks/chat-refresh-2026-09-23/RESULTS.md).
 
@@ -136,6 +120,16 @@ Medians over ten measured fresh-process launches per app; memory is settled phys
 | Compose | 626.6 | 1294.0 | 85.0 | 378.8 | 348.6 | 116.5 | 3.4 |
 | Deno WebView | 259.6 | 1301.2 | 75.2 | 660.1 | 390.8 | 65.8 | 0.1 |
 | Deno CEF | 327.2 | 1360.7 | 71.1 | 687.3 | 410.3 | 307.8 | 0.1 |
+
+![Chat history · first content (median ms, lower is better)](ChatHistory/assets/chat-history-first-content.png)
+
+![Chat history · initial memory (settled physical footprint, MiB, lower is better)](ChatHistory/assets/chat-history-memory.png)
+
+![Chat history · jump to top (median ms, lower is better)](ChatHistory/assets/chat-history-jump-to-top.png)
+
+![Chat history · installed app size (MiB, lower is better)](ChatHistory/assets/chat-history-app-size.png)
+
+![Chat history · load time, memory, and app size grouped by leading group](ChatHistory/assets/chat-history-three-metrics.png)
 
 ### Hello World reference (September 17–18 builds)
 
@@ -153,6 +147,12 @@ Hello World was not rerun in the September 23–24 refresh. This is the referenc
 | Deno WebView | 360.9 | 394.1 | 83.0 | 65.0 |
 | Tauri | 377.5 | 409.8 | 73.0 | 10.3 |
 | Compose | 593.8 | 600.5 | 214.6 | 113.3 |
+
+![Hello World · first content (median ms, lower is better)](HelloWorld/assets/hello-world-first-content.png)
+
+![Hello World · installed size (MiB, lower is better)](HelloWorld/assets/hello-world-installed-size.png)
+
+![Hello World · memory (settled physical footprint, MiB, lower is better)](HelloWorld/assets/hello-world-memory.png)
 
 Older synchronized full-suite tables live in [September 17 results](benchmarks/final-2026-09-17/RESULTS.md) and [September 16 results](benchmarks/final-2026-09-16/RESULTS.md); per-app installed sizes with grammar packs are in [built app sizes](benchmarks/BUILD_SIZES.md).
 
