@@ -136,7 +136,7 @@ export async function main(mode: Mode, args = process.argv.slice(2)) {
     console.log("Selected bundles will be replaced. Toolchains may download dependencies. Building all apps can take a long time.");
   } else {
     console.log(`\n${options.warmups} warmups + ${options.iterations} measured rounds per app; video timing and separate memory launches.`);
-    console.log("Keep the Mac unlocked and idle. Both full suites can take over an hour. Reports and videos: benchmarks/<suite>/results/.");
+    console.log("Keep the Mac unlocked and idle. Both full suites can take over an hour. Reports and videos: <Suite>/benchmark/results/.");
   }
   if (options.dryRun) return;
   if (process.platform !== "darwin") throw new Error("These desktop suites require macOS.");
