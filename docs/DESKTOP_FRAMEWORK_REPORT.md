@@ -218,7 +218,7 @@ A Swift application built directly with AppKit’s macOS views, text system, and
 
 ## Reproduction and evidence
 
-- [Build and benchmark instructions](../README.md#build-then-benchmark).
+- [Build and benchmark instructions](../README.md#how-to-run).
 - Latest sizes and exact bytes: [Chat History](../ChatHistory/results/) and [Hello World](../HelloWorld/results/).
 - Timing, memory, p90, and conditions: [Chat History refresh](../ChatHistory/results/results.md) and [Hello World reference](../HelloWorld/results/results.md).
 - [Fairness standard](../ChatHistory/benchmark/FAIRNESS_STANDARD.md) and [external grammar design](../ChatHistory/benchmark/EXTERNAL_GRAMMARS.md).

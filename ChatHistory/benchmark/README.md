@@ -155,7 +155,7 @@ Both are Codex histories because this machine currently has no `~/.claude`
 history store. Claude remains covered by parser conformance fixtures, but a real
 Claude performance corpus requires importing and pinning a stable Claude file.
 
-Prebuilt apps can be installed with `bun run benchmark:download --suite chat-history --repo OWNER/REPO` from the matching release checkout. See the [release instructions](../../README.md#prebuilt-releases) for prerequisites, version pinning, and publishing.
+Prebuilt apps can be installed with `bun run benchmark:download --suite chat-history --repo OWNER/REPO` from the matching release checkout. See the [release instructions](../../docs/BENCHMARKS.md#prebuilt-releases) for prerequisites, version pinning, and publishing.
 
 ### Build and run
 
@@ -172,7 +172,7 @@ The builder previews the selected apps and asks for confirmation before starting
 bun run benchmark:build --suite chat-history --legend-apps-repo /absolute/path/to/legend-apps
 ```
 
-See the [root command reference](../../README.md#arguments-and-defaults) for all supported arguments. Without `--suite`, the root build/run commands select both workloads.
+See the [root command reference](../../docs/BENCHMARKS.md#arguments-and-defaults) for all supported arguments. Without `--suite`, the root build/run commands select both workloads.
 
 React Native is built in Xcode's Release configuration and copied into the
 common build directory with an ad-hoc signature. This is production-mode code,

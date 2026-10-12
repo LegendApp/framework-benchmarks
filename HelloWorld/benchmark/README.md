@@ -19,7 +19,7 @@ The three web hosts bundle the same `packages/hello-world-web` view. The baselin
 
 See [the September 11 measured results](RESULTS.md) for the complete run and saved video gallery.
 
-Prebuilt apps can be installed with `bun run benchmark:download --suite hello-world --repo OWNER/REPO` from the matching release checkout. See the [release instructions](../../README.md#prebuilt-releases) for prerequisites, version pinning, and publishing.
+Prebuilt apps can be installed with `bun run benchmark:download --suite hello-world --repo OWNER/REPO` from the matching release checkout. See the [release instructions](../../docs/BENCHMARKS.md#prebuilt-releases) for prerequisites, version pinning, and publishing.
 
 ## Build and open
 
@@ -72,7 +72,7 @@ Latest JSON data and a Markdown summary replace `HelloWorld/results/{summary.jso
 
 ## Compare the two workloads
 
-The root `bun run benchmark` now measures existing builds in both workloads; it does not build. See the [command reference](../../README.md#arguments-and-defaults) for filters and defaults. Keep both workloads' reports, then generate a table with paired Hello World / full product numbers:
+The root `bun run benchmark` now measures existing builds in both workloads; it does not build. See the [command reference](../../docs/BENCHMARKS.md#arguments-and-defaults) for filters and defaults. Keep both workloads' reports, then generate a table with paired Hello World / full product numbers:
 
 ```sh
 bun run benchmark:compare \
