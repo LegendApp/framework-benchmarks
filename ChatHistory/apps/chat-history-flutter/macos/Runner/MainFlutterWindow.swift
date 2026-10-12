@@ -4,23 +4,7 @@ import FlutterMacOS
 class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
-    // Native window material underneath Flutter's transparent sidebar. Transcript
-    // and controls remain Flutter widgets, including their in-window blur.
-    self.isOpaque = false
-    self.backgroundColor = .clear
-    flutterViewController.backgroundColor = .clear
-    let material = NSVisualEffectView(frame: self.contentView?.bounds ?? .zero)
-    material.material = .sidebar
-    material.blendingMode = .behindWindow
-    material.state = .active
-    material.autoresizingMask = [.width, .height]
-    let container = NSViewController()
-    container.view = material
-    container.addChild(flutterViewController)
-    flutterViewController.view.frame = material.bounds
-    flutterViewController.view.autoresizingMask = [.width, .height]
-    material.addSubview(flutterViewController.view)
-    self.contentViewController = container
+    self.contentViewController = flutterViewController
     self.styleMask.insert(.fullSizeContentView)
     self.titlebarAppearsTransparent = true
     self.titleVisibility = .hidden

@@ -1,0 +1,135 @@
+--- a/apps/chat-history-swiftui/Sources/ChatHistorySwiftUI/main.swift
++++ b/apps/chat-history-swiftui/Sources/ChatHistorySwiftUI/main.swift
+@@ -80,6 +80,7 @@
+   func select(_ summary: ChatSummary, phase: ChatBenchmarkPhase? = nil) {
+     generation += 1
+     let currentGeneration = generation
++    SwiftUILayoutTrace.shared.phase(phase?.rawValue ?? "interactive")
+     selectedId = summary.id
+     benchmarkPhase = phase
+     paintPending = false
+@@ -142,6 +143,7 @@
+         document: document,
+         phase: phase))
+     ChatBenchmark.emitContentDigest(document: document, phase: phase)
++    SwiftUILayoutTrace.shared.flushSoon()
+   }
+ 
+   func recordTopPaint(for path: String, startedAt: Double) {
+@@ -149,6 +151,7 @@
+     topPaintPending = true
+     let durationMs = ProcessInfo.processInfo.systemUptime * 1_000 - startedAt
+     ChatBenchmark.emit(ChatBenchmarkViewportReadyEvent(durationMs: durationMs, path: path))
++    SwiftUILayoutTrace.shared.flushSoon()
+     if let benchmarkConfig, benchmarkConfig.targets.count == 2,
+       let secondary = summaries.first(where: {
+         $0.id == benchmarkConfig.targets[1].id && $0.provider == benchmarkConfig.targets[1].provider
+@@ -411,7 +414,7 @@
+       .padding(.horizontal, 22)
+       .padding(.vertical, 9)
+     case .assistant, .user:
+-      HStack {
++      HStack(spacing: SwiftUILayoutTrace.explicitSpacing ? 0 : nil) {
+         if row.kind == .user { Spacer(minLength: 80) }
+         VStack(alignment: .leading, spacing: 8) {
+           if loadImages {
+@@ -420,7 +423,7 @@
+             }
+           }
+           if !row.markdown.isEmpty {
+-            RichMarkdownText(loadImages: loadImages, markdown: row.markdown)
++            RichMarkdownText(loadImages: loadImages, markdown: row.markdown, rowID: row.id, textWidth: row.kind == .user ? 712 : 736)
+           }
+           if row.hasImagePlaceholder || (!loadImages && !row.imageSources.isEmpty) {
+             AttachmentLabel("Image or attachment omitted")
+@@ -441,15 +444,81 @@
+ private struct RichMarkdownText: View {
+   let loadImages: Bool
+   let markdown: String
+-
+-  var body: some View {
+-    Text(
+-      AttributedString(
+-        RichMarkdownRenderer.render(
+-          markdown, imagePolicy: loadImages ? .loadLocal : .omit)))
+-      .textSelection(.enabled)
+-      .lineSpacing(3)
+-      .frame(maxWidth: .infinity, alignment: .leading)
++  let rowID: String
++  let textWidth: CGFloat
++
++  private var rendered: AttributedString {
++    let start = ProcessInfo.processInfo.systemUptime
++    let native = RichMarkdownRenderer.render(markdown, imagePolicy: loadImages ? .loadLocal : .omit)
++    let nativeEnd = ProcessInfo.processInfo.systemUptime
++    let value = AttributedString(native)
++    SwiftUILayoutTrace.shared.record("markdown", row: rowID, length: markdown.utf16.count, start: start, extra: ["nativeMs": (nativeEnd - start) * 1000])
++    return value
++  }
++
++  var body: some View {
++    if SwiftUILayoutTrace.enabled || SwiftUILayoutTrace.probeSpacing {
++      TextMeasureProbe(rowID: rowID, length: markdown.utf16.count) {
++        Text(rendered).textSelection(.enabled).lineSpacing(3)
++          .frame(maxWidth: .infinity, alignment: .leading)
++      }
++    } else if SwiftUILayoutTrace.boundedText {
++      Text(AttributedString(RichMarkdownRenderer.render(markdown, imagePolicy: loadImages ? .loadLocal : .omit)))
++        .textSelection(.enabled).lineSpacing(3)
++        .frame(width: textWidth, alignment: .leading)
++    } else {
++      Text(AttributedString(RichMarkdownRenderer.render(markdown, imagePolicy: loadImages ? .loadLocal : .omit)))
++        .textSelection(.enabled).lineSpacing(3)
++        .frame(maxWidth: .infinity, alignment: .leading)
++    }
++  }
++}
++
++private struct TextMeasureProbe: Layout {
++  let rowID: String
++  let length: Int
++  func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
++    let start = ProcessInfo.processInfo.systemUptime
++    let size = subviews[0].sizeThatFits(proposal)
++    SwiftUILayoutTrace.shared.record("size", row: rowID, length: length, start: start, extra: ["width": proposal.width.map { String(describing: $0) } ?? "nil", "height": proposal.height.map { String(describing: $0) } ?? "nil", "resultWidth": String(describing: size.width), "resultHeight": String(describing: size.height)])
++    return size
++  }
++  func spacing(subviews: Subviews, cache: inout ()) -> ViewSpacing {
++    if SwiftUILayoutTrace.skipSpacing { return ViewSpacing() }
++    let start = ProcessInfo.processInfo.systemUptime
++    let value = subviews[0].spacing
++    SwiftUILayoutTrace.shared.record("spacing", row: rowID, length: length, start: start)
++    return value
++  }
++  func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
++    subviews[0].place(at: bounds.origin, anchor: .topLeading, proposal: ProposedViewSize(bounds.size))
++  }
++}
++
++private final class SwiftUILayoutTrace: @unchecked Sendable {
++  static let shared = SwiftUILayoutTrace()
++  static let enabled = ProcessInfo.processInfo.environment["CHAT_HISTORY_SWIFTUI_TRACE"] != nil
++  static let skipSpacing = ProcessInfo.processInfo.environment["CHAT_HISTORY_SWIFTUI_VARIANT"] == "no-text-spacing"
++  static let probeSpacing = skipSpacing || ProcessInfo.processInfo.environment["CHAT_HISTORY_SWIFTUI_VARIANT"] == "probe-spacing"
++  static let boundedText = ProcessInfo.processInfo.environment["CHAT_HISTORY_SWIFTUI_VARIANT"] == "bounded-text"
++  static let explicitSpacing = ProcessInfo.processInfo.environment["CHAT_HISTORY_SWIFTUI_VARIANT"] == "explicit-spacing"
++  private let lock = NSLock()
++  private var currentPhase = "initial"
++  private var rows: [[String: Any]] = []
++  func phase(_ phase: String) { lock.lock(); currentPhase = phase; lock.unlock() }
++  func record(_ kind: String, row: String, length: Int, start: Double, extra: [String: Any] = [:]) {
++    guard Self.enabled else { return }
++    let duration = (ProcessInfo.processInfo.systemUptime - start) * 1000
++    lock.lock()
++    rows.append(extra.merging(["kind": kind, "row": row, "length": length, "durationMs": duration, "phase": currentPhase]) { _, new in new })
++    lock.unlock()
++  }
++  func flushSoon() {
++    guard let path = ProcessInfo.processInfo.environment["CHAT_HISTORY_SWIFTUI_TRACE"] else { return }
++    DispatchQueue.global().asyncAfter(deadline: .now() + 0.3) { [self] in
++      lock.lock(); let snapshot = rows; lock.unlock()
++      if let data = try? JSONSerialization.data(withJSONObject: snapshot, options: [.prettyPrinted, .sortedKeys]) { try? data.write(to: URL(fileURLWithPath: path), options: .atomic) }
++    }
+   }
+ }
+ 

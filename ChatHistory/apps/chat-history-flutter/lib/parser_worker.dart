@@ -67,6 +67,7 @@ class ChatParserWorker {
         Object value;
         switch (request) {
           case ('open', ChatProvider provider, String path):
+            if (active != null) closeChatDocument(active!);
             active = null;
             generation++;
             final document = openChatFile(provider, path);

@@ -1,32 +1,39 @@
-import 'dart:convert';
 import 'dart:typed_data';
+
+import 'file_source.dart';
+
+import 'dart:convert';
 
 /// Validated byte ranges; only requested keys, arrays and strings are materialized.
 class JsonRange {
   JsonRange(this.source, this.start, this.end);
-  final Uint8List source;
+  final List<int> source;
   final int start, end;
   Map<String, dynamic>? _fields;
   List<dynamic>? _elements;
   bool get isString => source[start] == 34;
   String string() => isString
-      ? jsonDecode(utf8.decode(Uint8List.sublistView(source, start, end)))
-            as String
+      ? jsonDecode(utf8.decode(source.sublist(start, end))) as String
       : '';
   Map<String, dynamic>? object() {
     if (source[start] != 123) return null;
     if (_fields != null) return _fields;
+    final offset = source is FileSource ? start : 0;
+    final bytes = source is FileSource
+        ? source.sublist(start, end) as Uint8List
+        : source as Uint8List;
+    final limit = end - offset;
     final fields = <String, dynamic>{};
-    var cursor = _space(source, start + 1, end);
-    while (source[cursor] != 125) {
-      final keyEnd = _scan(source, cursor, end, 0);
-      final key = JsonRange(source, cursor, keyEnd).string();
-      cursor = _space(source, keyEnd, end) + 1;
-      cursor = _space(source, cursor, end);
-      final valueEnd = _scan(source, cursor, end, 0);
-      fields[key] = JsonRange(source, cursor, valueEnd);
-      cursor = _space(source, valueEnd, end);
-      if (source[cursor] == 44) cursor = _space(source, cursor + 1, end);
+    var cursor = _space(bytes, start - offset + 1, limit);
+    while (bytes[cursor] != 125) {
+      final keyEnd = _scan(bytes, cursor, limit, 0);
+      final key = JsonRange(bytes, cursor, keyEnd).string();
+      cursor = _space(bytes, keyEnd, limit) + 1;
+      cursor = _space(bytes, cursor, limit);
+      final valueEnd = _scan(bytes, cursor, limit, 0);
+      fields[key] = JsonRange(source, cursor + offset, valueEnd + offset);
+      cursor = _space(bytes, valueEnd, limit);
+      if (bytes[cursor] == 44) cursor = _space(bytes, cursor + 1, limit);
     }
     return _fields = fields;
   }
@@ -34,24 +41,33 @@ class JsonRange {
   List<dynamic>? array() {
     if (source[start] != 91) return null;
     if (_elements != null) return _elements;
+    final offset = source is FileSource ? start : 0;
+    final bytes = source is FileSource
+        ? source.sublist(start, end) as Uint8List
+        : source as Uint8List;
+    final limit = end - offset;
     final elements = <dynamic>[];
-    var cursor = _space(source, start + 1, end);
-    while (source[cursor] != 93) {
-      final valueEnd = _scan(source, cursor, end, 0);
-      elements.add(JsonRange(source, cursor, valueEnd));
-      cursor = _space(source, valueEnd, end);
-      if (source[cursor] == 44) cursor = _space(source, cursor + 1, end);
+    var cursor = _space(bytes, start - offset + 1, limit);
+    while (bytes[cursor] != 93) {
+      final valueEnd = _scan(bytes, cursor, limit, 0);
+      elements.add(JsonRange(source, cursor + offset, valueEnd + offset));
+      cursor = _space(bytes, valueEnd, limit);
+      if (bytes[cursor] == 44) cursor = _space(bytes, cursor + 1, limit);
     }
     return _elements = elements;
   }
 
-  static JsonRange parse(Uint8List source, int start, int end) {
-    start = _space(source, start, end);
-    final valueEnd = _scan(source, start, end, 0);
-    if (_space(source, valueEnd, end) != end) {
+  static JsonRange parse(List<int> source, int start, int end) {
+    final offset = source is FileSource ? start : 0;
+    final bytes = source is FileSource
+        ? source.sublist(start, end) as Uint8List
+        : source as Uint8List;
+    final limit = end - offset;
+    final begin = _space(bytes, start - offset, limit);
+    final valueEnd = _scan(bytes, begin, limit, 0);
+    if (_space(bytes, valueEnd, limit) != limit)
       throw const FormatException('Trailing JSON input');
-    }
-    return JsonRange(source, start, valueEnd);
+    return JsonRange(source, begin + offset, valueEnd + offset);
   }
 }
 

@@ -7,9 +7,30 @@ import kotlinx.serialization.json.*
 
 private val jsonValidator = JsonFactory()
 
+private fun java.nio.ByteBuffer.decodeToString(start: Int, end: Int): String {
+    val view = duplicate().position(start).limit(end)
+    return Charsets.UTF_8.decode(view).toString()
+}
+
+// Jackson reads bounded chunks directly from the mapping, without copying a
+// whole JSON record (which can itself contain megabytes of unused tool output).
+private class BufferInput(source: java.nio.ByteBuffer, start: Int, end: Int) : java.io.InputStream() {
+    private val bytes = source.duplicate().position(start).limit(end)
+    override fun read(): Int = if (bytes.hasRemaining()) bytes.get().toInt() and 255 else -1
+    override fun read(target: ByteArray, offset: Int, length: Int): Int {
+        if (length == 0) return 0
+        if (!bytes.hasRemaining()) return -1
+        val count = minOf(length, bytes.remaining())
+        bytes.get(target, offset, count)
+        return count
+    }
+}
+
+
 // Keep the UTF-8 document once. Object/array indexing skips string contents;
 // large message and tool strings are decoded only when a row is requested.
-class JsonRange(val bytes: ByteArray, val start: Int, val end: Int) {
+class JsonRange(val bytes: java.nio.ByteBuffer, val start: Int, val end: Int) {
+    constructor(bytes: ByteArray, start: Int, end: Int) : this(java.nio.ByteBuffer.wrap(bytes), start, end)
     val kind: Char
         get() = bytes[start].toInt().toChar()
 
@@ -74,7 +95,7 @@ class JsonRange(val bytes: ByteArray, val start: Int, val end: Int) {
     }
 
     fun valid() = runCatching {
-        jsonValidator.createParser(bytes, start, end - start).use { parser ->
+        jsonValidator.createParser(BufferInput(bytes, start, end)).use { parser ->
             if (parser.nextToken() != JsonToken.START_OBJECT) return@use false
             parser.skipChildren()
             parser.nextToken() == null
@@ -172,12 +193,15 @@ fun elapsed(start: Long) = (System.nanoTime() - start) / 1e6
 
 fun openDocument(provider: String, path: String): Document {
     val start = System.nanoTime()
-    val bytes = File(path).readBytes()
+    val bytes = java.nio.channels.FileChannel.open(java.nio.file.Path.of(path)).use { channel ->
+        if (channel.size() == 0L) java.nio.ByteBuffer.allocate(0)
+        else channel.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, 0, channel.size())
+    }
     val load = elapsed(start)
     val scan = System.nanoTime()
     val records = ArrayList<JsonRange>()
     var line = 0
-    for (i in 0..bytes.size) if (i == bytes.size || bytes[i] == 10.toByte()) {
+    for (i in 0..bytes.limit()) if (i == bytes.limit() || bytes[i] == 10.toByte()) {
         var begin = line
         var end = i
         while (begin < end && bytes[begin] <= 32 && bytes[begin] >= 0) begin++
@@ -193,7 +217,7 @@ fun openDocument(provider: String, path: String): Document {
         path,
         rows,
         records.size,
-        bytes.size,
+        bytes.limit(),
         parser.warnings,
         load,
         scanMs,

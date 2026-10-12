@@ -1,3 +1,4 @@
+use crate::text_source::TextSource;
 use std::{
     collections::{HashMap, HashSet},
     fs,
@@ -424,7 +425,7 @@ fn parse_message_content(
     (parts, has_image)
 }
 
-fn parse_codex(source: &Arc<String>, lines: &[Range<usize>]) -> (Vec<ChatRow>, usize) {
+fn parse_codex(source: &Arc<TextSource>, lines: &[Range<usize>]) -> (Vec<ChatRow>, usize) {
     let mut rows = Vec::new();
     let mut tool_rows = HashMap::new();
     let mut warnings = 0;
@@ -756,7 +757,7 @@ fn parse_claude_message(
     warnings
 }
 
-fn parse_claude(source: &Arc<String>, lines: &[Range<usize>]) -> (Vec<ChatRow>, usize) {
+fn parse_claude(source: &Arc<TextSource>, lines: &[Range<usize>]) -> (Vec<ChatRow>, usize) {
     let mut records = Vec::new();
     let mut record_by_id = HashMap::new();
     let mut warnings = 0;
@@ -811,12 +812,12 @@ pub fn parse_chat_text(
     provider: &str,
     source: &str,
 ) -> Result<(Vec<ChatRow>, usize, usize, f64, f64), String> {
-    parse_source(provider, Arc::new(source.to_string()))
+    parse_source(provider, Arc::new(TextSource::Owned(source.to_string())))
 }
 
 fn parse_source(
     provider: &str,
-    source: Arc<String>,
+    source: Arc<TextSource>,
 ) -> Result<(Vec<ChatRow>, usize, usize, f64, f64), String> {
     let scan_started = Instant::now();
     let mut offset = 0;
@@ -843,10 +844,8 @@ fn parse_source(
 pub fn open_chat_file(provider: &str, path: &Path) -> Result<ChatDocument, String> {
     let started = Instant::now();
     let load_started = Instant::now();
-    let bytes = fs::read(path).map_err(|error| format!("Failed to read transcript: {error}"))?;
-    let source_bytes = bytes.len();
-    let source =
-        String::from_utf8(bytes).map_err(|error| format!("Transcript is not UTF-8: {error}"))?;
+    let source = TextSource::open(path)?;
+    let source_bytes = source.len();
     let load_ms = load_started.elapsed().as_secs_f64() * 1000.0;
     let (rows, warning_count, record_count, scan_ms, parse_ms) =
         parse_source(provider, Arc::new(source))?;
@@ -874,6 +873,18 @@ mod tests {
     fn fixture(name: &str) -> String {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../chat-history/tests/fixtures");
         fs::read_to_string(root.join(name)).unwrap()
+    }
+
+    #[test]
+    fn mapped_sources_match_owned_parser() {
+        for (provider, name) in [("codex", "codex.jsonl"), ("claude", "claude.jsonl")] {
+            let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../chat-history/tests/fixtures").join(name);
+            let mapped = open_chat_file(provider, &path).unwrap();
+            let (owned, warnings, records, _, _) = parse_chat_text(provider, &fixture(name)).unwrap();
+            assert_eq!(normalized_content_digest(&mapped.rows), normalized_content_digest(&owned));
+            assert_eq!(mapped.warning_count, warnings);
+            assert_eq!(mapped.record_count, records);
+        }
     }
 
     #[test]

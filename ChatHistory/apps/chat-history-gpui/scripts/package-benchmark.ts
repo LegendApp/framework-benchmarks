@@ -3,9 +3,9 @@ import { dirname, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 
 const appRoot = resolve(import.meta.dir, "..");
-const repositoryRoot = resolve(appRoot, "../..");
+const repositoryRoot = resolve(appRoot, "../../..");
 const sourceExecutable = resolve(appRoot, "target/release/legend-chat-history-gpui");
-const sourceIcon = resolve(repositoryRoot, "apps/chat-history-tauri/src-tauri/icons/icon.icns");
+const sourceIcon = resolve(repositoryRoot, "ChatHistory/apps/chat-history-tauri/src-tauri/icons/icon.icns");
 const outputApp = resolve(
   repositoryRoot,
   ".build/chat-history-benchmarks/Chat History — GPUI.app",

@@ -25,8 +25,8 @@ GPUI still uses pulldown-cmark and syntect/two-face; Flutter still uses markdown
 ## Evidence
 
 - [Final history validation run](results/2026-09-17T06-53-40.159Z.json) and [video/transition validation](results/layout-alignment-2026-09-16/validation.json).
-- Dense lists: [Flutter](results/layout-alignment-2026-09-16/flutter-top.png), [GPUI](results/layout-alignment-2026-09-16/gpui-top.png), [RN reference](../final-2026-09-16/visual/top-react-native.png).
-- Switched history: [Flutter](results/layout-alignment-2026-09-16/flutter-switch.png), [GPUI](results/layout-alignment-2026-09-16/gpui-switch.png), [RN reference](../final-2026-09-16/visual/switch-react-native.png).
+- Dense lists: [Flutter](results/layout-alignment-2026-09-16/flutter-top.png), [GPUI](results/layout-alignment-2026-09-16/gpui-top.png), [RN reference](../../benchmarks/final-2026-09-16/visual/top-react-native.png).
+- Switched history: [Flutter](results/layout-alignment-2026-09-16/flutter-switch.png), [GPUI](results/layout-alignment-2026-09-16/gpui-switch.png), [RN reference](../../benchmarks/final-2026-09-16/visual/switch-react-native.png).
 - Rich Markdown: [Flutter](results/layout-alignment-2026-09-16/flutter-rich-initial.png), [GPUI](results/layout-alignment-2026-09-16/gpui-rich-initial.png).
 - Highlighted code: [Flutter](results/layout-alignment-2026-09-16/flutter-rich-switch.png), [GPUI](results/layout-alignment-2026-09-16/gpui-rich-switch.png).
 - [Repeatable rich-content probe](experiments/verify-flutter-gpui-rendering.py).

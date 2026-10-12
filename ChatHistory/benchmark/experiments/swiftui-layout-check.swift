@@ -10,7 +10,9 @@ private enum SwiftUILayoutQA {
         imageSources: [], kind: kind, markdown: text, toolName: "", toolPreview: "", toolStatus: .none)
     }
     let cache = TranscriptMarkdownCache()
-    for (text, expectedHeight) in [("one  \ntwo  \nthree", 66.0), ("# Heading", 28.0), ("```text\none\ntwo\nthree\n```", 72.0)] {
+    let codeHeader = NSFont.systemFont(ofSize: 12 * 0.85, weight: .medium)
+    let codeHeight = 54.0 + 39 + ceil(codeHeader.ascender - codeHeader.descender)
+    for (text, expectedHeight) in [("one  \ntwo  \nthree", 66.0), ("# Heading", 28.0), ("```text\none\ntwo\nthree\n```", codeHeight)] {
       let text = RichMarkdownText(rendered: cache.render(row: row(text), loadImages: false), expand: true)
       let controller = NSHostingController(rootView: text)
       let size = controller.sizeThatFits(in: CGSize(width: 300, height: 10000))

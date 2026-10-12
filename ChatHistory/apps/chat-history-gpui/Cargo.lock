@@ -847,6 +847,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "indexmap",
+ "memmap2",
  "serde",
  "serde_json",
 ]
@@ -2976,7 +2977,6 @@ dependencies = [
  "chrono",
  "gpui",
  "pulldown-cmark",
- "raw-window-handle",
  "serde",
  "serde_json",
  "syntect",

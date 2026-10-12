@@ -1,3 +1,4 @@
+use crate::text_source::TextSource;
 use serde_json::value::RawValue;
 use std::{
     ops::Range,
@@ -8,20 +9,20 @@ pub type Map<K, V> = indexmap::IndexMap<K, V>;
 #[derive(Clone)]
 pub struct Value(Arc<Node>);
 struct Node {
-    source: Arc<String>,
+    source: Arc<TextSource>,
     range: Range<usize>,
     object: OnceLock<Map<String, Value>>,
     array: OnceLock<Vec<Value>>,
     text: OnceLock<String>,
 }
 impl Value {
-    pub fn parse(source: Arc<String>, range: Range<usize>) -> Option<Self> {
+    pub fn parse(source: Arc<TextSource>, range: Range<usize>) -> Option<Self> {
         let raw: &RawValue = serde_json::from_str(&source[range.clone()]).ok()?;
         let start = raw.get().as_ptr() as usize - source.as_ptr() as usize;
         let end = start + raw.get().len();
         Some(Self::new(source, start..end))
     }
-    fn new(source: Arc<String>, range: Range<usize>) -> Self {
+    fn new(source: Arc<TextSource>, range: Range<usize>) -> Self {
         Self(Arc::new(Node {
             source,
             range,
@@ -90,10 +91,10 @@ mod tests {
     #[test]
     fn validates_ignored_values_and_preserves_source_field_order() {
         for source in [r#"{"skip":[1,]}"#, r#"{"skip":"\q"}"#, r#"{"skip":01}"#] {
-            assert!(Value::parse(Arc::new(source.to_string()), 0..source.len()).is_none());
+            assert!(Value::parse(Arc::new(TextSource::Owned(source.to_string())), 0..source.len()).is_none());
         }
         let source = r#"{"z":"a\nb","a":[true,{"unused":"\u263a"}]}"#;
-        let value = Value::parse(Arc::new(source.to_string()), 0..source.len()).unwrap();
+        let value = Value::parse(Arc::new(TextSource::Owned(source.to_string())), 0..source.len()).unwrap();
         let fields = value.as_object().unwrap();
         assert_eq!(
             fields.keys().map(String::as_str).collect::<Vec<_>>(),

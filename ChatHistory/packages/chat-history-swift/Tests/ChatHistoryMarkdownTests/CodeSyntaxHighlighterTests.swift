@@ -6,8 +6,8 @@ import Testing
 func allSyntaxLanguagesPreserveSourceAndProduceColors() throws {
   struct Fixture: Decodable { let language: String; let source: String }
   var root = URL(fileURLWithPath: #filePath)
-  for _ in 0..<5 { root.deleteLastPathComponent() }
-  let fixtures = try JSONDecoder().decode([Fixture].self, from: Data(contentsOf: root.appendingPathComponent("benchmarks/chat-history/syntax-highlighting-fixtures.json")))
+  for _ in 0..<6 { root.deleteLastPathComponent() }
+  let fixtures = try JSONDecoder().decode([Fixture].self, from: Data(contentsOf: root.appendingPathComponent("ChatHistory/benchmark/syntax-highlighting-fixtures.json")))
   for fixture in fixtures {
     let output = NSMutableAttributedString(string: fixture.source)
     CodeSyntaxHighlighter.apply(to: output, language: fixture.language)

@@ -18,7 +18,7 @@ static SYNTAXES: LazyLock<SyntaxSet> = LazyLock::new(|| {
             let executable = std::env::current_exe().expect("executable path");
             let app = executable.ancestors().find(|path| path.extension().is_some_and(|ext| ext == "app"));
             app.and_then(|path| path.parent()).map(|parent| parent.join("grammar-packs/v1"))
-                .unwrap_or_else(|| std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.build/chat-history-benchmarks/grammar-packs/v1"))
+                .unwrap_or_else(|| std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../.build/chat-history-benchmarks/grammar-packs/v1"))
         });
     syntect::dumps::from_dump_file(root.join("syntect/syntaxes.pack"))
         .expect("Missing or invalid external syntect grammar pack; build benchmark assets first")
@@ -136,7 +136,7 @@ mod tests {
     #[test]
     fn all_languages_preserve_unicode_and_produce_colors() {
         let fixtures: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../benchmarks/chat-history/syntax-highlighting-fixtures.json"
+            "../../../benchmark/syntax-highlighting-fixtures.json"
         ))
         .unwrap();
         for fixture in fixtures.as_array().unwrap() {

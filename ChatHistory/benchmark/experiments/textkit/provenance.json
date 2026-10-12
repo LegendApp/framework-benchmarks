@@ -1,0 +1,17 @@
+{
+  "baseCommit": "7de0f856f1e08b2eb07361d6ec3f3a8ae64e0f0b",
+  "swiftVersion": "Apple Swift version 6.3.3 (swiftlang-6.3.3.1.3 clang-2100.1.1.101)\nTarget: arm64-apple-macosx26.0",
+  "sha256": {
+    "packages/chat-history-swift/Sources/ChatHistoryMarkdown/TranscriptTextView.swift": "b98c2893dd4ccfe6c5fbf5c95fb230ef73936a9f9b434d93e8807e0f10249b14",
+    "packages/chat-history-swift/Sources/ChatHistoryMarkdown/RichMarkdownRenderer.swift": "98c780c504148e5ebe7da42f78eb40909491faa8c0ee4ca2f9a3bb7497cd0a4c",
+    "apps/chat-history-appkit/Sources/ChatHistoryAppKit/main.swift": "c5885c97a28f309fc777882821a67aabf4a7485538a8023fd8a579c40d7edf10",
+    "apps/chat-history-swiftui/Sources/ChatHistorySwiftUI/main.swift": "8923fab2bfc907500e650e8e4bc64cdb1de4ba05ae190cc952c21c8127379e3d",
+    ".build/chat-history-benchmarks/Chat History \u2014 AppKit.app/Contents/MacOS/ChatHistoryAppKit": "b63170644465ba4ec48d493a691d8fbe2521ae6d685a8a7dd4bbb82fa2dc1e47",
+    ".build/chat-history-benchmarks/Chat History \u2014 SwiftUI.app/Contents/MacOS/ChatHistorySwiftUI": "26557be607f723d6f70589a7a88239c15f3d4195301e454da7f71fda81623187"
+  },
+  "excludedBatches": [
+    "2026-09-12T11-05-38.390Z (initial smoke, oversized short bubbles)",
+    "2026-09-12T11-07-03.233Z (aborted, oversized short bubbles)",
+    "2026-09-12T11-10-43.973Z (aborted, width fix insufficient in view hierarchy)"
+  ]
+}

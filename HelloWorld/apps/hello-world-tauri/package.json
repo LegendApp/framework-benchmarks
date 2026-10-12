@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "bun ../../benchmarks/hello-world/build.ts --app tauri --launch"
+    "start": "bun ../../benchmark/build.ts --app tauri --launch"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.11.4"

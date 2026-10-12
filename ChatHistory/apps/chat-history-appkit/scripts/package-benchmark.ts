@@ -1,10 +1,10 @@
-import { copySwiftResources } from "../../../scripts/package-swift-resources";
+import { copySwiftResources } from "../../../../scripts/package-swift-resources";
 import { execFileSync } from "node:child_process";
 import { chmodSync, copyFileSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
 const appRoot = resolve(import.meta.dir, "..");
-const repositoryRoot = resolve(appRoot, "../..");
+const repositoryRoot = resolve(appRoot, "../../..");
 const sourceExecutable = resolve(appRoot, ".build/release/ChatHistoryAppKit");
 const outputApp = resolve(repositoryRoot, ".build/chat-history-benchmarks/Chat History — AppKit.app");
 const outputExecutable = resolve(outputApp, "Contents/MacOS/ChatHistoryAppKit");

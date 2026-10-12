@@ -1,4 +1,4 @@
-import { openChatFile } from "./parser";
+import { closeChatDocument, openChatFile } from "./parser";
 import {
   type ChatDocument,
   type ChatProvider,
@@ -18,9 +18,13 @@ export class DocumentRegistry {
   async request(request: DocumentRequest): Promise<ChatDocument | ChatRow[] | string> {
     if (request.op === "open") {
       const generation = ++this.generation;
+      if (this.active) closeChatDocument(this.active.document);
       this.active = undefined;
       const document = await openChatFile(request.provider, request.path);
-      if (generation !== this.generation) throw new Error("Document open was superseded");
+      if (generation !== this.generation) {
+        closeChatDocument(document);
+        throw new Error("Document open was superseded");
+      }
       const id = String(generation);
       this.active = { id, document };
       return {

@@ -383,7 +383,9 @@ main {
   margin-bottom: 8px;
   border-radius: 12px;
   max-height: 440px;
-  max-width: min(100%, 560px);
+  width: 300px;
+  max-width: 100%;
+  height: auto;
   object-fit: contain;
 }
 .attachment {

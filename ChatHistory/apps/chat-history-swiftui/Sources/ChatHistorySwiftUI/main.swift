@@ -594,7 +594,7 @@ private struct MessageImage: View {
       Image(nsImage: image)
         .resizable()
         .scaledToFit()
-        .frame(maxWidth: 560, maxHeight: 440)
+        .frame(maxWidth: 300, maxHeight: 440)
         .clipShape(RoundedRectangle(cornerRadius: 12))
     } else if let url = URL(string: source), let scheme = url.scheme,
       scheme == "http" || scheme == "https"
@@ -608,7 +608,7 @@ private struct MessageImage: View {
           ProgressView()
         }
       }
-      .frame(maxWidth: 560, maxHeight: 440)
+      .frame(maxWidth: 300, maxHeight: 440)
       .clipShape(RoundedRectangle(cornerRadius: 12))
     } else {
       AttachmentLabel("Image or attachment unavailable")

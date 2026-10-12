@@ -1030,8 +1030,8 @@ private final class TranscriptCell: NSTableCellView {
     imageView.layer?.masksToBounds = true
     imageView.translatesAutoresizingMaskIntoConstraints = false
     stack.addArrangedSubview(imageView)
-    let preferredWidth = imageView.widthAnchor.constraint(equalToConstant: 560)
-    preferredWidth.priority = .defaultHigh
+    let preferredWidth = imageView.widthAnchor.constraint(equalToConstant: 300)
+    preferredWidth.priority = .required
     NSLayoutConstraint.activate([
       preferredWidth,
       imageView.widthAnchor.constraint(lessThanOrEqualTo: stack.widthAnchor),

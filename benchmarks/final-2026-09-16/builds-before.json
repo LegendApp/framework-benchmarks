@@ -1,0 +1,300 @@
+{
+  "at": "2026-09-16T20:21:23.165859+00:00",
+  "bundles": {
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/chat-history-benchmarks/Chat History \u2014 AppKit.app": {
+      "sha256OfFileManifest": "ffb180159f5d9f97c1164312f18daca5129a3cea0279003747869468733bd20e",
+      "logicalBytes": 4779125,
+      "fileCount": 253
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/chat-history-benchmarks/Chat History \u2014 Deno CEF.app": {
+      "sha256OfFileManifest": "84c3cf746a1c503ed739a09ac3eac468d5429a94d81ddfd2ddeed98d4feda00b",
+      "logicalBytes": 322799304,
+      "fileCount": 35
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/chat-history-benchmarks/Chat History \u2014 Deno WebView.app": {
+      "sha256OfFileManifest": "584297019a3b3d26d8c26df58a7891d343efbd024707010afc66986bdc80ae98",
+      "logicalBytes": 69092439,
+      "fileCount": 6
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/chat-history-benchmarks/Chat History \u2014 Electron.app": {
+      "sha256OfFileManifest": "6f4a5491c41933e2229a073afb29bf6987528ebfd0296c1861cf9e009fc8a9a9",
+      "logicalBytes": 300088493,
+      "fileCount": 274
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/chat-history-benchmarks/Chat History \u2014 Flutter.app": {
+      "sha256OfFileManifest": "ca5a21de25a40bdf77181770b8e8cc328b122ab992ba6f5618af9d2f3f740846",
+      "logicalBytes": 50373026,
+      "fileCount": 26
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/chat-history-benchmarks/Chat History \u2014 GPUI.app": {
+      "sha256OfFileManifest": "c61490074a77e87a66a287d087496024689ccbe9018421e0b0db4c443c4123e3",
+      "logicalBytes": 11342210,
+      "fileCount": 4
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/chat-history-benchmarks/Chat History \u2014 React Native Optimized.app": {
+      "sha256OfFileManifest": "a1272e1e29bf6eb679a847df37dd2e58ae84dc8de0893afff47b12d66ce094ff",
+      "logicalBytes": 17847292,
+      "fileCount": 41
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/chat-history-benchmarks/Chat History \u2014 React Native.app": {
+      "sha256OfFileManifest": "c02f9347db49dace35fef45015966c6652d9a993e0dd995d50820091dccdfc8c",
+      "logicalBytes": 44118960,
+      "fileCount": 159
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/chat-history-benchmarks/Chat History \u2014 SwiftUI.app": {
+      "sha256OfFileManifest": "c5b05291dc414037550aa0fa0375ad6cce97e2c2f02cd892b72bc791178e231e",
+      "logicalBytes": 5304201,
+      "fileCount": 253
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/chat-history-benchmarks/Chat History \u2014 Tauri.app": {
+      "sha256OfFileManifest": "8a3f3927666c988e3576b202d8fbcf2018c88e48955f06c07439ebba9f5e16bb",
+      "logicalBytes": 12160193,
+      "fileCount": 2
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 AppKit.app": {
+      "sha256OfFileManifest": "66584285c8b5b3028551fcd466ff3567ca101e56f47eb2af6491c88751a47409",
+      "logicalBytes": 81096,
+      "fileCount": 3
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 Deno CEF.app": {
+      "sha256OfFileManifest": "a5d4594a5e2cb66cd09199cbd579a1c304a0ea9704637ac6816404a46dd5584f",
+      "logicalBytes": 321879995,
+      "fileCount": 35
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 Deno WebView.app": {
+      "sha256OfFileManifest": "011e1b8a4260d3f2d7a026e0a8eb5e1af9e2de569b35ae880ae8f2756b7d382e",
+      "logicalBytes": 68173135,
+      "fileCount": 6
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 Electron.app": {
+      "sha256OfFileManifest": "6d5ace632f92308ae801c6f32fb6d735337ff80dda3ba5918d157dd85afa0532",
+      "logicalBytes": 298947547,
+      "fileCount": 269
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 Flutter.app": {
+      "sha256OfFileManifest": "c859454a06ee02773072fa297dd7d71b9af1d4e148cf9d7964c9cd98e5d8f294",
+      "logicalBytes": 35277348,
+      "fileCount": 21
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 GPUI.app": {
+      "sha256OfFileManifest": "a8cc31454c8ae8c45f392f30e31368755c26dd81037fe00a9efb96349826096a",
+      "logicalBytes": 5572322,
+      "fileCount": 3
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 Legend Shell.app": {
+      "sha256OfFileManifest": "d41db23cd384bbaca66f687f27f34c38dfba085683244e9485188df61ad65b3a",
+      "logicalBytes": 9775403,
+      "fileCount": 18
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 React Native.app": {
+      "sha256OfFileManifest": "4d003b37f270f46276fe9eed40ccf06886ee6d1d55774eaf7a2ec159e9fb279e",
+      "logicalBytes": 17048794,
+      "fileCount": 18
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 SwiftUI.app": {
+      "sha256OfFileManifest": "e9aad018f6e63482fc04fe5f5f8c4509d425b128dc23a0013c3f114d3b7106b3",
+      "logicalBytes": 89979,
+      "fileCount": 3
+    },
+    "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 Tauri.app": {
+      "sha256OfFileManifest": "fe748272a680cfd58134985b2fce8267f88e21e4e8a29e4de4b80c3eb0acff56",
+      "logicalBytes": 10775687,
+      "fileCount": 4
+    }
+  },
+  "buildManifests": {
+    "chat-history": {
+      "builds": {
+        "react-native": {
+          "builtAt": "2026-09-16T20:17:24.320Z",
+          "gitCommit": "6c31130005cc058ce78661a21a59eac0a6b98045",
+          "gitDirty": true,
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/legend-apps",
+          "renderingInputs": {
+            "contractSha256": "34a8b6cf58e800f4063d7c916cf52fe848e59baffa61c78da9757c4eae5b32a2",
+            "highlightingPolicySha256": "de7875940d01dc3e13807af6189a8282800cf3a30e7ff4fdbd3d70cbb0e73f69",
+            "legendList": {
+              "version": "3.3.10-sparse-layout.a6f5ba13",
+              "artifacts": {
+                "react.js": "8efe0f826c77c5dea0e8a655a498c295da29b308bd185c11669f2e44fb9d0ccd",
+                "react.mjs": "c84ce56c9e39beae50decd3b0c94b948a327e3a15d1589c6f3211a75a8ef05c7",
+                "react.d.ts": "cd728b2e26c5853802e1a32c7414694d7143164e492d6b4e9b11cb967f683e50"
+              }
+            }
+          }
+        },
+        "electron": {
+          "builtAt": "2026-09-16T20:17:25.319Z",
+          "gitCommit": "e32f1aff807c0e04f9a45035b40c7d5242ccde79",
+          "gitDirty": true,
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/chat-history-comparison",
+          "renderingInputs": {
+            "contractSha256": "34a8b6cf58e800f4063d7c916cf52fe848e59baffa61c78da9757c4eae5b32a2",
+            "highlightingPolicySha256": "de7875940d01dc3e13807af6189a8282800cf3a30e7ff4fdbd3d70cbb0e73f69",
+            "legendList": {
+              "version": "3.3.10-sparse-layout.a6f5ba13",
+              "artifacts": {
+                "react.js": "8efe0f826c77c5dea0e8a655a498c295da29b308bd185c11669f2e44fb9d0ccd",
+                "react.mjs": "c84ce56c9e39beae50decd3b0c94b948a327e3a15d1589c6f3211a75a8ef05c7",
+                "react.d.ts": "cd728b2e26c5853802e1a32c7414694d7143164e492d6b4e9b11cb967f683e50"
+              }
+            }
+          }
+        },
+        "tauri": {
+          "builtAt": "2026-09-16T20:17:39.858Z",
+          "gitCommit": "e32f1aff807c0e04f9a45035b40c7d5242ccde79",
+          "gitDirty": true,
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/chat-history-comparison",
+          "renderingInputs": {
+            "contractSha256": "34a8b6cf58e800f4063d7c916cf52fe848e59baffa61c78da9757c4eae5b32a2",
+            "highlightingPolicySha256": "de7875940d01dc3e13807af6189a8282800cf3a30e7ff4fdbd3d70cbb0e73f69",
+            "legendList": {
+              "version": "3.3.10-sparse-layout.a6f5ba13",
+              "artifacts": {
+                "react.js": "8efe0f826c77c5dea0e8a655a498c295da29b308bd185c11669f2e44fb9d0ccd",
+                "react.mjs": "c84ce56c9e39beae50decd3b0c94b948a327e3a15d1589c6f3211a75a8ef05c7",
+                "react.d.ts": "cd728b2e26c5853802e1a32c7414694d7143164e492d6b4e9b11cb967f683e50"
+              }
+            }
+          }
+        },
+        "deno": {
+          "builtAt": "2026-09-16T20:17:43.234Z",
+          "gitCommit": "e32f1aff807c0e04f9a45035b40c7d5242ccde79",
+          "gitDirty": true,
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/chat-history-comparison",
+          "renderingInputs": {
+            "contractSha256": "34a8b6cf58e800f4063d7c916cf52fe848e59baffa61c78da9757c4eae5b32a2",
+            "highlightingPolicySha256": "de7875940d01dc3e13807af6189a8282800cf3a30e7ff4fdbd3d70cbb0e73f69",
+            "legendList": {
+              "version": "3.3.10-sparse-layout.a6f5ba13",
+              "artifacts": {
+                "react.js": "8efe0f826c77c5dea0e8a655a498c295da29b308bd185c11669f2e44fb9d0ccd",
+                "react.mjs": "c84ce56c9e39beae50decd3b0c94b948a327e3a15d1589c6f3211a75a8ef05c7",
+                "react.d.ts": "cd728b2e26c5853802e1a32c7414694d7143164e492d6b4e9b11cb967f683e50"
+              }
+            }
+          }
+        },
+        "flutter": {
+          "builtAt": "2026-09-16T20:18:00.381Z",
+          "gitCommit": "e32f1aff807c0e04f9a45035b40c7d5242ccde79",
+          "gitDirty": true,
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/chat-history-comparison",
+          "renderingInputs": {
+            "contractSha256": "34a8b6cf58e800f4063d7c916cf52fe848e59baffa61c78da9757c4eae5b32a2",
+            "highlightingPolicySha256": "de7875940d01dc3e13807af6189a8282800cf3a30e7ff4fdbd3d70cbb0e73f69"
+          }
+        },
+        "gpui": {
+          "builtAt": "2026-09-16T20:18:01.122Z",
+          "gitCommit": "e32f1aff807c0e04f9a45035b40c7d5242ccde79",
+          "gitDirty": true,
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/chat-history-comparison",
+          "renderingInputs": {
+            "contractSha256": "34a8b6cf58e800f4063d7c916cf52fe848e59baffa61c78da9757c4eae5b32a2",
+            "highlightingPolicySha256": "de7875940d01dc3e13807af6189a8282800cf3a30e7ff4fdbd3d70cbb0e73f69"
+          }
+        },
+        "swiftui": {
+          "builtAt": "2026-09-16T20:18:03.118Z",
+          "gitCommit": "e32f1aff807c0e04f9a45035b40c7d5242ccde79",
+          "gitDirty": true,
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/chat-history-comparison",
+          "renderingInputs": {
+            "contractSha256": "34a8b6cf58e800f4063d7c916cf52fe848e59baffa61c78da9757c4eae5b32a2",
+            "highlightingPolicySha256": "de7875940d01dc3e13807af6189a8282800cf3a30e7ff4fdbd3d70cbb0e73f69"
+          }
+        },
+        "appkit": {
+          "builtAt": "2026-09-16T20:18:04.910Z",
+          "gitCommit": "e32f1aff807c0e04f9a45035b40c7d5242ccde79",
+          "gitDirty": true,
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/chat-history-comparison",
+          "renderingInputs": {
+            "contractSha256": "34a8b6cf58e800f4063d7c916cf52fe848e59baffa61c78da9757c4eae5b32a2",
+            "highlightingPolicySha256": "de7875940d01dc3e13807af6189a8282800cf3a30e7ff4fdbd3d70cbb0e73f69"
+          }
+        }
+      },
+      "version": 1
+    },
+    "hello-world": {
+      "version": 1,
+      "workload": "hello-world",
+      "builds": {
+        "react-native": {
+          "builtAt": "2026-09-16T20:18:43.542Z",
+          "gitCommit": "e32f1aff807c0e04f9a45035b40c7d5242ccde79",
+          "gitDirty": true,
+          "bundle": "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 React Native.app",
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/chat-history-comparison"
+        },
+        "legend-shell": {
+          "builtAt": "2026-09-16T20:19:33.894Z",
+          "gitCommit": "6c31130005cc058ce78661a21a59eac0a6b98045",
+          "gitDirty": true,
+          "bundle": "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 Legend Shell.app",
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/legend-apps"
+        },
+        "electron": {
+          "builtAt": "2026-09-16T20:19:34.688Z",
+          "gitCommit": "e32f1aff807c0e04f9a45035b40c7d5242ccde79",
+          "gitDirty": true,
+          "bundle": "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 Electron.app",
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/chat-history-comparison"
+        },
+        "tauri": {
+          "builtAt": "2026-09-16T20:19:47.101Z",
+          "gitCommit": "e32f1aff807c0e04f9a45035b40c7d5242ccde79",
+          "gitDirty": true,
+          "bundle": "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 Tauri.app",
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/chat-history-comparison"
+        },
+        "deno-webview": {
+          "builtAt": "2026-09-16T20:19:47.904Z",
+          "gitCommit": "e32f1aff807c0e04f9a45035b40c7d5242ccde79",
+          "gitDirty": true,
+          "bundle": "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 Deno WebView.app",
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/chat-history-comparison"
+        },
+        "deno-cef": {
+          "builtAt": "2026-09-16T20:19:49.557Z",
+          "gitCommit": "e32f1aff807c0e04f9a45035b40c7d5242ccde79",
+          "gitDirty": true,
+          "bundle": "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 Deno CEF.app",
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/chat-history-comparison"
+        },
+        "flutter": {
+          "builtAt": "2026-09-16T20:20:19.586Z",
+          "gitCommit": "e32f1aff807c0e04f9a45035b40c7d5242ccde79",
+          "gitDirty": true,
+          "bundle": "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 Flutter.app",
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/chat-history-comparison"
+        },
+        "gpui": {
+          "builtAt": "2026-09-16T20:20:20.334Z",
+          "gitCommit": "e32f1aff807c0e04f9a45035b40c7d5242ccde79",
+          "gitDirty": true,
+          "bundle": "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 GPUI.app",
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/chat-history-comparison"
+        },
+        "swiftui": {
+          "builtAt": "2026-09-16T20:20:20.884Z",
+          "gitCommit": "e32f1aff807c0e04f9a45035b40c7d5242ccde79",
+          "gitDirty": true,
+          "bundle": "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 SwiftUI.app",
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/chat-history-comparison"
+        },
+        "appkit": {
+          "builtAt": "2026-09-16T20:20:21.377Z",
+          "gitCommit": "e32f1aff807c0e04f9a45035b40c7d5242ccde79",
+          "gitDirty": true,
+          "bundle": "/Users/jay/Documents/code/legendapp/chat-history-comparison/.build/hello-world-benchmarks/Hello World \u2014 AppKit.app",
+          "repositoryPath": "/Users/jay/Documents/code/legendapp/chat-history-comparison"
+        }
+      }
+    }
+  }
+}

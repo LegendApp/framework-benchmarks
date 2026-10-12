@@ -9,7 +9,7 @@ import {
   textValue,
 } from "./json-range";
 import { Buffer } from "node:buffer";
-import { readFile } from "node:fs/promises";
+import { FileSource, type ByteSource } from "./file-source";
 import { performance } from "node:perf_hooks";
 import {
   type ChatDocument,
@@ -686,15 +686,16 @@ export function parseChatText(provider: ChatProvider, text: string) {
   return { ...result, parseMs, recordCount: lines.length, scanMs };
 }
 
-function scanLineRanges(source: Buffer) {
+function scanLineRanges(source: ByteSource) {
+  if (source instanceof FileSource) return source.lineRanges();
   const ranges: number[] = [];
   let start = 0;
   for (let index = 0; index <= source.length; index += 1) {
-    if (index !== source.length && source[index] !== 10) {
+    if (index !== source.length && source.at(index)! !== 10) {
       continue;
     }
     let end = index;
-    if (end > start && source[end - 1] === 13) {
+    if (end > start && source.at(end - 1)! === 13) {
       end -= 1;
     }
     if (end > start) {
@@ -705,7 +706,7 @@ function scanLineRanges(source: Buffer) {
   return ranges;
 }
 
-function* decodeLines(source: Buffer, ranges: number[]) {
+function* decodeLines(source: ByteSource, ranges: number[]) {
   for (let index = 0; index < ranges.length; index += 2) {
     try {
       yield parseJsonRange(source, ranges[index], ranges[index + 1]);
@@ -718,28 +719,41 @@ function* decodeLines(source: Buffer, ranges: number[]) {
 export async function openChatFile(provider: ChatProvider, path: string): Promise<ChatDocument> {
   const startedAt = performance.now();
   const loadStartedAt = performance.now();
-  const source = await readFile(path);
-  const loadMs = performance.now() - loadStartedAt;
-  const scanStartedAt = performance.now();
-  const ranges = scanLineRanges(source);
-  const scanMs = performance.now() - scanStartedAt;
-  const parseStartedAt = performance.now();
-  const result = provider === "codex"
-    ? parseCodex(decodeLines(source, ranges))
-    : parseClaude(decodeLines(source, ranges));
-  const parseMs = performance.now() - parseStartedAt;
-  return {
-    path,
-    provider,
-    recordCount: ranges.length / 2,
-    rows: result.rows,
-    sourceBytes: source.byteLength,
-    timing: {
-      loadMs,
-      nativeTotalMs: performance.now() - startedAt,
-      parseMs,
-      scanMs,
-    },
-    warningCount: result.warningCount,
-  };
+  const source = new FileSource(path);
+  try {
+    const loadMs = performance.now() - loadStartedAt;
+    const scanStartedAt = performance.now();
+    const ranges = scanLineRanges(source);
+    const scanMs = performance.now() - scanStartedAt;
+    const parseStartedAt = performance.now();
+    const result = provider === "codex"
+      ? parseCodex(decodeLines(source, ranges))
+      : parseClaude(decodeLines(source, ranges));
+    const parseMs = performance.now() - parseStartedAt;
+    const document: ChatDocument = {
+      path,
+      provider,
+      recordCount: ranges.length / 2,
+      rows: result.rows,
+      sourceBytes: source.byteLength,
+      timing: {
+        loadMs,
+        nativeTotalMs: performance.now() - startedAt,
+        parseMs,
+        scanMs,
+      },
+      warningCount: result.warningCount,
+    };
+    sources.set(document, source);
+    return document;
+  } catch (error) {
+    source.close();
+    throw error;
+  }
+}
+
+const sources = new WeakMap<ChatDocument, FileSource>();
+export function closeChatDocument(document: ChatDocument) {
+  sources.get(document)?.close();
+  sources.delete(document);
 }

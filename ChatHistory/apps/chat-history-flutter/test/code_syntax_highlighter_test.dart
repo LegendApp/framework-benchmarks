@@ -23,7 +23,7 @@ void main() {
   });
   test('all RN languages preserve Unicode and emit tokens', () {
     final fixtures = jsonDecode(
-      File('../../benchmarks/chat-history/syntax-highlighting-fixtures.json')
+      File('../../benchmark/syntax-highlighting-fixtures.json')
           .readAsStringSync(),
     ) as List;
     for (final fixture in fixtures) {

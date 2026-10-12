@@ -3,7 +3,7 @@ import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 const appRoot = resolve(import.meta.dir, "..");
-const repositoryRoot = resolve(appRoot, "../..");
+const repositoryRoot = resolve(appRoot, "../../..");
 const electronApp = resolve(appRoot, "node_modules/electron/dist/Electron.app");
 const outputApp = resolve(repositoryRoot, ".build/chat-history-benchmarks/Chat History — Electron.app");
 const resourcesApp = join(outputApp, "Contents/Resources/app");

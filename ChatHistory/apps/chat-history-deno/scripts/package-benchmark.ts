@@ -3,7 +3,7 @@ import { cpSync, mkdirSync, rmSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 const appRoot = resolve(import.meta.dir, "..");
-const repositoryRoot = resolve(appRoot, "../..");
+const repositoryRoot = resolve(appRoot, "../../..");
 
 for (const backend of ["WebView", "CEF"] as const) {
   const sourceApp = join(appRoot, "build", `Chat History - Deno ${backend}.app`);

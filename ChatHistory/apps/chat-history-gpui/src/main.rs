@@ -717,7 +717,20 @@ impl ChatHistory {
             .relative()
             .child(body)
             .child(header)
-
+            // GPUI-rendered transparency; no native overlay or backdrop blur.
+            .child(
+                div().absolute().bottom(px(20.0)).left(px(24.0)).right(px(24.0))
+                    .flex().justify_center().child(
+                        div().w_full().max_w(px(860.0)).h(px(60.0)).rounded(px(26.0))
+                            .border_1().border_color(palette.border)
+                            .bg(if self.is_dark(_window) { rgba(0x20212466) } else { rgba(0xf5f5f770) })
+                            .px(px(16.0)).flex().items_center().justify_between()
+                            .child(div().text_size(px(15.0)).text_color(palette.muted)
+                                .child("Send a test message that doesn't actually do anything"))
+                            .child(div().size(px(36.0)).rounded_full().bg(rgba(0x60a5fa4d))
+                                .text_color(rgb(0xffffff)).flex().items_center().justify_center().child("↑"))
+                    )
+            )
     }
 
     fn render_settings(&self, palette: Palette, cx: &mut Context<Self>) -> AnyElement {
@@ -838,18 +851,7 @@ impl ChatHistory {
 
 impl Render for ChatHistory {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let dark = self.is_dark(window);
-        #[cfg(target_os = "macos")]
-        {
-            use raw_window_handle::{HasWindowHandle, RawWindowHandle};
-            unsafe extern "C" { fn update_composer_glass(view: *mut std::ffi::c_void, dark: bool, hidden: bool); }
-            if let Ok(handle) = HasWindowHandle::window_handle(window) {
-                if let RawWindowHandle::AppKit(handle) = handle.as_raw() {
-                    unsafe { update_composer_glass(handle.ns_view.as_ptr(), dark, self.settings_open); }
-                }
-            }
-        }
-        let palette = Palette::new(dark);
+        let palette = Palette::new(self.is_dark(window));
         div()
             .relative()
             .size_full()
@@ -1078,6 +1080,18 @@ fn render_row(
                                 .rounded(px(16.0))
                                 .bg(palette.user)
                         })
+                        .when(load_images, |message| {
+                            message.children(row.image_sources.iter().filter_map(|source| {
+                                let path = PathBuf::from(source);
+                                path.exists().then(|| {
+                                    img(path)
+                                        .w(px(300.0))
+                                        .max_w(gpui::relative(1.0))
+                                        .mb(px(8.0))
+                                        .rounded(px(12.0))
+                                })
+                            }))
+                        })
                         .child(render_markdown(
                             &row.id,
                             markdown,
@@ -1097,15 +1111,7 @@ fn render_row(
                                         .child("Image or attachment omitted"),
                                 )
                             },
-                        )
-                        .when(load_images, |message| {
-                            message.children(row.image_sources.iter().filter_map(|source| {
-                                let path = PathBuf::from(source);
-                                path.exists().then(|| {
-                                    img(path).mt(px(9.0)).max_h(px(360.0)).rounded(px(8.0))
-                                })
-                            }))
-                        }),
+                        ),
                 )
                 .into_any_element()
         }

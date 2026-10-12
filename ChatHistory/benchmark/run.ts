@@ -23,15 +23,14 @@ import type {
   BenchmarkContentReadyEvent,
   BenchmarkFixtureManifest,
   BenchmarkViewportReadyEvent,
-} from "../../apps/chat-history-electron/src/model";
+} from "../apps/chat-history-electron/src/model";
+import { analyzeRecording, type VideoEvidence } from "./video";
 import {
-  analyzeRecording,
   startRecording,
   stopRecording,
   targetRecording,
-  type VideoEvidence,
   type WindowInfo,
-} from "./video";
+} from "../../shared/video";
 
 type AppName =
   | "appkit"
@@ -113,13 +112,13 @@ const buildRoot = resolve(repositoryRoot, ".build/chat-history-benchmarks");
 const manifestPath = resolve(import.meta.dir, "fixtures.local.json");
 const resultsRoot = resolve(import.meta.dir, "results");
 const windowInfoExecutable = resolve(buildRoot, "chat-history-window-info");
-const windowInfoSource = resolve(import.meta.dir, "window-info.swift");
+const windowInfoSource = resolve(import.meta.dir, "../../shared/capture/window-info.swift");
 const launchAppExecutable = resolve(buildRoot, "chat-history-launch-app");
-const launchAppSource = resolve(import.meta.dir, "launch-app.swift");
+const launchAppSource = resolve(import.meta.dir, "../../shared/capture/launch-app.swift");
 const captureApp = resolve(buildRoot, "Chat History Benchmark Capture.app");
 const captureExecutable = resolve(captureApp, "Contents/MacOS/ChatHistoryCapture");
-const captureInfo = resolve(import.meta.dir, "CaptureInfo.plist");
-const captureSource = resolve(import.meta.dir, "capture-screen.swift");
+const captureInfo = resolve(import.meta.dir, "../../shared/capture/CaptureInfo.plist");
+const captureSource = resolve(import.meta.dir, "../../shared/capture/capture-screen.swift");
 const recordVideo = !process.argv.includes("--no-video");
 const allowLockedSession = process.argv.includes("--allow-locked-session");
 const memorySampleCount = 3;
@@ -809,6 +808,16 @@ function markdown(results: AppResult[]) {
 }
 
 async function main() {
+  const appBundle = option("--app-bundle");
+  if (appBundle) {
+    const selected = selectedApps();
+    if (selected.length !== 1 || !option("--build-manifest")) {
+      throw new Error("--app-bundle requires one --app and its --build-manifest provenance");
+    }
+    const definition = apps[selected[0]];
+    definition.bundle = resolve(appBundle);
+    definition.executable = join(definition.bundle, "Contents/MacOS", basename(definition.executable));
+  }
   buildBenchmarkHelpers();
   assertDesktopSession();
   if (recordVideo) {
@@ -833,7 +842,7 @@ async function main() {
   const iterations = Math.max(1, Number(option("--iterations") ?? 10));
   const warmups = Math.max(0, Number(option("--warmups") ?? 2));
   const requestedApps = selectedApps();
-  const buildManifest = JSON.parse(readFileSync(resolve(buildRoot, "build-manifest.json"), "utf8")) as {
+  const buildManifest = JSON.parse(readFileSync(resolve(option("--build-manifest") ?? join(buildRoot, "build-manifest.json")), "utf8")) as {
     builds: Record<string, { grammarPack?: GrammarPackRecord; renderingInputs?: RenderingInputs }>;
   };
   const inputRecords = Object.fromEntries(requestedApps.map(app => [app,
@@ -919,9 +928,7 @@ async function main() {
     renderingContract,
     renderingInputRecords: inputRecords,
     discardedAttempts,
-    buildManifest: existsSync(resolve(buildRoot, "build-manifest.json"))
-      ? JSON.parse(readFileSync(resolve(buildRoot, "build-manifest.json"), "utf8"))
-      : undefined,
+    buildManifest,
     fixtures: fixtureManifest.fixtures,
     gitCommit: command("git", ["rev-parse", "HEAD"]),
     machine: {

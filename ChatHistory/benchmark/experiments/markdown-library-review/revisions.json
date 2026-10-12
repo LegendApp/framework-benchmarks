@@ -1,0 +1,42 @@
+{
+  "liyanan": {
+    "repository": "https://github.com/LiYanan2004/MarkdownView",
+    "revision": "700fe702a29349007a3e6ff5064e35128f8af0a6"
+  },
+  "richtext": {
+    "repository": "https://github.com/LiYanan2004/RichText",
+    "revision": "a2fb191988f6f2ce60574962c96a0e1846c36dae"
+  },
+  "markdownui": {
+    "repository": "https://github.com/gonzalezreal/swift-markdown-ui",
+    "revision": "8371aeb32f35795a9e559029fb08613355733626"
+  },
+  "textual": {
+    "repository": "https://github.com/gonzalezreal/textual",
+    "revision": "01b51875a5406eefc95f52a058cb059e7bc94dc4"
+  },
+  "microsoft": {
+    "repository": "https://github.com/microsoft/SwiftStreamingMarkdown",
+    "revision": "95bb755a9b23a1aea8682b9ebc912cb72b176c95"
+  },
+  "nodes": {
+    "repository": "https://github.com/nodes-app/swift-markdown-engine",
+    "revision": "08ff3c07b198ed639f595d0279ebac62c0410bc7"
+  },
+  "no-problem": {
+    "repository": "https://github.com/no-problem-dev/swift-markdown-view",
+    "revision": "5e2e23050048e9f3ab248601fbe0eb7717c38f30"
+  },
+  "humaninterface": {
+    "repository": "https://github.com/HumanInterfaceDesign/MarkdownView",
+    "revision": "4e2ad8961ab07a83e555865a87c4a5a9edb5c3c6"
+  },
+  "enriched": {
+    "repository": "https://github.com/software-mansion/enriched-markdown",
+    "revision": "019b88facf23de7b84a1b044e368e49a62b6d66c"
+  },
+  "lakr": {
+    "repository": "https://github.com/Lakr233/MarkdownView",
+    "revision": "4abc4817fa5211f05e25fbf7a6295fb8e9fcfd90"
+  }
+}

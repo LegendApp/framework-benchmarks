@@ -1,6 +1,10 @@
 # Desktop framework comparison report
 
+**Updated chat measurements:** [September 23–24 full ten-framework rerun](../benchmarks/chat-refresh-2026-09-23/RESULTS.md). The tables and screenshots below retain their stated historical dates; use the linked refresh for current chat timings, memory, and sizes.
+
 September 17, 2026 · macOS · Apple M4 · ARM64
+
+**Later results:** [September 19 RN update and full ten-framework reference table](REACT_NATIVE_BENCHMARK_RESULTS.md). The original tables below retain the historical synchronized run.
 
 This project compares nine implementations of a chat-history browser and nine Hello World apps. The chat workload browses the same pinned transcripts with Markdown and syntax highlighting; Hello World isolates the overhead of opening a window and showing a greeting. These results describe the implementations in this repository, rather than a universal ranking of frameworks.
 
@@ -22,7 +26,7 @@ Current sizes are paired with the earlier controlled performance measurements as
 | App | App language | UI | App MiB | Pack MiB | Total MiB | Window ms | First content ms | Initial memory MiB |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | AppKit | Swift | Native | 3.2 | 1.3 | 4.5 | 226.9 | 318.9 | 42.4 |
-| GPUI | Rust + Objective-C composer | Canvas + native composer | 9.9 | 0.8 | 10.7 | 226.4 | 335.5 | 289.0 |
+| GPUI (recorded build) | Rust + Objective-C composer | Canvas + native composer | 9.9 | 0.8 | 10.7 | 226.4 | 335.5 | 289.0 |
 | React Native | TypeScript / React; C++ native modules | Native | 17.8 | 22.5 | 40.3 | 243.4 | 406.3 | 52.8 |
 | Tauri | TypeScript / React + Rust | Web | 11.5 | 0.1 | 11.6 | 244.0 | 544.0 | 363.5 |
 | SwiftUI | Swift | Native | 3.7 | 1.3 | 5.0 | 268.7 | 668.8 | 82.6 |
@@ -77,18 +81,18 @@ Small Hello World differences near the recording cadence should be treated as ef
 
 These are actual September 17 recordings after the composer blur update of a long synthetic chat scrolled to the top, with text continuing behind the composer. Each frame is taken 600 ms after the top-viewport event. The same prose, lists, and TypeScript code appear in all nine apps; this is visual evidence, not the private benchmark corpus. Flutter is ARM64-only. The web/canvas apps have plain sidebars; native stacks retain their split-view treatment.
 
-### Composer material comparison
+### Composer material comparison (current source; older screenshots retained)
 
 | Apps | Composer effect | Blurs the chat beneath it? |
 | --- | --- | --- |
 | React Native, AppKit, SwiftUI | Native Liquid Glass, regular style (`NSGlassEffectView`) | Yes |
 | Electron, Tauri, Deno WebView, Deno CEF | CSS backdrop blur, 10 px, saturation 1.2 | Yes |
 | Flutter | Gaussian `BackdropFilter`, sigma 10 | Yes |
-| GPUI 0.2.2 | Native Liquid Glass overlay above the GPU-rendered chat | Yes |
+| GPUI 0.2.2 | GPUI translucent fill; no backdrop blur | No |
 
 Native Liquid Glass is more than Gaussian blur. Conventional web and Flutter blur can soften underlying text but do not reproduce the system material's full behavior. Static dark-mode images may make these differences subtle, so each screenshot is labeled by its actual implementation.
 
-**Rendering distinction:** GPUI now hosts a native glass composer; its transcript remains canvas-rendered. All apps blur the text beneath the composer, but CSS/Flutter Gaussian blur and native Liquid Glass have different rendering behavior and costs. The earlier timing tables predate the new GPUI overlay. See the [material audit](COMPOSER_MATERIALS.md) for settings and validation.
+**Rendering distinction:** The current GPUI source draws its composer itself, using transparency without backdrop blur. Its former AppKit overlay and Flutter's custom native window material were removed on September 19. Retained GPUI/Flutter screenshots and app-size figures predate the removal; refresh them before claiming current visuals or sizes. Timing/memory figures are unchanged historical measurements. See the [material audit](COMPOSER_MATERIALS.md).
 
 The short pros and cons below are engineering assessments, informed by the implementation and linked framework documentation; they are not additional benchmark measurements.
 
@@ -168,7 +172,7 @@ Dart widgets draw through Flutter’s rendering engine rather than mapping the c
 
 [View the light-mode composer](report-assets/flutter-light.png)
 
-*Composer: Gaussian backdrop blur. Long chat shown behind the input surface.*
+*Composer: Flutter Gaussian backdrop blur, retained. Historical screenshot includes the native window background removed on September 19; a new capture is pending.*
 
 **Pros:** A composable widget system and framework-owned rendering support consistent custom UI across platforms. The ARM64-only bundles are much smaller than the earlier universal builds.
 
@@ -176,13 +180,13 @@ Dart widgets draw through Flutter’s rendering engine rather than mapping the c
 
 ### GPUI
 
-Rust application code uses GPUI’s GPU-rendered elements; this benchmark uses GPUI 0.2.2. Its transcript and sidebar are canvas-rendered; its composer now uses a macOS-native Liquid Glass overlay. [GPUI documentation](https://github.com/zed-industries/zed/blob/main/crates/gpui/README.md).
+Rust application code uses GPUI’s GPU-rendered elements; this benchmark uses GPUI 0.2.2. Its transcript, sidebar, and composer are now GPUI-rendered. The composer uses transparency rather than native Liquid Glass or backdrop blur. [GPUI documentation](https://github.com/zed-industries/zed/blob/main/crates/gpui/README.md).
 
 ![GPUI chat-history app showing a long synthetic chat behind the composer](report-assets/gpui.png)
 
 [View the light-mode composer](report-assets/gpui-light.png)
 
-*Composer: Native Liquid Glass overlay. Long chat shown behind the input surface.*
+*Historical screenshot: the removed native Liquid Glass overlay. Current source uses a GPUI-rendered translucent composer; a new capture is pending.*
 
 **Pros:** Direct control over layout, rendering, and data structures without a browser runtime. This implementation has a small bundle and competitive measured first-content time.
 
@@ -230,7 +234,7 @@ Hello World and Chat History implementations now exist under `apps/hello-world-c
 
 **Cons:** the desktop distribution includes a JVM and Skia runtime; custom-rendered widgets need deliberate macOS integration. The current benchmark implementation targets text-only histories and uses conventional blur rather than Liquid Glass.
 
-This candidate is not part of the historical tables above. See [build, optimization and fairness notes](COMPOSE_MULTIPLATFORM.md); a fresh full measurement run is needed before adding it to a published ranking.
+This candidate is not part of the historical tables above. [September 18 Compose measurements and updated reference tables](COMPOSE_BENCHMARK_RESULTS.md) now include the full ten-run protocol for both workloads, with cross-run limitations disclosed. See also [build, optimization and fairness notes](COMPOSE_MULTIPLATFORM.md).
 
 ![Compose Multiplatform rendering the shared long-chat fixture](report-assets/compose.png)
 

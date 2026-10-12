@@ -1,0 +1,29 @@
+--- a/apps/chat-history-swiftui/Sources/ChatHistorySwiftUI/main.swift
++++ b/apps/chat-history-swiftui/Sources/ChatHistorySwiftUI/main.swift
+@@ -354,8 +354,8 @@
+       ScrollViewReader { proxy in
+         List {
+           ForEach(rows.indices, id: \.self) { index in
+-            TranscriptRow(
+-              loadImages: settings.loadImages, row: rows[index], markdownCache: markdownCache
++            LazyTranscriptRow(
++              loadImages: settings.loadImages, rows: rows, index: index, markdownCache: markdownCache
+             )
+             .padding(.top, index == 0 ? 12 : 0)
+             .id(index)
+@@ -756,3 +756,15 @@
+ private func formatMs(_ value: Double) -> String {
+   String(format: "%.2f", value)
+ }
++
++private struct LazyTranscriptRow: View {
++ let loadImages: Bool
++ let rows: ChatRows
++ let index: Int
++ let markdownCache: TranscriptMarkdownCache
++ var body: some View {
++   VStack(spacing: 0) {
++     TranscriptRow(loadImages: loadImages, row: rows[index], markdownCache: markdownCache)
++   }
++ }
++}

@@ -20,7 +20,7 @@ class RenderingTest {
     fun everySharedLanguageAndAliasHighlightsWithoutChangingText() {
         val fixtures =
             Json.parseToJsonElement(
-                    File("benchmarks/chat-history/syntax-highlighting-fixtures.json").readText()
+                    File("ChatHistory/benchmark/syntax-highlighting-fixtures.json").readText()
                 )
                 .jsonArray
         for (fixture in fixtures) {

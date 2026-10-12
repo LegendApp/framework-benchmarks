@@ -1,0 +1,212 @@
+--- a/apps/chat-history-appkit/Sources/ChatHistoryAppKit/main.swift
++++ b/apps/chat-history-appkit/Sources/ChatHistoryAppKit/main.swift
+@@ -1,6 +1,71 @@
+ import AppKit
+ import ChatHistoryCore
+ import ChatHistoryMarkdown
++
++@MainActor
++private enum AppKitProbe {
++  nonisolated static let variant = ProcessInfo.processInfo.environment["CHAT_HISTORY_APPKIT_VARIANT"] ?? "baseline"
++  static let output = ProcessInfo.processInfo.environment["CHAT_HISTORY_APPKIT_TRACE"].flatMap { $0.isEmpty ? nil : $0 }
++  static var events: [[String: Any]] = []
++  static func mark(_ event: String, _ detail: String = "") {
++    guard output != nil else { return }
++    events.append(["event": event, "detail": detail, "timestampMs": Date().timeIntervalSince1970 * 1000])
++  }
++  nonisolated static func enqueue(_ block: @escaping @Sendable () -> Void) {
++    if variant == "main-queue" {
++      DispatchQueue.main.async(execute: block)
++    } else {
++      RunLoop.main.perform(inModes: [.common], block: block)
++    }
++  }
++  static func install() {
++    guard output != nil else { return }
++    let observer = CFRunLoopObserverCreateWithHandler(nil, CFRunLoopActivity.beforeWaiting.rawValue, true, 0) { _, _ in
++      MainActor.assumeIsolated { mark("beforeWaiting") }
++    }
++    CFRunLoopAddObserver(CFRunLoopGetMain(), observer, .commonModes)
++    DispatchQueue.main.asyncAfter(deadline: .now() + 12) {
++      if let output, let data = try? JSONSerialization.data(withJSONObject: events) {
++        try? data.write(to: URL(fileURLWithPath: output))
++      }
++      CFRunLoopRemoveObserver(CFRunLoopGetMain(), observer, .commonModes)
++    }
++  }
++}
++
++@MainActor
++private final class ProbeRootView: NSView {
++  override func layout() {
++    AppKitProbe.mark("rootLayout-start")
++    super.layout()
++    AppKitProbe.mark("rootLayout-end")
++  }
++  override func viewWillDraw() {
++    AppKitProbe.mark("rootWillDraw")
++    super.viewWillDraw()
++  }
++  override func draw(_ dirtyRect: NSRect) {
++    AppKitProbe.mark("rootDraw")
++    super.draw(dirtyRect)
++  }
++}
++
++@MainActor
++private final class ProbeTableView: NSTableView {
++  override func layout() {
++    AppKitProbe.mark("tableLayout-start")
++    super.layout()
++    AppKitProbe.mark("tableLayout-end")
++  }
++  override func viewWillDraw() {
++    AppKitProbe.mark("tableWillDraw")
++    super.viewWillDraw()
++  }
++  override func draw(_ dirtyRect: NSRect) {
++    AppKitProbe.mark("tableDraw")
++    super.draw(dirtyRect)
++  }
++}
+ 
+ @main
+ @MainActor
+@@ -19,6 +84,8 @@
+   private var window: NSWindow?
+ 
+   func applicationDidFinishLaunching(_ notification: Notification) {
++    AppKitProbe.install()
++    AppKitProbe.mark("launch")
+     let root = ChatSplitViewController()
+     let window = NSWindow(
+       contentRect: NSRect(x: 0, y: 0, width: 1_280, height: 720),
+@@ -36,12 +103,15 @@
+     root.applyAppearance(to: window)
+     window.setFrame(NSRect(x: 0, y: 0, width: 1_280, height: 720), display: false)
+     window.center()
++    if AppKitProbe.variant == "no-window-animation" { window.animationBehavior = .none }
+     window.makeKeyAndOrderFront(nil)
+     NSApp.activate()
+     self.window = window
+     DispatchQueue.main.async {
+       ChatBenchmark.emitWindowShown()
++      AppKitProbe.mark("warmup-start")
+       _ = RichMarkdownRenderer.render("Warmup")
++      AppKitProbe.mark("warmup-end")
+     }
+   }
+ 
+@@ -215,7 +285,7 @@
+         do {
+           let document = try openChatFile(provider: summary.provider, path: summary.path)
+           // Window presentation can defer default-mode work, so deliver results in common modes.
+-          RunLoop.main.perform(inModes: [.common]) { [weak self] in
++          AppKitProbe.enqueue { [weak self] in
+             MainActor.assumeIsolated {
+               guard let self, self.generation == currentGeneration else { return }
+               self.content.show(document: document, openedAt: openedAt) { [weak self] durationMs in
+@@ -225,7 +295,7 @@
+           }
+         } catch {
+           let message = error.localizedDescription
+-          RunLoop.main.perform(inModes: [.common]) { [weak self] in
++          AppKitProbe.enqueue { [weak self] in
+             MainActor.assumeIsolated {
+               guard let self, self.generation == currentGeneration else { return }
+               self.content.showError(message)
+@@ -328,7 +398,7 @@
+     let scroll = NSScrollView()
+     scroll.documentView = tableView
+     scroll.drawsBackground = false
+-    scroll.hasVerticalScroller = true
++    scroll.hasVerticalScroller = AppKitProbe.variant != "no-sidebar-scroller"
+     scroll.translatesAutoresizingMaskIntoConstraints = false
+     root.addSubview(scroll)
+     NSLayoutConstraint.activate([
+@@ -522,10 +592,11 @@
+   private let emptyLabel = NSTextField(labelWithString: "Scanning recent chats…")
+   private let metricsLabel = NSTextField(labelWithString: "")
+   private let scroll = NSScrollView()
+-  private let tableView = NSTableView()
++  private let tableView: NSTableView = AppKitProbe.output == nil ? NSTableView() : ProbeTableView()
+ 
+   override func loadView() {
+-    let root = NSView()
++    let root: NSView = AppKitProbe.output == nil ? NSView() : ProbeRootView()
++    if AppKitProbe.variant == "layer-root" { root.wantsLayer = true }
+     metricsLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+     metricsLabel.backgroundColor = .controlBackgroundColor
+     metricsLabel.drawsBackground = true
+@@ -617,6 +688,7 @@
+     openedAt: Double,
+     onReady: @escaping @MainActor @Sendable (Double) -> Void
+   ) {
++    AppKitProbe.mark("show-start", document.path)
+     isLoading = false
+     self.document = document
+     firstPaintMs = nil
+@@ -627,8 +699,13 @@
+     updateMetricsVisibility()
+     updateMetrics()
+     tableView.reloadData()
++    AppKitProbe.mark("show-reloaded")
++    if AppKitProbe.variant == "immediate-bottom" {
++      settleVisibleLayout(document: document, openedAt: openedAt, onReady: onReady)
++      return
++    }
+     // Keep the first layout moving while AppKit presents the window in a non-default mode.
+-    RunLoop.main.perform(inModes: [.common]) { [weak self] in
++    AppKitProbe.enqueue { [weak self] in
+       MainActor.assumeIsolated {
+         self?.settleVisibleLayout(document: document, openedAt: openedAt, onReady: onReady)
+       }
+@@ -646,6 +723,8 @@
+   }
+ 
+   func tableView(_ tableView: NSTableView, viewFor column: NSTableColumn?, row: Int) -> NSView? {
++    AppKitProbe.mark("cell-start", String(row))
++    defer { AppKitProbe.mark("cell-end", String(row)) }
+     guard let item = document?.rows[row] else { return nil }
+     let identifier = NSUserInterfaceItemIdentifier("transcript-row")
+     let cell =
+@@ -656,7 +735,10 @@
+       : renderedMarkdown[item.id]
+         ?? RichMarkdownRenderer.render(
+           item.markdown, imagePolicy: settings.loadImages ? .loadLocal : .omit)
+-    if let markdown { renderedMarkdown[item.id] = markdown }
++    if let markdown {
++      renderedMarkdown[item.id] = markdown
++      AppKitProbe.mark("markdown-length", "\(row):\(markdown.length)")
++    }
+     cell.configure(
+       with: item,
+       markdown: markdown,
+@@ -681,6 +763,7 @@
+     openedAt: Double,
+     onReady: @escaping @MainActor @Sendable (Double) -> Void
+   ) {
++    AppKitProbe.mark("settle-start")
+     guard self.document?.path == document.path else { return }
+     if !document.rows.isEmpty { tableView.scrollRowToVisible(document.rows.count - 1) }
+     tableView.layoutSubtreeIfNeeded()
+@@ -688,7 +771,11 @@
+     let durationMs = ProcessInfo.processInfo.systemUptime * 1_000 - openedAt
+     firstPaintMs = durationMs
+     updateMetrics()
++    AppKitProbe.mark("settle-ready")
+     onReady(durationMs)
++    if AppKitProbe.variant == "update-windows" { NSApp.updateWindows() }
++    if AppKitProbe.variant == "force-display" { view.window?.display() }
++    if AppKitProbe.variant == "flush-transaction" { CATransaction.flush() }
+   }
+ 
+   private func updateMetricsVisibility() {
+@@ -781,6 +868,7 @@
+     label.maximumNumberOfLines = 0
+     label.lineBreakMode = .byWordWrapping
+     label.attributedStringValue = markdown
++    if AppKitProbe.variant == "bounded-text" { label.preferredMaxLayoutWidth = 820 }
+     if user {
+       label.drawsBackground = true
+       label.backgroundColor = .controlBackgroundColor

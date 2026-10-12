@@ -1,3 +1,4 @@
+mod text_source;
 mod deferred_text;
 mod json_range;
 pub use deferred_text::DeferredText;

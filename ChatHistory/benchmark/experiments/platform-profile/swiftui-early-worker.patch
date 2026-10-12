@@ -1,0 +1,18 @@
+--- a/apps/chat-history-swiftui/Sources/ChatHistorySwiftUI/main.swift
++++ b/apps/chat-history-swiftui/Sources/ChatHistorySwiftUI/main.swift
+@@ -100,11 +100,12 @@
+     isLoading = true
+     openedAt = ProcessInfo.processInfo.systemUptime * 1_000
+     PlatformTrace.mark("document.request")
++    let loadingTask = Task.detached(priority: .userInitiated) {
++      try openChatFile(provider: summary.provider, path: summary.path)
++    }
+     Task {
+       do {
+-        let loaded = try await Task.detached(priority: .userInitiated) {
+-          try openChatFile(provider: summary.provider, path: summary.path)
+-        }.value
++        let loaded = try await loadingTask.value
+         guard generation == currentGeneration else { return }
+         PlatformTrace.mark("document.delivered")
+         document = loaded

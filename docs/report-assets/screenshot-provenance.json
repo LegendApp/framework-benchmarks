@@ -151,12 +151,12 @@
   },
   {
     "app": "compose",
-    "material": "Compose Gaussian backdrop blur",
-    "videoSecond": 3.50221533203125,
+    "material": "Skia Gaussian backdrop blur (sigma 10)",
+    "videoSecond": 5.088325439453125,
     "phase": "top",
-    "timestampMs": 1789760420107,
+    "timestampMs": 1789803028175,
     "appearance": "dark",
-    "sourceDirectory": "benchmarks/chat-history/results/compose-visual-1789760416410-dark",
+    "sourceDirectory": "benchmarks/chat-history/results/compose-visual-1789803022833-dark",
     "file": "compose.png",
     "crop": {
       "height": 720,
@@ -167,12 +167,12 @@
   },
   {
     "app": "compose",
-    "material": "Compose Gaussian backdrop blur",
-    "videoSecond": 3.533253173828125,
+    "material": "Skia Gaussian backdrop blur (sigma 10)",
+    "videoSecond": 3.580177978515625,
     "phase": "top",
-    "timestampMs": 1789760437038,
+    "timestampMs": 1789803051333,
     "appearance": "light",
-    "sourceDirectory": "benchmarks/chat-history/results/compose-visual-1789760433315-light",
+    "sourceDirectory": "benchmarks/chat-history/results/compose-visual-1789803047566-light",
     "file": "compose-light.png",
     "crop": {
       "height": 720,

@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 
 const appRoot = resolve(import.meta.dir, "..");
-const repositoryRoot = resolve(appRoot, "../..");
+const repositoryRoot = resolve(appRoot, "../../..");
 const sourceApp = resolve(
   appRoot,
   "build/macos/Build/Products/Release/Chat History - Flutter.app",

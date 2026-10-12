@@ -1,5 +1,5 @@
 import hljs from "highlight.js/lib/core";
-import policy from "../../../benchmarks/chat-history/syntax-highlighting-policy.json";
+import policy from "../../../benchmark/syntax-highlighting-policy.json";
 
 let ready = false;
 export async function initializeGrammarPack(source: string) {

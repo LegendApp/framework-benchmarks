@@ -1,6 +1,6 @@
+import 'file_source.dart';
+
 import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
 
 import 'json_range.dart';
 
@@ -795,58 +795,49 @@ _ParseResult _parseClaude(Iterable<dynamic> lines) {
 ChatDocument openChatFile(ChatProvider provider, String path) {
   final total = Stopwatch()..start();
   final load = Stopwatch()..start();
-  final source = File(path).readAsBytesSync();
-  load.stop();
+  final source = FileSource(path);
+  try {
+    load.stop();
 
-  final scan = Stopwatch()..start();
-  final ranges = <int>[];
-  var start = 0;
-  for (var index = 0; index <= source.length; index += 1) {
-    if (index != source.length && source[index] != 10) {
-      continue;
-    }
-    var end = index;
-    if (end > start && source[end - 1] == 13) {
-      end -= 1;
-    }
-    if (end > start) {
-      ranges
-        ..add(start)
-        ..add(end);
-    }
-    start = index + 1;
+    final scan = Stopwatch()..start();
+    final ranges = source.lineRanges();
+    scan.stop();
+
+    final parse = Stopwatch()..start();
+    final lines = _DecodedLines(source, ranges);
+    final parsed = provider == ChatProvider.codex
+        ? _parseCodex(lines)
+        : _parseClaude(lines);
+    parse.stop();
+    total.stop();
+
+    final document = ChatDocument(
+      path: path,
+      provider: provider,
+      recordCount: ranges.length ~/ 2,
+      rows: parsed.rows,
+      sourceBytes: source.length,
+      timing: NativeTiming(
+        loadMs: _elapsedMs(load),
+        nativeTotalMs: _elapsedMs(total),
+        parseMs: _elapsedMs(parse),
+        scanMs: _elapsedMs(scan),
+      ),
+      warningCount: parsed.warningCount,
+    );
+    _sources[document] = source;
+    return document;
+  } catch (_) {
+    source.close();
+    rethrow;
   }
-  scan.stop();
-
-  final parse = Stopwatch()..start();
-  final lines = _DecodedLines(source, ranges);
-  final parsed = provider == ChatProvider.codex
-      ? _parseCodex(lines)
-      : _parseClaude(lines);
-  parse.stop();
-  total.stop();
-
-  return ChatDocument(
-    path: path,
-    provider: provider,
-    recordCount: ranges.length ~/ 2,
-    rows: parsed.rows,
-    sourceBytes: source.length,
-    timing: NativeTiming(
-      loadMs: _elapsedMs(load),
-      nativeTotalMs: _elapsedMs(total),
-      parseMs: _elapsedMs(parse),
-      scanMs: _elapsedMs(scan),
-    ),
-    warningCount: parsed.warningCount,
-  );
 }
 
 class _DecodedLines extends Iterable<dynamic> {
   const _DecodedLines(this.source, this.ranges);
 
   final List<int> ranges;
-  final Uint8List source;
+  final List<int> source;
 
   @override
   Iterator<dynamic> get iterator => _DecodedLineIterator(source, ranges);
@@ -856,7 +847,7 @@ class _DecodedLineIterator implements Iterator<dynamic> {
   _DecodedLineIterator(this.source, this.ranges);
 
   final List<int> ranges;
-  final Uint8List source;
+  final List<int> source;
   var _rangeIndex = 0;
   dynamic _value;
 
@@ -880,4 +871,10 @@ class _DecodedLineIterator implements Iterator<dynamic> {
     _rangeIndex += 2;
     return true;
   }
+}
+
+final _sources = Expando<FileSource>();
+void closeChatDocument(ChatDocument document) {
+  _sources[document]?.close();
+  _sources[document] = null;
 }

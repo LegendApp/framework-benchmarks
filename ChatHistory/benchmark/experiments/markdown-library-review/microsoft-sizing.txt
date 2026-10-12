@@ -1,0 +1,14 @@
+heading width 886.0 height 141.0 finite true
+heading width 400.0 height 141.0 finite true
+nested-code width 886.0 height 193.5 finite true
+nested-code width 400.0 height 193.5 finite true
+table width 886.0 height 86.0 finite true
+table width 400.0 height 86.0 finite true
+quote width 886.0 height 44.0 finite true
+quote width 400.0 height 44.0 finite true
+fixture-0-row-0 width 886.0 height 1462.0 finite true
+fixture-0-row-0 width 400.0 height 1912.0 finite true
+fixture-0-row-7 width 886.0 height 1435.0 finite true
+fixture-0-row-7 width 400.0 height 2060.0 finite true
+fixture-1-row-166 width 886.0 height 9586.0 finite true
+fixture-1-row-166 width 400.0 height 15270.5 finite true

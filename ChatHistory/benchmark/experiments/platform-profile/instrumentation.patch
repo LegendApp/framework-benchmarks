@@ -1,0 +1,520 @@
+--- a/apps/chat-history-appkit/Sources/ChatHistoryAppKit/main.swift
++++ b/apps/chat-history-appkit/Sources/ChatHistoryAppKit/main.swift
+@@ -6,7 +6,8 @@
+ @MainActor
+ enum ChatHistoryAppKitApp {
+   static func main() {
+-    let app = NSApplication.shared
++    PlatformTrace.mark("main.enter")
++    let app = PlatformTrace.measure("application.shared") { NSApplication.shared }
+     let delegate = AppDelegate()
+     app.delegate = delegate
+     app.setActivationPolicy(.regular)
+@@ -19,7 +20,8 @@
+   private var window: NSWindow?
+ 
+   func applicationDidFinishLaunching(_ notification: Notification) {
+-    let root = ChatSplitViewController()
++    let traceStart = PlatformTrace.now(); defer { PlatformTrace.end("didFinishLaunching", traceStart) }
++    let root = PlatformTrace.measure("root.init") { ChatSplitViewController() }
+     let window = NSWindow(
+       contentRect: NSRect(x: 0, y: 0, width: 1_280, height: 720),
+       styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+@@ -31,12 +33,13 @@
+     window.titlebarAppearsTransparent = true
+     window.titlebarSeparatorStyle = .shadow
+     window.toolbarStyle = .unified
+-    window.contentViewController = root
++    PlatformTrace.measure("window.attachRoot") { window.contentViewController = root }
+     window.toolbar = root.makeToolbar()
+     root.applyAppearance(to: window)
+     window.setFrame(NSRect(x: 0, y: 0, width: 1_280, height: 720), display: false)
+     window.center()
+-    window.makeKeyAndOrderFront(nil)
++    if PlatformTrace.variant == "no-window-animation" { window.animationBehavior = .none }
++    PlatformTrace.measure("window.makeKey") { window.makeKeyAndOrderFront(nil) }
+     NSApp.activate()
+     self.window = window
+     DispatchQueue.main.async {
+@@ -163,8 +166,10 @@
+   private func loadCatalog(preferredId: String? = nil) async {
+     let limit = benchmarkConfig == nil ? settings.recentChatLimit : Int.max
+     let discoveryStartedAt = ProcessInfo.processInfo.systemUptime * 1_000
+-    let result = await Task.detached(priority: .userInitiated) { getRecentChats(limit: limit) }
++    PlatformTrace.mark("catalog.request")
++    let result = await Task.detached(priority: .userInitiated) { PlatformTrace.measure("catalog.work") { getRecentChats(limit: limit) } }
+       .value
++    PlatformTrace.mark("catalog.delivered")
+     catalogLabel.stringValue = "catalog \(formatMs(result.nativeTotalMs)) ms"
+     if let benchmarkConfig {
+       benchmarkDiscoveryMs = ProcessInfo.processInfo.systemUptime * 1_000 - discoveryStartedAt
+@@ -210,8 +215,10 @@
+       settings.selectedId = summary.id
+       ChatSettingsStore.save(settings)
+     }
++    PlatformTrace.phase(phase?.rawValue ?? "interactive")
+     let openedAt = ProcessInfo.processInfo.systemUptime * 1_000
+     content.showLoading()
++    PlatformTrace.mark("document.request")
+     parserQueue.async { [weak self] in
+       autoreleasepool {
+         do {
+@@ -220,6 +227,7 @@
+           RunLoop.main.perform(inModes: [.common]) { [weak self] in
+             MainActor.assumeIsolated {
+               guard let self, self.generation == currentGeneration else { return }
++              PlatformTrace.mark("document.delivered")
+               self.content.show(document: document, openedAt: openedAt) { [weak self] durationMs in
+                 self?.contentReady(document: document, durationMs: durationMs, phase: phase)
+               }
+@@ -348,7 +356,7 @@
+     items.append(.spacer)
+     items.append(.header(.claude))
+     items += summaries.filter { $0.provider == .claude }.map(Item.summary)
+-    tableView.reloadData()
++    PlatformTrace.measure("table.reload") { tableView.reloadData() }
+   }
+ 
+   func summary(id: String) -> ChatSummary? {
+@@ -532,6 +540,7 @@
+   private var measuredColumnWidth: CGFloat = 0
+ 
+   override func viewDidLayout() {
++    let traceStart=PlatformTrace.now(); defer { PlatformTrace.end("content.layout",traceStart) }
+     super.viewDidLayout()
+     updateTextMeasurementWidth()
+   }
+@@ -643,7 +652,7 @@
+     demo.onChange = { [weak self] in
+       guard let self else { return }
+       renderedMarkdown = renderedMarkdown.filter { !$0.key.contains(":assistant") }
+-      tableView.reloadData()
++      PlatformTrace.measure("table.reload") { tableView.reloadData() }
+       tableView.scrollRowToVisible(tableView.numberOfRows - 1)
+     }
+     view = root
+@@ -653,7 +662,7 @@
+     self.settings = settings
+     renderedMarkdown.removeAll(keepingCapacity: true)
+     updateMetricsVisibility()
+-    tableView.reloadData()
++    PlatformTrace.measure("table.reload") { tableView.reloadData() }
+   }
+ 
+   func showLoading() {
+@@ -668,7 +677,7 @@
+     emptyLabel.isHidden = false
+     emptyLabel.textColor = .secondaryLabelColor
+     emptyLabel.stringValue = "Loading and parsing natively…"
+-    tableView.reloadData()
++    PlatformTrace.measure("table.reload") { tableView.reloadData() }
+   }
+ 
+   func showError(_ message: String) {
+@@ -694,7 +703,7 @@
+     emptyLabel.isHidden = false
+     emptyLabel.textColor = .secondaryLabelColor
+     emptyLabel.stringValue = "No local Codex or Claude transcripts found."
+-    tableView.reloadData()
++    PlatformTrace.measure("table.reload") { tableView.reloadData() }
+   }
+ 
+   func show(
+@@ -712,7 +721,7 @@
+     scroll.isHidden = false
+     updateMetricsVisibility()
+     updateMetrics()
+-    tableView.reloadData()
++    PlatformTrace.measure("table.reload") { tableView.reloadData() }
+     // Keep the first layout moving while AppKit presents the window in a non-default mode.
+     RunLoop.main.perform(inModes: [.common]) { [weak self] in
+       MainActor.assumeIsolated {
+@@ -730,14 +739,17 @@
+   }
+ 
+   func scrollToTop() -> Double {
++    PlatformTrace.phase("top")
++    let traceStart=PlatformTrace.now(); defer { PlatformTrace.end("top.total",traceStart) }
+     let startedAt = ProcessInfo.processInfo.systemUptime * 1_000
+-    if tableView.numberOfRows > 0 { tableView.scrollRowToVisible(0) }
+-    tableView.layoutSubtreeIfNeeded()
+-    view.window?.displayIfNeeded()
++    PlatformTrace.measure("scroll.top") { if tableView.numberOfRows > 0 { tableView.scrollRowToVisible(0) } }
++    PlatformTrace.measure("table.layout") { tableView.layoutSubtreeIfNeeded() }
++    PlatformTrace.measure("window.display") { view.window?.displayIfNeeded() }
+     return ProcessInfo.processInfo.systemUptime * 1_000 - startedAt
+   }
+ 
+   func tableView(_ tableView: NSTableView, viewFor column: NSTableColumn?, row: Int) -> NSView? {
++    let traceStart=PlatformTrace.now(); defer { PlatformTrace.end("cell.viewFor",traceStart,String(row)) }
+     guard let rows else { return nil }
+     if row == rows.count {
+       return TranscriptBottomSpacer()
+@@ -779,16 +791,17 @@
+     openedAt: Double,
+     onReady: @escaping @MainActor @Sendable (Double) -> Void
+   ) {
++    let traceStart=PlatformTrace.now(); defer { PlatformTrace.end("settle.total",traceStart) }
+     guard self.document?.path == document.path else { return }
+-    if !document.rows.isEmpty { tableView.scrollRowToVisible(tableView.numberOfRows - 1) }
+-    tableView.layoutSubtreeIfNeeded()
++    PlatformTrace.measure("scroll.bottom") { if !document.rows.isEmpty { tableView.scrollRowToVisible(tableView.numberOfRows - 1) } }
++    PlatformTrace.measure("table.layout") { tableView.layoutSubtreeIfNeeded() }
+     // Automatic row measurements can change the estimated document height.
+     // Anchor to the real end, including composer clearance, after that layout.
+     scroll.contentView.scroll(
+       to: NSPoint(x: 0, y: max(0, tableView.frame.height - scroll.contentView.bounds.height)))
+     scroll.reflectScrolledClipView(scroll.contentView)
+-    tableView.layoutSubtreeIfNeeded()
+-    view.window?.displayIfNeeded()
++    PlatformTrace.measure("table.layout") { tableView.layoutSubtreeIfNeeded() }
++    PlatformTrace.measure("window.display") { view.window?.displayIfNeeded() }
+     let durationMs = ProcessInfo.processInfo.systemUptime * 1_000 - openedAt
+     firstPaintMs = durationMs
+     updateMetrics()
+@@ -970,7 +983,7 @@
+   }
+ 
+   private func markdownLabel(_ markdown: NSAttributedString, user: Bool) -> NSTextField {
+-    let label = NSTextField(wrappingLabelWithString: "")
++    let label = ProfileTextField(wrappingLabelWithString: "")
+     label.isSelectable = true
+     label.allowsEditingTextAttributes = true
+     label.maximumNumberOfLines = 0
+@@ -1088,7 +1101,7 @@
+   }
+ 
+   private func detailLabel(_ text: String) -> NSTextField {
+-    let label = NSTextField(wrappingLabelWithString: text)
++    let label = ProfileTextField(wrappingLabelWithString: text)
+     label.isSelectable = true
+     label.font = .systemFont(ofSize: 14)
+     label.textColor = .secondaryLabelColor
+@@ -1264,3 +1277,10 @@
+ private func formatBytes(_ bytes: Int) -> String {
+   String(format: "%.1f KB", Double(bytes) / 1_024)
+ }
++
++@MainActor private final class ProfileTextField: NSTextField {
++ override var intrinsicContentSize: NSSize {
++   PlatformTrace.measure("text.intrinsic", String(attributedStringValue.length)) { super.intrinsicContentSize }
++ }
++ override func draw(_ dirtyRect: NSRect) { PlatformTrace.measure("text.draw") { super.draw(dirtyRect) } }
++}
+--- a/apps/chat-history-swiftui/Sources/ChatHistorySwiftUI/main.swift
++++ b/apps/chat-history-swiftui/Sources/ChatHistorySwiftUI/main.swift
+@@ -29,6 +29,7 @@
+   }
+ 
+   init() {
++    PlatformTrace.mark("store.init")
+     benchmarkConfig = try? ChatBenchmark.load()
+     if let benchmarkConfig {
+       settings = ChatHistorySettings(
+@@ -41,9 +42,11 @@
+   func loadCatalog(preferredId: String? = nil) async {
+     let limit = benchmarkConfig == nil ? settings.recentChatLimit : Int.max
+     let discoveryStartedAt = ProcessInfo.processInfo.systemUptime * 1_000
++    PlatformTrace.mark("catalog.request")
+     let result = await Task.detached(priority: .userInitiated) {
+-      getRecentChats(limit: limit)
++      PlatformTrace.measure("catalog.work") { getRecentChats(limit: limit) }
+     }.value
++    PlatformTrace.mark("catalog.delivered")
+     if let benchmarkConfig {
+       benchmarkDiscoveryMs = ProcessInfo.processInfo.systemUptime * 1_000 - discoveryStartedAt
+       let targets = benchmarkConfig.targets.compactMap { target in
+@@ -80,6 +83,7 @@
+   }
+ 
+   func select(_ summary: ChatSummary, phase: ChatBenchmarkPhase? = nil) {
++    PlatformTrace.phase(phase?.rawValue ?? "interactive")
+     generation += 1
+     let currentGeneration = generation
+     selectedId = summary.id
+@@ -95,12 +99,14 @@
+     firstPaintMs = nil
+     isLoading = true
+     openedAt = ProcessInfo.processInfo.systemUptime * 1_000
++    PlatformTrace.mark("document.request")
+     Task {
+       do {
+         let loaded = try await Task.detached(priority: .userInitiated) {
+           try openChatFile(provider: summary.provider, path: summary.path)
+         }.value
+         guard generation == currentGeneration else { return }
++        PlatformTrace.mark("document.delivered")
+         document = loaded
+         isLoading = false
+       } catch {
+@@ -124,6 +130,7 @@
+ 
+   func recordFirstPaint(for path: String) {
+     guard document?.path == path, firstPaintMs == nil, !paintPending else { return }
++    PlatformTrace.mark("tail.appear")
+     paintPending = true
+     DispatchQueue.main.async {
+       DispatchQueue.main.async { [weak self] in
+@@ -388,7 +395,7 @@
+         }
+         .onAppear {
+           if !document.rows.isEmpty {
+-            proxy.scrollTo("transcript-bottom", anchor: .bottom)
++            PlatformTrace.measure("scroll.bottom.request") { proxy.scrollTo("transcript-bottom", anchor: .bottom) }
+           }
+         }
+         .onChange(of: demo.rows.last?.markdown) { _, _ in
+@@ -398,8 +405,9 @@
+           guard firstPaintMs != nil, let topDelayMs, !document.rows.isEmpty else { return }
+           try? await Task.sleep(for: .milliseconds(Int64(topDelayMs)))
+           guard !Task.isCancelled else { return }
++          PlatformTrace.phase("top")
+           topStartedAt = ProcessInfo.processInfo.systemUptime * 1_000
+-          proxy.scrollTo(0, anchor: .top)
++          PlatformTrace.measure("scroll.top.request") { proxy.scrollTo(0, anchor: .top) }
+         }
+       }
+ 
+@@ -441,6 +449,9 @@
+   @State private var toolExpanded = false
+ 
+   var body: some View {
++    let traceStart=PlatformTrace.now()
++    let _ = PlatformTrace.mark("row.body", row.id)
++    let _ = traceStart
+     switch row.kind {
+     case .files:
+       FileChangesRow(row: row)
+@@ -499,11 +510,13 @@
+ private final class TranscriptMarkdownCache {
+   private var rendered: [String: (String, AttributedString)] = [:]
+   func render(row: ChatRow, loadImages: Bool) -> AttributedString {
++    PlatformTrace.mark("markdown.request", row.id)
+     let key = "\(row.id):\(loadImages)"
+     let source = row.markdown
+     if let value = rendered[key], value.0 == source { return value.1 }
+     let native = RichMarkdownRenderer.render(
+       row.markdown, imagePolicy: loadImages ? .loadLocal : .omit)
++    let conversionStart=PlatformTrace.now()
+     var value = AttributedString(native)
+     if #available(macOS 26, *) {
+       // Text does not honor bridged NSParagraphStyle line heights. Use its
+@@ -517,6 +530,7 @@
+         value[range].swiftUI.lineHeight = .exact(points: style.minimumLineHeight)
+       }
+     }
++    PlatformTrace.end("markdown.swiftUIAttributes", conversionStart)
+     rendered[key] = (source, value)
+     return value
+   }
+@@ -537,7 +551,7 @@
+ // triggers extra text measurement. Forward its real size and placement unchanged.
+ private struct ExplicitTextSpacing: Layout {
+   func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+-    subviews[0].sizeThatFits(proposal)
++    PlatformTrace.measure("text.size", "w=\(String(describing: proposal.width))") { subviews[0].sizeThatFits(proposal) }
+   }
+   func spacing(subviews: Subviews, cache: inout ()) -> ViewSpacing { ViewSpacing() }
+   func placeSubviews(
+@@ -559,7 +573,7 @@
+         1,
+         width * (user ? TranscriptStyle.userWidthFraction : TranscriptStyle.assistantWidthFraction))
+     }
+-    return subviews[0].sizeThatFits(ProposedViewSize(width: width, height: nil))
++    return PlatformTrace.measure("message.measure", "w=\(String(describing: width))") { subviews[0].sizeThatFits(ProposedViewSize(width: width, height: nil)) }
+   }
+   func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+     let size = contentSize(proposal, subviews)
+--- a/packages/chat-history-swift/Package.swift
++++ b/packages/chat-history-swift/Package.swift
+@@ -21,7 +21,7 @@
+     .target(name: "ChatHistoryCore", dependencies: ["ChatHistoryNative"]),
+     .target(
+       name: "ChatHistoryMarkdown",
+-      dependencies: [.product(name: "Markdown", package: "swift-markdown")]),
++      dependencies: ["ChatHistoryCore", .product(name: "Markdown", package: "swift-markdown")]),
+     .testTarget(name: "ChatHistoryCoreTests", dependencies: ["ChatHistoryCore"]),
+     .testTarget(name: "ChatHistoryMarkdownTests", dependencies: ["ChatHistoryMarkdown"]),
+   ],
+--- a/packages/chat-history-swift/Sources/ChatHistoryCore/Benchmark.swift
++++ b/packages/chat-history-swift/Sources/ChatHistoryCore/Benchmark.swift
+@@ -88,6 +88,8 @@
+   public static func emit<T: Encodable>(
+     _ event: T, environment: [String: String] = ProcessInfo.processInfo.environment
+   ) {
++    PlatformTrace.mark("event." + String(describing: T.self))
++    PlatformTrace.flushSoon()
+     guard let path = environment["CHAT_HISTORY_BENCHMARK_EVENTS"],
+       let data = try? JSONEncoder().encode(event)
+     else { return }
+--- a/packages/chat-history-swift/Sources/ChatHistoryCore/Catalog.swift
++++ b/packages/chat-history-swift/Sources/ChatHistoryCore/Catalog.swift
+@@ -13,11 +13,13 @@
+ }
+ 
+ private func jsonObject(at path: String) -> JSONObject? {
++  let t = PlatformTrace.now(); defer { PlatformTrace.end("catalog.jsonFile", t) }
+   guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)) else { return nil }
+   return (try? JSONSerialization.jsonObject(with: data)) as? JSONObject
+ }
+ 
+ private func jsonlFiles(at root: String) -> [String] {
++  let t = PlatformTrace.now(); defer { PlatformTrace.end("catalog.enumerate", t) }
+   let fileManager = FileManager.default
+   guard
+     let enumerator = fileManager.enumerator(
+@@ -34,11 +36,13 @@
+ }
+ 
+ private func sessionId(for path: String) -> String {
++  let t = PlatformTrace.now(); defer { PlatformTrace.end("catalog.sessionID", t) }
+   let stem = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
+   return stem.count >= 36 ? String(stem.suffix(36)) : stem
+ }
+ 
+ private func modifiedAt(_ path: String) -> Double {
++  let t = PlatformTrace.now(); defer { PlatformTrace.end("catalog.stat", t) }
+   guard
+     let values = try? URL(fileURLWithPath: path).resourceValues(forKeys: [
+       .contentModificationDateKey
+@@ -49,6 +53,7 @@
+ }
+ 
+ private func fallbackTitle(provider: ChatProvider, updatedAt: Double) -> String {
++  let t = PlatformTrace.now(); defer { PlatformTrace.end("catalog.fallbackTitle", t) }
+   let formatter = DateFormatter()
+   formatter.dateFormat = "MMM d"
+   let label =
+@@ -58,6 +63,7 @@
+ }
+ 
+ private func loadCodexMetadata(home: String) -> [String: CatalogMetadata] {
++  let t = PlatformTrace.now(); defer { PlatformTrace.end("catalog.codexIndex", t) }
+   let path = URL(fileURLWithPath: home).appending(path: ".codex/session_index.jsonl").path
+   guard let source = try? String(contentsOfFile: path, encoding: .utf8) else { return [:] }
+   var metadata: [String: CatalogMetadata] = [:]
+@@ -75,6 +81,7 @@
+ }
+ 
+ private func loadClaudeMetadata(root: String) -> [String: CatalogMetadata] {
++  let t = PlatformTrace.now(); defer { PlatformTrace.end("catalog.claudeIndex", t) }
+   let fileManager = FileManager.default
+   guard
+     let enumerator = fileManager.enumerator(
+@@ -110,6 +117,7 @@
+ private let wholeCatalogTimestampStyle = Date.ISO8601FormatStyle(includingFractionalSeconds: false)
+ 
+ private func catalogTimestamp(_ value: Any?) -> Double {
++  let t = PlatformTrace.now(); defer { PlatformTrace.end("catalog.timestamp", t) }
+   if let number = value as? NSNumber { return number.doubleValue }
+   guard let source = value as? String else { return 0 }
+   if let date = try? Date(source, strategy: fractionalCatalogTimestampStyle) {
+@@ -122,15 +130,17 @@
+ }
+ 
+ private func isCodexSubagent(_ path: String) -> Bool {
++  let t = PlatformTrace.now(); defer { PlatformTrace.end("catalog.subagent", t) }
+   guard let handle = FileHandle(forReadingAtPath: path) else { return false }
+   defer { try? handle.close() }
+-  let data = try? handle.read(upToCount: 64 * 1_024)
+-  guard let data, let source = String(data: data, encoding: .utf8) else { return false }
+-  let firstLine =
+-    source.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: false).first.map(
+-      String.init) ?? source
+-  guard let lineData = firstLine.data(using: .utf8),
+-    let root = (try? JSONSerialization.jsonObject(with: lineData)) as? JSONObject,
++  let data = try? PlatformTrace.measure("catalog.headerRead") { try handle.read(upToCount: 64 * 1_024) }
++  guard let data, let source = PlatformTrace.measure("catalog.headerString", "", { String(data: data, encoding: .utf8) }) else { return false }
++  let firstLine = PlatformTrace.measure("catalog.headerFirstLine") {
++    source.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: false).first.map(String.init) ?? source
++  }
++  guard let lineData = firstLine.data(using: .utf8) else { return false }
++  let object: Any? = try? PlatformTrace.measure("catalog.headerJSON", "", { () throws -> Any in try JSONSerialization.jsonObject(with: lineData) })
++  guard let root = object as? JSONObject,
+     let payload = root["payload"] as? JSONObject,
+     let sourceValue = payload["source"] as? JSONObject
+   else { return false }
+--- a/packages/chat-history-swift/Sources/ChatHistoryCore/Models.swift
++++ b/packages/chat-history-swift/Sources/ChatHistoryCore/Models.swift
+@@ -185,7 +185,7 @@
+       if !cached { return makeRow(index) }
+       return lock.withLock {
+         if let row = cache[index] { return row }
+-        let row = makeRow(index)
++        let row = PlatformTrace.measure("row.metadata", String(index)) { makeRow(index) }
+         cache[index] = row
+         return row
+       }
+--- a/packages/chat-history-swift/Sources/ChatHistoryCore/NativeDocument.swift
++++ b/packages/chat-history-swift/Sources/ChatHistoryCore/NativeDocument.swift
+@@ -26,7 +26,7 @@
+   var markdown: String {
+     lock.withLock {
+       if let cachedMarkdown { return cachedMarkdown }
+-      let value = decodeMarkdown()
++      let value = PlatformTrace.measure("text.decode") { decodeMarkdown() }
+       cachedMarkdown = value
+       return value
+     }
+@@ -60,6 +60,7 @@
+ public func openChatFile(provider: ChatProvider, path: String, parser: ChatParser? = nil) throws
+   -> ChatDocument
+ {
++  let traceStart = PlatformTrace.now(); defer { PlatformTrace.end("document.open", traceStart) }
+   let selected =
+     parser ?? ChatParser(
+       rawValue: ProcessInfo.processInfo.environment["CHAT_HISTORY_PARSER"] ?? "swift") ?? .swift
+--- /dev/null
++++ b/packages/chat-history-swift/Sources/ChatHistoryCore/PlatformTrace.swift
+@@ -0,0 +1,32 @@
++import Foundation
++public enum PlatformTrace {
++  private final class Store: @unchecked Sendable {
++    let lock = NSLock()
++    var events: [[String: Any]] = []
++    var phase = "startup"
++  }
++  private static let store = Store()
++  public static let output = ProcessInfo.processInfo.environment["CHAT_PLATFORM_TRACE"]
++  public static let variant = ProcessInfo.processInfo.environment["CHAT_PLATFORM_VARIANT"] ?? "baseline"
++  public static func now() -> Double { ProcessInfo.processInfo.systemUptime * 1000 }
++  public static func phase(_ name: String) { store.lock.withLock { store.phase = name }; mark("phase", name) }
++  public static func mark(_ name: String, _ detail: String = "") { end(name, now(), detail) }
++  public static func end(_ name: String, _ start: Double, _ detail: String = "") {
++    guard output != nil else { return }
++    let end = now()
++    let main = Thread.isMainThread
++    store.lock.withLock {
++      store.events.append(["name":name,"startMs":start,"durationMs":end-start,"epochEndMs":Date().timeIntervalSince1970*1000,"main":main,"phase":store.phase,"detail":detail])
++    }
++  }
++  public static func measure<T>(_ name: String, _ detail: String = "", _ block: () throws -> T) rethrows -> T {
++    let t=now(); defer { end(name,t,detail) }; return try block()
++  }
++  public static func flushSoon() {
++    guard output != nil else { return }
++    DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now()+1) {
++      let events=store.lock.withLock { store.events }
++      if let output, let data=try? JSONSerialization.data(withJSONObject:events, options:[.sortedKeys]) { try? data.write(to:URL(fileURLWithPath:output),options:.atomic) }
++    }
++  }
++}
+--- a/packages/chat-history-swift/Sources/ChatHistoryMarkdown/RichMarkdownRenderer.swift
++++ b/packages/chat-history-swift/Sources/ChatHistoryMarkdown/RichMarkdownRenderer.swift
+@@ -1,4 +1,5 @@
+ import AppKit
++import ChatHistoryCore
+ import Markdown
+ 
+ public enum RichMarkdownImagePolicy: Equatable, Sendable {
+@@ -13,7 +14,9 @@
+     _ source: String,
+     imagePolicy: RichMarkdownImagePolicy = .altText
+   ) -> NSAttributedString {
+-    Renderer(imagePolicy: imagePolicy).render(Document(parsing: source))
++    let traceStart = PlatformTrace.now(); defer { PlatformTrace.end("markdown.total", traceStart, String(source.utf8.count)) }
++    let parsed = PlatformTrace.measure("markdown.parse") { Document(parsing: source) }
++    return PlatformTrace.measure("markdown.attributed") { Renderer(imagePolicy: imagePolicy).render(parsed) }
+   }
+ }
+ 

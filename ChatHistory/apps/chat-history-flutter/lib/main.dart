@@ -442,7 +442,6 @@ class _ChatHistoryAppState extends State<ChatHistoryApp> {
       darkTheme: _theme(Brightness.dark),
       themeMode: _themeMode,
       home: Scaffold(
-        backgroundColor: Colors.transparent,
         body: Row(
           children: <Widget>[
             SizedBox(
@@ -1190,7 +1189,7 @@ class _MessageImage extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 440, maxWidth: 560),
+        constraints: const BoxConstraints(maxHeight: 440, maxWidth: 300),
         child: image,
       ),
     );

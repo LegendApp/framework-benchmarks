@@ -5,7 +5,7 @@ WebView, Deno Desktop CEF, Flutter, GPUI, SwiftUI, and AppKit. React Native is
 maintained in the sibling `legend-apps` repository and exported into this
 repository's common production-build directory by the build command. Benchmark runs use existing builds.
 
-For the latest full run, see [September 16 final results for both workloads](../../benchmarks/final-2026-09-16/RESULTS.md) and the [90-video viewer](results/2026-09-16T20-35-45.623Z-videos/index.html). The earlier parser/layout checkpoint is in [Swift/native parity results](SWIFT_PARITY_RESULTS.md). The prior production comparison is in [responsive AppKit results and SwiftUI diagnosis](RESPONSIVE_LAYOUT_RESULTS.md). The earlier detector correction and causal experiments are in [CAUSAL_ANALYSIS.md](CAUSAL_ANALYSIS.md). The earlier eight-app run and memory measurements are in [RESULTS.md](RESULTS.md).
+For the latest chat run, see the [September 23–24 refresh of all ten frameworks](../../benchmarks/chat-refresh-2026-09-23/RESULTS.md). The historical [September 16 final results for both workloads](../../benchmarks/final-2026-09-16/RESULTS.md) and the [90-video viewer](results/2026-09-16T20-35-45.623Z-videos/index.html). The earlier parser/layout checkpoint is in [Swift/native parity results](SWIFT_PARITY_RESULTS.md). The prior production comparison is in [responsive AppKit results and SwiftUI diagnosis](RESPONSIVE_LAYOUT_RESULTS.md). The earlier detector correction and causal experiments are in [CAUSAL_ANALYSIS.md](CAUSAL_ANALYSIS.md). The earlier eight-app run and memory measurements are in [RESULTS.md](RESULTS.md).
 [PERFORMANCE_ANALYSIS.md](PERFORMANCE_ANALYSIS.md) preserves the historical
 September 4 analysis and its earlier implementation/corpus.
 
@@ -390,3 +390,16 @@ Syntax highlighting is now enabled across all nine targets. See [the highlightin
 Build the self-contained release with `bun run benchmark:build --suite chat-history --app compose`; run the same foreground/video and separate-memory protocol with `bun run benchmark:run --suite chat-history --app compose`. Development: `bun run chat-history:compose` after building its external syntax pack. `BENCHMARK_GRAMMAR_ROOT` can override the common grammar-pack root; otherwise development uses `.build/chat-history-benchmarks/grammar-packs/v1` relative to the working directory. Kotlin parser and syntax policy tests: `scripts/with-local-compose.sh :chat:test`.
 
 See [Compose implementation notes](../../docs/COMPOSE_MULTIPLATFORM.md). The macOS ARM64 exports contain their own trimmed Java runtime; users do not need a separate Java install. Benchmark timings include normal JVM startup and JIT behavior.
+
+## Comparing fixed app bundles
+
+The lower-level chat runner can measure one retained build without replacing the normal installation:
+
+```sh
+bun ChatHistory/benchmark/run.ts --app react-native \
+  --app-bundle /absolute/path/to/saved.app \
+  --build-manifest /absolute/path/to/saved-build-manifest.json \
+  --warmups 2 --iterations 10
+```
+
+`--app-bundle` requires exactly one selected app and its matching saved build manifest. Helpers still come from the standard build directory. The report records the selected executable path and supplied build provenance. Keep each bundle at a fixed path throughout an A/B experiment and warm up each build before scoring; replacing bundles between observations can add first-launch overhead. These diagnostic arguments belong to the lower-level runner, not the unified suite command.

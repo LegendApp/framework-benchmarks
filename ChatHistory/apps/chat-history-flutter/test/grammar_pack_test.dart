@@ -7,13 +7,13 @@ import 'package:highlighting/src/highlightv2.dart' show HighlightV2;
 
 void main() {
   test('External rules preserve original token trees for every fixture', () {
-    final fixtures = jsonDecode(File('../../benchmarks/chat-history/syntax-highlighting-fixtures.json').readAsStringSync()) as List;
+    final fixtures = jsonDecode(File('../../benchmark/syntax-highlighting-fixtures.json').readAsStringSync()) as List;
     final original = HighlightV2();
     for (final language in builtinLanguages.values) { original.registerLanguage(language); }
     final external = HighlightV2();
-    final pack = jsonDecode(File('../../.build/chat-history-benchmarks/grammar-packs/v1/dart-highlighting/grammars.json').readAsStringSync()) as Map<String, dynamic>;
+    final pack = jsonDecode(File('../../../.build/chat-history-benchmarks/grammar-packs/v1/dart-highlighting/grammars.json').readAsStringSync()) as Map<String, dynamic>;
     for (final language in decodeLanguages(pack).values) { external.registerLanguage(language); }
-    final policy = jsonDecode(File('../../benchmarks/chat-history/syntax-highlighting-policy.json').readAsStringSync());
+    final policy = jsonDecode(File('../../benchmark/syntax-highlighting-policy.json').readAsStringSync());
     dynamic tree(dynamic node) => [node.className, node.value, node.children.map(tree).toList()];
     for (final fixture in fixtures) {
       final language = policy['languages'][fixture['language']];

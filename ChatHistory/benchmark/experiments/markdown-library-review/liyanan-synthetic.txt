@@ -1,0 +1,30 @@
+heading width 886.0 height 82.0 finite true
+TEXT heading First|Second|body
+FONTS heading [13.0, 15.0, 19.0, 22.0]
+heading width 400.0 height 82.0 finite true
+TEXT heading First|Second|body
+FONTS heading [13.0, 15.0, 19.0, 22.0]
+nested-code width 886.0 height 131.0 finite true
+TEXT nested-code 1. step|￼|after
+FONTS nested-code [13.0, 15.0]
+nested-code width 400.0 height 131.0 finite true
+TEXT nested-code 1. step|￼|after
+FONTS nested-code [13.0, 15.0]
+table width 886.0 height 89.0 finite true
+TEXT table ￼
+FONTS table [13.0]
+table width 400.0 height 89.0 finite true
+TEXT table ￼
+FONTS table [13.0]
+quote width 886.0 height 82.0 finite true
+TEXT quote ￼
+FONTS quote [13.0]
+quote width 400.0 height 82.0 finite true
+TEXT quote ￼
+FONTS quote [13.0]
+list-start width 886.0 height 44.0 finite true
+TEXT list-start 1. third|2. fourth
+FONTS list-start [13.0, 15.0]
+list-start width 400.0 height 44.0 finite true
+TEXT list-start 1. third|2. fourth
+FONTS list-start [13.0, 15.0]

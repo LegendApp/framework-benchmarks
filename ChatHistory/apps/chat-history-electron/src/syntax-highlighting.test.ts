@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { initializeGrammarPack } from "./syntax-highlighting";
-await initializeGrammarPack(readFileSync(new URL("../../../.build/chat-history-benchmarks/grammar-packs/v1/highlight-js/grammars.mjs", import.meta.url), "utf8"));
+await initializeGrammarPack(readFileSync(new URL("../../../../.build/chat-history-benchmarks/grammar-packs/v1/highlight-js/grammars.mjs", import.meta.url), "utf8"));
 import { expect, test } from "bun:test";
-import fixtures from "../../../benchmarks/chat-history/syntax-highlighting-fixtures.json";
+import fixtures from "../../../benchmark/syntax-highlighting-fixtures.json";
 import { codePaneSource, highlightCode } from "./syntax-highlighting";
 
 test("every RN language and alias emits tokens without changing source", () => {

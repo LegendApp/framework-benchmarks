@@ -72,7 +72,7 @@ void _loadGrammarPack() {
     }
     root = directory.endsWith('.app')
         ? paths.join(paths.dirname(directory), 'grammar-packs', 'v1')
-        : paths.absolute('../../.build/chat-history-benchmarks/grammar-packs/v1');
+        : paths.absolute('../../../.build/chat-history-benchmarks/grammar-packs/v1');
   }
   final pack = jsonDecode(File(paths.join(root, 'dart-highlighting', 'grammars.json')).readAsStringSync()) as Map<String, dynamic>;
   for (final language in decodeLanguages(pack).values) { hl.highlight.registerLanguage(language); }

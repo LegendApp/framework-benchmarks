@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start:webview": "bun ../../benchmarks/hello-world/build.ts --app deno-webview --launch",
-    "start:cef": "bun ../../benchmarks/hello-world/build.ts --app deno-cef --launch"
+    "start:webview": "bun ../../benchmark/build.ts --app deno-webview --launch",
+    "start:cef": "bun ../../benchmark/build.ts --app deno-cef --launch"
   }
 }

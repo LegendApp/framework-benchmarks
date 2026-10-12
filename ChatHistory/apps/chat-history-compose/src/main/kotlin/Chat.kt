@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.*
 import androidx.compose.ui.geometry.Offset
@@ -13,6 +14,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.layout.*
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
@@ -90,6 +92,15 @@ fun main(args: Array<String>) {
         return
     }
     val benchmark = Benchmark()
+    val initialAppearance = benchmark.config?.text("appearance")?.ifEmpty { "system" }
+        ?: jsonFile(settingsFile)?.text("appearance")?.ifEmpty { "system" }
+        ?: "system"
+    // AWT otherwise defaults to Aqua even when the Compose content is dark.
+    System.setProperty("apple.awt.application.appearance", when (initialAppearance) {
+        "dark" -> "NSAppearanceNameDarkAqua"
+        "light" -> "NSAppearanceNameAqua"
+        else -> "system"
+    })
     application {
         Window(
             onCloseRequest = ::exitApplication,
@@ -97,13 +108,13 @@ fun main(args: Array<String>) {
             state = rememberWindowState(width = 1280.dp, height = 720.dp),
         ) {
             LaunchedEffect(Unit) { benchmark.emit("windowShown") }
-            ChatApp(benchmark)
+            ChatApp(benchmark, window)
         }
     }
 }
 
 @Composable
-fun ChatApp(benchmark: Benchmark) {
+fun ChatApp(benchmark: Benchmark, window: ComposeWindow) {
     val scope = rememberCoroutineScope()
     val saved = remember { if (benchmark.enabled) null else jsonFile(settingsFile) }
     var appearance by remember {
@@ -121,6 +132,12 @@ fun ChatApp(benchmark: Benchmark) {
         }
     val fg = if (dark) Color(0xfff5f5f5) else Color(0xff111827)
     val bg = if (dark) Color(0xff191a1b) else Color(0xfff5f6f8)
+    SideEffect {
+        // Keep native window controls and dragging, while matching the content theme.
+        window.rootPane.putClientProperty("apple.awt.transparentTitleBar", true)
+        window.rootPane.putClientProperty("apple.awt.windowTitleVisible", false)
+        window.background = java.awt.Color(bg.toArgb(), true)
+    }
     val muted = if (dark) Color(0xffa3a3a3) else Color(0xff6b7280)
     val border = if (dark) Color(0xff3e4042) else Color(0xffd1d5db)
     var summaries by remember { mutableStateOf(emptyList<Summary>()) }
@@ -323,6 +340,15 @@ fun ChatApp(benchmark: Benchmark) {
             Box(Modifier.width(1.dp).fillMaxHeight().background(border))
             Box(Modifier.weight(1f).fillMaxHeight()) {
                 val layer = rememberGraphicsLayer()
+                val density = LocalDensity.current
+                val composerBlur = remember(density) {
+                    val sigma = with(density) { 10.dp.toPx() }
+                    // Compose BlurEffect takes a radius and reduces it to sigma.
+                    // Use the same Gaussian sigma as Flutter and CSS backdrop blur.
+                    org.jetbrains.skia.ImageFilter.makeBlur(
+                        sigma, sigma, org.jetbrains.skia.FilterTileMode.CLAMP
+                    ).asComposeRenderEffect()
+                }
                 var composerOffset by remember { mutableStateOf(Offset.Zero) }
                 var transcriptOffset by remember { mutableStateOf(Offset.Zero) }
                 Box(
@@ -359,8 +385,11 @@ fun ChatApp(benchmark: Benchmark) {
                                         Modifier.fillMaxWidth(),
                                         contentAlignment = Alignment.TopCenter,
                                     ) {
-                                        Box(Modifier.widthIn(max = 900.dp).fillMaxWidth()) {
-                                            TranscriptRow(row, dark, markdownCache)
+                                        Box(
+                                            Modifier.widthIn(max = 900.dp).fillMaxWidth(),
+                                            contentAlignment = if (row.kind == "user") Alignment.TopEnd else Alignment.TopStart,
+                                        ) {
+                                            TranscriptRow(row, dark, markdownCache, benchmark.config?.get("loadImages")?.jsonPrimitive?.booleanOrNull ?: true)
                                         }
                                     }
                                 }
@@ -408,8 +437,7 @@ fun ChatApp(benchmark: Benchmark) {
                     ) {
                         Canvas(
                             Modifier.matchParentSize().graphicsLayer {
-                                renderEffect =
-                                    BlurEffect(10.dp.toPx(), 10.dp.toPx(), TileMode.Clamp)
+                                renderEffect = composerBlur
                             }
                         ) {
                             val delta = transcriptOffset - composerOffset
@@ -474,6 +502,7 @@ private fun TranscriptRow(
     row: ChatRow,
     dark: Boolean,
     cache: java.util.IdentityHashMap<ChatRow, MarkdownCache>,
+    loadImages: Boolean,
 ) {
     val fg = if (dark) Color(0xfff5f5f5) else Color(0xff111827)
     val muted = if (dark) Color(0xffa3a3a3) else Color(0xff6b7280)
@@ -517,7 +546,9 @@ private fun TranscriptRow(
                 cache.getOrPut(row) { MarkdownCache(MarkdownEngine.parser.parse(row.markdown.value)) }
             }
         Column(
-            Modifier.fillMaxWidth()
+            Modifier
+                .then(if (row.kind == "user" && loadImages && row.images.isNotEmpty()) Modifier.widthIn(max = 332.dp) else Modifier)
+                .fillMaxWidth()
                 .then(
                     if (row.kind == "user")
                         Modifier.background(
@@ -528,9 +559,28 @@ private fun TranscriptRow(
                     else Modifier
                 )
         ) {
+            if (loadImages) row.images.forEach { source -> InlineAttachment(source) }
             Markdown(node.node, dark, node)
-            if (row.image || row.images.isNotEmpty())
+            if (row.image || (!loadImages && row.images.isNotEmpty()))
                 Text("Image or attachment omitted", color = muted, fontSize = 13.sp)
         }
+    }
+}
+
+@Composable
+private fun InlineAttachment(source: String) {
+    val bitmap by produceState<ImageBitmap?>(null, source) {
+        value = withContext(Dispatchers.IO) {
+            runCatching {
+                val file = if (source.startsWith("file:")) File(java.net.URI(source)) else File(source)
+                org.jetbrains.skia.Image.makeFromEncoded(file.readBytes()).toComposeImageBitmap()
+            }.getOrNull()
+        }
+    }
+    bitmap?.let {
+        Image(it, "Attached image", Modifier.widthIn(max = 300.dp).width(300.dp)
+            .aspectRatio(it.width.toFloat() / it.height).clip(RoundedCornerShape(12.dp)),
+            contentScale = ContentScale.Fit)
+        Spacer(Modifier.height(8.dp))
     }
 }

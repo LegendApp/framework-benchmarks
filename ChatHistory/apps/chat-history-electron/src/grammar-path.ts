@@ -8,5 +8,5 @@ export function externalGrammarRoot(executable: string, override?: string) {
     path = dirname(path);
   }
   // Dev commands are run from their app directory; production resolves beside .app.
-  return resolve("../../.build/chat-history-benchmarks/grammar-packs/v1");
+  return resolve("../../../.build/chat-history-benchmarks/grammar-packs/v1");
 }

@@ -1,12 +1,13 @@
+import { FileSource, type ByteSource } from "./file-source";
 import { Buffer } from "node:buffer";
 
 /** JSON syntax is checked without unescaping unused strings or retaining their object trees. */
 export class JsonRange {
   private fields?: Record<string, JsonRange>;
   private elements?: JsonRange[];
-  constructor(readonly source: Buffer, readonly start: number, readonly end: number) {}
+  constructor(readonly source: ByteSource, readonly start: number, readonly end: number) {}
   get isString() {
-    return this.source[this.start] === 34;
+    return this.source.at(this.start)! === 34;
   }
   get isEmptyString() {
     return this.isString && this.end === this.start + 2;
@@ -15,39 +16,45 @@ export class JsonRange {
     return this.isString ? JSON.parse(this.source.toString("utf8", this.start, this.end)) : "";
   }
   object(): Record<string, JsonRange> | undefined {
-    if (this.source[this.start] !== 123) return;
+    if (this.source.at(this.start) !== 123) return;
     if (!this.fields) {
+      const offset = this.source instanceof FileSource ? this.start : 0;
+      const source = this.source instanceof FileSource ? this.source.readBytes(this.start, this.end) : this.source;
+      const limit = this.end - offset;
       const fields: Record<string, JsonRange> = Object.create(null);
-      let cursor = whitespace(this.source, this.start + 1, this.end);
-      while (this.source[cursor] !== 125) {
-        const keyEnd = scan(this.source, cursor, this.end);
-        const key = JSON.parse(this.source.toString("utf8", cursor, keyEnd));
-        cursor = whitespace(this.source, whitespace(this.source, keyEnd, this.end) + 1, this.end);
-        const end = scan(this.source, cursor, this.end);
-        fields[key] = new JsonRange(this.source, cursor, end);
-        cursor = whitespace(this.source, end, this.end);
-        if (this.source[cursor] === 44) cursor = whitespace(this.source, cursor + 1, this.end);
+      let cursor = whitespace(source, this.start - offset + 1, limit);
+      while (source[cursor] !== 125) {
+        const keyEnd = scan(source, cursor, limit);
+        const key = JSON.parse(source.toString("utf8", cursor, keyEnd));
+        cursor = whitespace(source, whitespace(source, keyEnd, limit) + 1, limit);
+        const end = scan(source, cursor, limit);
+        fields[key] = new JsonRange(this.source, cursor + offset, end + offset);
+        cursor = whitespace(source, end, limit);
+        if (source[cursor] === 44) cursor = whitespace(source, cursor + 1, limit);
       }
       this.fields = fields;
     }
     return this.fields;
   }
   array(): JsonRange[] | undefined {
-    if (this.source[this.start] !== 91) return;
+    if (this.source.at(this.start) !== 91) return;
     if (!this.elements) {
+      const offset = this.source instanceof FileSource ? this.start : 0;
+      const source = this.source instanceof FileSource ? this.source.readBytes(this.start, this.end) : this.source;
+      const limit = this.end - offset;
       this.elements = [];
-      let cursor = whitespace(this.source, this.start + 1, this.end);
-      while (this.source[cursor] !== 93) {
-        const end = scan(this.source, cursor, this.end);
-        this.elements.push(new JsonRange(this.source, cursor, end));
-        cursor = whitespace(this.source, end, this.end);
-        if (this.source[cursor] === 44) cursor = whitespace(this.source, cursor + 1, this.end);
+      let cursor = whitespace(source, this.start - offset + 1, limit);
+      while (source[cursor] !== 93) {
+        const end = scan(source, cursor, limit);
+        this.elements.push(new JsonRange(this.source, cursor + offset, end + offset));
+        cursor = whitespace(source, end, limit);
+        if (source[cursor] === 44) cursor = whitespace(source, cursor + 1, limit);
       }
     }
     return this.elements;
   }
   boolean() {
-    return this.source[this.start] === 116;
+    return this.source.at(this.start)! === 116;
   }
 }
 
@@ -128,11 +135,14 @@ function scan(source: Buffer, start: number, end: number, depth = 0): number {
   return index;
 }
 
-export function parseJsonRange(source: Buffer, start = 0, end = source.length) {
-  start = whitespace(source, start, end);
-  const valueEnd = scan(source, start, end);
-  if (whitespace(source, valueEnd, end) !== end) return invalid();
-  return new JsonRange(source, start, valueEnd);
+export function parseJsonRange(source: ByteSource, start = 0, end = source.length) {
+  const offset = source instanceof FileSource ? start : 0;
+  const bytes = source instanceof FileSource ? source.readBytes(start, end) : source;
+  const limit = end - offset;
+  const begin = whitespace(bytes, start - offset, limit);
+  const valueEnd = scan(bytes, begin, limit);
+  if (whitespace(bytes, valueEnd, limit) !== limit) return invalid();
+  return new JsonRange(source, begin + offset, valueEnd + offset);
 }
 
 export type DeferredText = string | { decode(): string; nonempty: boolean };

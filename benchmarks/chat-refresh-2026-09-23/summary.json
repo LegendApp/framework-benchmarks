@@ -1,0 +1,964 @@
+{
+  "measuredAt": "2026-09-24T07:16:24.633Z",
+  "machine": {
+    "architecture": "arm64",
+    "cpu": "Apple M4",
+    "macOS": "26.6.1"
+  },
+  "iterations": 10,
+  "warmups": 2,
+  "apps": [
+    {
+      "app": "appkit",
+      "buildSizeBytes": 3366500,
+      "grammarPackBytes": 1379783,
+      "combinedInstalledBytes": 4746283,
+      "median": {
+        "discoveryMs": 24.72089582681656,
+        "firstContentMs": 344.266357421875,
+        "internalFirstContentMs": 304.5699462890625,
+        "internalSwitchContentMs": 60.95520833134651,
+        "internalTopJumpMs": 43.41133326292038,
+        "internalWindowOpenMs": 215.924560546875,
+        "initialContentDurationMs": 62.7748541533947,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 45696152,
+          "processCount": 1,
+          "residentSetBytes": 364363776
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 1.1723330318927765,
+          "nativeTotalMs": 39.79052048921585,
+          "parseMs": 18.401249527931213,
+          "scanMs": 20.41643750667572
+        },
+        "topJumpMs": 82.590087890625,
+        "topMemory": {
+          "physicalFootprintBytes": 53683352,
+          "processCount": 1,
+          "residentSetBytes": 369614848
+        },
+        "switchContentMs": 96.7373046875,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 2.345791459083557,
+          "nativeTotalMs": 47.980082988739014,
+          "parseMs": 21.785187482833862,
+          "scanMs": 23.768895506858826
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 53675244,
+          "processCount": 1,
+          "residentSetBytes": 522387456
+        },
+        "windowOpenMs": 244.1256103515625
+      },
+      "p90": {
+        "discoveryMs": 25.565666675567627,
+        "firstContentMs": 358.681640625,
+        "internalFirstContentMs": 309.476806640625,
+        "internalSwitchContentMs": 62.30883330106735,
+        "internalTopJumpMs": 45.099125027656555,
+        "internalWindowOpenMs": 218.581298828125,
+        "initialContentDurationMs": 64.7031666636467,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 46711936,
+          "processCount": 1,
+          "residentSetBytes": 364429312
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 1.6464160084724426,
+          "nativeTotalMs": 41.91137498617172,
+          "parseMs": 18.619458973407745,
+          "scanMs": 22.538917005062103
+        },
+        "topJumpMs": 91.9375,
+        "topMemory": {
+          "physicalFootprintBytes": 53757056,
+          "processCount": 1,
+          "residentSetBytes": 369901568
+        },
+        "switchContentMs": 99.12255859375,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 2.4292500019073486,
+          "nativeTotalMs": 48.66266602277756,
+          "parseMs": 22.807834029197693,
+          "scanMs": 24.835041999816895
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 53724456,
+          "processCount": 1,
+          "residentSetBytes": 522534912
+        },
+        "windowOpenMs": 245.646240234375
+      }
+    },
+    {
+      "app": "gpui",
+      "buildSizeBytes": 10356850,
+      "grammarPackBytes": 890385,
+      "combinedInstalledBytes": 11247235,
+      "median": {
+        "discoveryMs": 38.2289375,
+        "firstContentMs": 360.5548095703125,
+        "internalFirstContentMs": 376.0869140625,
+        "internalSwitchContentMs": 153.9237915,
+        "internalTopJumpMs": 52.0195415,
+        "internalWindowOpenMs": 182.4974365234375,
+        "initialContentDurationMs": 162.7814375,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 64775248,
+          "processCount": 1,
+          "residentSetBytes": 339238912
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 25.639457999999998,
+          "nativeTotalMs": 110.49827099999999,
+          "parseMs": 77.280375,
+          "scanMs": 7.987083500000001
+        },
+        "topJumpMs": 51.29541015625,
+        "topMemory": {
+          "physicalFootprintBytes": 67093584,
+          "processCount": 1,
+          "residentSetBytes": 341811200
+        },
+        "switchContentMs": 178.242431640625,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 24.9230415,
+          "nativeTotalMs": 101.034833,
+          "parseMs": 70.044479,
+          "scanMs": 6.947312500000001
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 86377504,
+          "processCount": 1,
+          "residentSetBytes": 271368192
+        },
+        "windowOpenMs": 227.7801513671875
+      },
+      "p90": {
+        "discoveryMs": 41.44225,
+        "firstContentMs": 361.35693359375,
+        "internalFirstContentMs": 382.865966796875,
+        "internalSwitchContentMs": 168.09875,
+        "internalTopJumpMs": 52.614582999999996,
+        "internalWindowOpenMs": 184.27294921875,
+        "initialContentDurationMs": 168.037041,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 64898128,
+          "processCount": 1,
+          "residentSetBytes": 339394560
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 27.719082999999998,
+          "nativeTotalMs": 117.206833,
+          "parseMs": 80.629333,
+          "scanMs": 8.567708
+        },
+        "topJumpMs": 67.689697265625,
+        "topMemory": {
+          "physicalFootprintBytes": 67306576,
+          "processCount": 1,
+          "residentSetBytes": 342016000
+        },
+        "switchContentMs": 194.86767578125,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 27.128958,
+          "nativeTotalMs": 106.308375,
+          "parseMs": 70.914667,
+          "scanMs": 8.37625
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 86541344,
+          "processCount": 1,
+          "residentSetBytes": 271581184
+        },
+        "windowOpenMs": 228.52099609375
+      }
+    },
+    {
+      "app": "react-native",
+      "buildSizeBytes": 18632473,
+      "grammarPackBytes": 23617711,
+      "combinedInstalledBytes": 42250184,
+      "median": {
+        "discoveryMs": 3.123312532901764,
+        "firstContentMs": 409.561279296875,
+        "internalFirstContentMs": 324.0106201171875,
+        "internalSwitchContentMs": 99.22012501955032,
+        "internalTopJumpMs": 4.76774999499321,
+        "internalWindowOpenMs": 179.76611328125,
+        "initialContentDurationMs": 86.44914549589157,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 58189024,
+          "processCount": 1,
+          "residentSetBytes": 383811584
+        },
+        "initialStages": {
+          "documentMs": 0.15210449999999998,
+          "loadMs": 1.389729,
+          "nativeTotalMs": 35.481603500000006,
+          "parseMs": 11.786749499999999,
+          "scanMs": 21.6292915
+        },
+        "topJumpMs": 71.0208740234375,
+        "topMemory": {
+          "physicalFootprintBytes": 62874848,
+          "processCount": 1,
+          "residentSetBytes": 386940928
+        },
+        "switchContentMs": 200.5465087890625,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0.158771,
+          "loadMs": 2.5318335000000003,
+          "nativeTotalMs": 39.974312499999996,
+          "parseMs": 12.634145499999999,
+          "scanMs": 24.7090205
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 69379344,
+          "processCount": 1,
+          "residentSetBytes": 312672256
+        },
+        "windowOpenMs": 258.8968505859375
+      },
+      "p90": {
+        "discoveryMs": 3.4415419697761536,
+        "firstContentMs": 426.278076171875,
+        "internalFirstContentMs": 334.062255859375,
+        "internalSwitchContentMs": 101.48870903253555,
+        "internalTopJumpMs": 5.3028329610824585,
+        "internalWindowOpenMs": 186.433349609375,
+        "initialContentDurationMs": 88.37220799922943,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 58361128,
+          "processCount": 1,
+          "residentSetBytes": 384319488
+        },
+        "initialStages": {
+          "documentMs": 0.205,
+          "loadMs": 1.501791,
+          "nativeTotalMs": 36.667874,
+          "parseMs": 13.276625,
+          "scanMs": 23.402917
+        },
+        "topJumpMs": 75.129150390625,
+        "topMemory": {
+          "physicalFootprintBytes": 63079672,
+          "processCount": 1,
+          "residentSetBytes": 387383296
+        },
+        "switchContentMs": 215.697998046875,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0.171375,
+          "loadMs": 2.781875,
+          "nativeTotalMs": 41.906,
+          "parseMs": 13.343042,
+          "scanMs": 25.767791
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 70943992,
+          "processCount": 1,
+          "residentSetBytes": 313016320
+        },
+        "windowOpenMs": 261.392333984375
+      }
+    },
+    {
+      "app": "tauri",
+      "buildSizeBytes": 12109497,
+      "grammarPackBytes": 82651,
+      "combinedInstalledBytes": 12192148,
+      "median": {
+        "discoveryMs": 8.5,
+        "firstContentMs": 608.9674072265625,
+        "internalFirstContentMs": 597.2659912109375,
+        "internalSwitchContentMs": 235.9999999999991,
+        "internalTopJumpMs": 78.5,
+        "internalWindowOpenMs": 232.697998046875,
+        "initialContentDurationMs": 210.5,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 146501172,
+          "processCount": 4,
+          "residentSetBytes": 489807872
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 19.163207999999997,
+          "nativeTotalMs": 97.176271,
+          "parseMs": 70.67972900000001,
+          "scanMs": 6.9084164999999995
+        },
+        "topJumpMs": 73.5938720703125,
+        "topMemory": {
+          "physicalFootprintBytes": 153620056,
+          "processCount": 4,
+          "residentSetBytes": 508198912
+        },
+        "switchContentMs": 227.2459716796875,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 25.8471255,
+          "nativeTotalMs": 103.567417,
+          "parseMs": 69.47791649999999,
+          "scanMs": 7.7370625
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 179170988,
+          "processCount": 4,
+          "residentSetBytes": 450813952
+        },
+        "windowOpenMs": 275.6341552734375
+      },
+      "p90": {
+        "discoveryMs": 10.000000000000009,
+        "firstContentMs": 611.85107421875,
+        "internalFirstContentMs": 637.325927734375,
+        "internalSwitchContentMs": 237,
+        "internalTopJumpMs": 80,
+        "internalWindowOpenMs": 241.382080078125,
+        "initialContentDurationMs": 213,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 146935312,
+          "processCount": 4,
+          "residentSetBytes": 490962944
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 19.872292,
+          "nativeTotalMs": 97.36475,
+          "parseMs": 71.279541,
+          "scanMs": 7.157667
+        },
+        "topJumpMs": 78.085205078125,
+        "topMemory": {
+          "physicalFootprintBytes": 153931424,
+          "processCount": 4,
+          "residentSetBytes": 509181952
+        },
+        "switchContentMs": 236.96826171875,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 27.128,
+          "nativeTotalMs": 104.096084,
+          "parseMs": 69.80541699999999,
+          "scanMs": 8.342291999999999
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 181407320,
+          "processCount": 4,
+          "residentSetBytes": 451444736
+        },
+        "windowOpenMs": 278.517578125
+      }
+    },
+    {
+      "app": "swiftui",
+      "buildSizeBytes": 3891560,
+      "grammarPackBytes": 1379783,
+      "combinedInstalledBytes": 5271343,
+      "median": {
+        "discoveryMs": 24.37620833516121,
+        "firstContentMs": 676.7288818359375,
+        "internalFirstContentMs": 654.5426025390625,
+        "internalSwitchContentMs": 531.757833302021,
+        "internalTopJumpMs": 44.111624985933304,
+        "internalWindowOpenMs": 209.7171630859375,
+        "initialContentDurationMs": 369.51381251215935,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 89130316,
+          "processCount": 1,
+          "residentSetBytes": 420290560
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 1.3191874623298645,
+          "nativeTotalMs": 39.76156201958656,
+          "parseMs": 18.961979001760483,
+          "scanMs": 19.16270849108696
+        },
+        "topJumpMs": 80.988525390625,
+        "topMemory": {
+          "physicalFootprintBytes": 89933156,
+          "processCount": 1,
+          "residentSetBytes": 420470784
+        },
+        "switchContentMs": 556.6334228515625,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 2.707000494003296,
+          "nativeTotalMs": 50.14433351159096,
+          "parseMs": 21.833124488592148,
+          "scanMs": 25.50595799088478
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 96437592,
+          "processCount": 1,
+          "residentSetBytes": 338796544
+        },
+        "windowOpenMs": 291.3223876953125
+      },
+      "p90": {
+        "discoveryMs": 24.910791635513306,
+        "firstContentMs": 710.97509765625,
+        "internalFirstContentMs": 674.927001953125,
+        "internalSwitchContentMs": 533.9461250305176,
+        "internalTopJumpMs": 152.5627083182335,
+        "internalWindowOpenMs": 217.887939453125,
+        "initialContentDurationMs": 379.97233337163925,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 89261376,
+          "processCount": 1,
+          "residentSetBytes": 420495360
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 1.652625024318695,
+          "nativeTotalMs": 40.373250007629395,
+          "parseMs": 19.59150004386902,
+          "scanMs": 19.74620795249939
+        },
+        "topJumpMs": 172.720947265625,
+        "topMemory": {
+          "physicalFootprintBytes": 90441024,
+          "processCount": 1,
+          "residentSetBytes": 421134336
+        },
+        "switchContentMs": 560.48779296875,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 2.884749948978424,
+          "nativeTotalMs": 51.15570801496506,
+          "parseMs": 22.86820900440216,
+          "scanMs": 26.29541701078415
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 100320552,
+          "processCount": 1,
+          "residentSetBytes": 342507520
+        },
+        "windowOpenMs": 295.0556640625
+      }
+    },
+    {
+      "app": "electron",
+      "buildSizeBytes": 299478816,
+      "grammarPackBytes": 82651,
+      "combinedInstalledBytes": 299561467,
+      "median": {
+        "discoveryMs": 31.349999994039536,
+        "firstContentMs": 1185.7921142578125,
+        "internalFirstContentMs": 1187.3985595703125,
+        "internalSwitchContentMs": 605.5,
+        "internalTopJumpMs": 46.85000002384186,
+        "internalWindowOpenMs": 253.5594482421875,
+        "initialContentDurationMs": 838.5500000119209,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 271545804,
+          "processCount": 4,
+          "residentSetBytes": 696451072
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 0.17420799999999304,
+          "nativeTotalMs": 742.203875,
+          "parseMs": 694.9608129999999,
+          "scanMs": 46.00610449999999
+        },
+        "topJumpMs": 70.592041015625,
+        "topMemory": {
+          "physicalFootprintBytes": 275215808,
+          "processCount": 4,
+          "residentSetBytes": 709255168
+        },
+        "switchContentMs": 604.0655517578125,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 0.26974999999947613,
+          "nativeTotalMs": 483.763062,
+          "parseMs": 432.51233349999984,
+          "scanMs": 50.14774999999918
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 357430948,
+          "processCount": 4,
+          "residentSetBytes": 889634816
+        },
+        "windowOpenMs": 294.5260009765625
+      },
+      "p90": {
+        "discoveryMs": 32.80000001192093,
+        "firstContentMs": 1392.68896484375,
+        "internalFirstContentMs": 1369.19482421875,
+        "internalSwitchContentMs": 614,
+        "internalTopJumpMs": 47.09999996423721,
+        "internalWindowOpenMs": 442.19482421875,
+        "initialContentDurationMs": 850.7000000476837,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 290444808,
+          "processCount": 4,
+          "residentSetBytes": 720060416
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 0.34550000000001546,
+          "nativeTotalMs": 745.6140419999999,
+          "parseMs": 700.087,
+          "scanMs": 50.506415999999945
+        },
+        "topJumpMs": 70.959716796875,
+        "topMemory": {
+          "physicalFootprintBytes": 293737992,
+          "processCount": 4,
+          "residentSetBytes": 732954624
+        },
+        "switchContentMs": 620.41259765625,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 0.2835419999992155,
+          "nativeTotalMs": 490.61870799999997,
+          "parseMs": 440.3937079999996,
+          "scanMs": 51.22704199999862
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 373298960,
+          "processCount": 4,
+          "residentSetBytes": 916652032
+        },
+        "windowOpenMs": 492.68896484375
+      }
+    },
+    {
+      "app": "flutter",
+      "buildSizeBytes": 22595958,
+      "grammarPackBytes": 605873,
+      "combinedInstalledBytes": 23201831,
+      "median": {
+        "discoveryMs": 22.174,
+        "firstContentMs": 1209.018798828125,
+        "internalFirstContentMs": 1241.81005859375,
+        "internalSwitchContentMs": 785.697,
+        "internalTopJumpMs": 56.3255,
+        "internalWindowOpenMs": 219.62451171875,
+        "initialContentDurationMs": 995.713,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 110535700,
+          "processCount": 1,
+          "residentSetBytes": 161513472
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 0.0355,
+          "nativeTotalMs": 851.3815,
+          "parseMs": 660.886,
+          "scanMs": 191.9065
+        },
+        "topJumpMs": 80.2401123046875,
+        "topMemory": {
+          "physicalFootprintBytes": 119219232,
+          "processCount": 1,
+          "residentSetBytes": 170573824
+        },
+        "switchContentMs": 753.15966796875,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 0.244,
+          "nativeTotalMs": 607.06,
+          "parseMs": 461.068,
+          "scanMs": 144.7045
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 125469728,
+          "processCount": 1,
+          "residentSetBytes": 177807360
+        },
+        "windowOpenMs": 242.517333984375
+      },
+      "p90": {
+        "discoveryMs": 30.344,
+        "firstContentMs": 1235.41455078125,
+        "internalFirstContentMs": 1267.64306640625,
+        "internalSwitchContentMs": 787.677,
+        "internalTopJumpMs": 58.239,
+        "internalWindowOpenMs": 255.468017578125,
+        "initialContentDurationMs": 1010.309,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 116999176,
+          "processCount": 1,
+          "residentSetBytes": 167985152
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 0.065,
+          "nativeTotalMs": 873.89,
+          "parseMs": 663.647,
+          "scanMs": 198.058
+        },
+        "topJumpMs": 81.3017578125,
+        "topMemory": {
+          "physicalFootprintBytes": 119899168,
+          "processCount": 1,
+          "residentSetBytes": 172146688
+        },
+        "switchContentMs": 754.89013671875,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 0.274,
+          "nativeTotalMs": 609.897,
+          "parseMs": 464.694,
+          "scanMs": 147.421
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 129107000,
+          "processCount": 1,
+          "residentSetBytes": 181813248
+        },
+        "windowOpenMs": 276.6806640625
+      }
+    },
+    {
+      "app": "compose",
+      "buildSizeBytes": 122180800,
+      "grammarPackBytes": 3579102,
+      "combinedInstalledBytes": 125759902,
+      "median": {
+        "discoveryMs": 86.871959,
+        "firstContentMs": 1293.9814453125,
+        "internalFirstContentMs": 1331.5469970703125,
+        "internalSwitchContentMs": 415.16875,
+        "internalTopJumpMs": 110.79677050000001,
+        "internalWindowOpenMs": 531.2559814453125,
+        "initialContentDurationMs": 728.9829585,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 365536876,
+          "processCount": 1,
+          "residentSetBytes": 555794432
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 17.0780415,
+          "nativeTotalMs": 591.709209,
+          "parseMs": 365.690854,
+          "scanMs": 211.1495
+        },
+        "topJumpMs": 84.9981689453125,
+        "topMemory": {
+          "physicalFootprintBytes": 373614176,
+          "processCount": 1,
+          "residentSetBytes": 562790400
+        },
+        "switchContentMs": 378.823486328125,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 0.721271,
+          "nativeTotalMs": 331.2665835,
+          "parseMs": 181.661959,
+          "scanMs": 148.90085449999998
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 383837936,
+          "processCount": 1,
+          "residentSetBytes": 725032960
+        },
+        "windowOpenMs": 626.59765625
+      },
+      "p90": {
+        "discoveryMs": 92.73775,
+        "firstContentMs": 1311.7451171875,
+        "internalFirstContentMs": 1349.18896484375,
+        "internalSwitchContentMs": 415.661,
+        "internalTopJumpMs": 117.133375,
+        "internalWindowOpenMs": 544.18701171875,
+        "initialContentDurationMs": 735.423083,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 369329736,
+          "processCount": 1,
+          "residentSetBytes": 557498368
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 18.314084,
+          "nativeTotalMs": 612.191875,
+          "parseMs": 384.168791,
+          "scanMs": 211.783708
+        },
+        "topJumpMs": 101.54541015625,
+        "topMemory": {
+          "physicalFootprintBytes": 376243808,
+          "processCount": 1,
+          "residentSetBytes": 564592640
+        },
+        "switchContentMs": 381.52294921875,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 0.808625,
+          "nativeTotalMs": 333.28808300000003,
+          "parseMs": 185.981291,
+          "scanMs": 150.176875
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 387843800,
+          "processCount": 1,
+          "residentSetBytes": 727531520
+        },
+        "windowOpenMs": 643.44921875
+      }
+    },
+    {
+      "app": "deno-webview",
+      "buildSizeBytes": 69026775,
+      "grammarPackBytes": 82651,
+      "combinedInstalledBytes": 69109426,
+      "median": {
+        "discoveryMs": 27.000000000000014,
+        "firstContentMs": 1301.2213134765625,
+        "internalFirstContentMs": 1321.9095458984375,
+        "internalSwitchContentMs": 665.0000000000009,
+        "internalTopJumpMs": 81,
+        "internalWindowOpenMs": 180.822998046875,
+        "initialContentDurationMs": 935,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 409732312,
+          "processCount": 4,
+          "residentSetBytes": 537591808
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 0.3200414999999879,
+          "nativeTotalMs": 820.6935,
+          "parseMs": 674.660021,
+          "scanMs": 145.092833
+        },
+        "topJumpMs": 75.22119140625,
+        "topMemory": {
+          "physicalFootprintBytes": 417604848,
+          "processCount": 4,
+          "residentSetBytes": 556605440
+        },
+        "switchContentMs": 660.09619140625,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 0.5801460000002407,
+          "nativeTotalMs": 540.1297085000006,
+          "parseMs": 417.5576039999996,
+          "scanMs": 122.22108299999945
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 471337928,
+          "processCount": 4,
+          "residentSetBytes": 618348544
+        },
+        "windowOpenMs": 259.5919189453125
+      },
+      "p90": {
+        "discoveryMs": 37,
+        "firstContentMs": 1361.421875,
+        "internalFirstContentMs": 1380.809814453125,
+        "internalSwitchContentMs": 668,
+        "internalTopJumpMs": 82,
+        "internalWindowOpenMs": 246.095947265625,
+        "initialContentDurationMs": 936.0000000000001,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 410231880,
+          "processCount": 4,
+          "residentSetBytes": 538198016
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 0.4969590000000039,
+          "nativeTotalMs": 821.9447500000001,
+          "parseMs": 675.5657080000001,
+          "scanMs": 147.56858300000002
+        },
+        "topJumpMs": 86.660888671875,
+        "topMemory": {
+          "physicalFootprintBytes": 418276544,
+          "processCount": 4,
+          "residentSetBytes": 557596672
+        },
+        "switchContentMs": 667.983154296875,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 0.6102499999997235,
+          "nativeTotalMs": 541.036250000001,
+          "parseMs": 418.3123340000002,
+          "scanMs": 122.90779199999997
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 473426744,
+          "processCount": 4,
+          "residentSetBytes": 620183552
+        },
+        "windowOpenMs": 311.421875
+      }
+    },
+    {
+      "app": "deno-cef",
+      "buildSizeBytes": 322733640,
+      "grammarPackBytes": 82651,
+      "combinedInstalledBytes": 322816291,
+      "median": {
+        "discoveryMs": 40.150000005960464,
+        "firstContentMs": 1360.655517578125,
+        "internalFirstContentMs": 1370.762451171875,
+        "internalSwitchContentMs": 681.1000000238419,
+        "internalTopJumpMs": 47.400000005960464,
+        "internalWindowOpenMs": 300.764404296875,
+        "initialContentDurationMs": 952.0999999642372,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 430183804,
+          "processCount": 6,
+          "residentSetBytes": 1012506624
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 0.31672900000000226,
+          "nativeTotalMs": 848.6402915,
+          "parseMs": 691.2536459999999,
+          "scanMs": 156.5037915
+        },
+        "topJumpMs": 71.09375,
+        "topMemory": {
+          "physicalFootprintBytes": 433231276,
+          "processCount": 6,
+          "residentSetBytes": 1026285568
+        },
+        "switchContentMs": 687.30712890625,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 0.4773544999998194,
+          "nativeTotalMs": 556.2526665000005,
+          "parseMs": 431.15172900000016,
+          "scanMs": 125.36443700000018
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 494271560,
+          "processCount": 6,
+          "residentSetBytes": 1192583168
+        },
+        "windowOpenMs": 327.2340087890625
+      },
+      "p90": {
+        "discoveryMs": 42.80000001192093,
+        "firstContentMs": 1577.3896484375,
+        "internalFirstContentMs": 1587.494873046875,
+        "internalSwitchContentMs": 696,
+        "internalTopJumpMs": 62.5,
+        "internalWindowOpenMs": 555.494873046875,
+        "initialContentDurationMs": 961.6000000238419,
+        "initialContentDigest": "896fdfd0e21d36fc",
+        "initialMemory": {
+          "physicalFootprintBytes": 440415648,
+          "processCount": 6,
+          "residentSetBytes": 1014579200
+        },
+        "initialStages": {
+          "documentMs": 0,
+          "loadMs": 0.576082999999997,
+          "nativeTotalMs": 852.145166,
+          "parseMs": 693.113875,
+          "scanMs": 160.238583
+        },
+        "topJumpMs": 86.017333984375,
+        "topMemory": {
+          "physicalFootprintBytes": 444085712,
+          "processCount": 6,
+          "residentSetBytes": 1028915200
+        },
+        "switchContentMs": 704.05859375,
+        "switchContentDigest": "c27e9dc5a848d7f6",
+        "switchStages": {
+          "documentMs": 0,
+          "loadMs": 0.5400829999998678,
+          "nativeTotalMs": 558.9443329999995,
+          "parseMs": 433.5944579999996,
+          "scanMs": 126.24045900000056
+        },
+        "switchedMemory": {
+          "physicalFootprintBytes": 498711696,
+          "processCount": 6,
+          "residentSetBytes": 1201815552
+        },
+        "windowOpenMs": 594.056396484375
+      }
+    }
+  ],
+  "fixtures": [
+    {
+      "id": "codex:01a00da0-98d8-73d2-855c-4de683784524",
+      "provider": "codex",
+      "sourceBytes": 239115823,
+      "sha256": "c935ca09010e7b631aaea739643375afbc749fb0dd98d9e93c3b0a1b5bf7fb10"
+    },
+    {
+      "id": "codex:019ffc0a-5477-7170-80fa-70aac0a91a85",
+      "provider": "codex",
+      "sourceBytes": 148125953,
+      "sha256": "b5bdee977cc8b20adc841e458ad0255fb1c7cc62ed05232dd8d2dc410cb3c172"
+    }
+  ],
+  "host": {
+    "samples": 545,
+    "medianCpuBusyPercent": 7.045636509207366,
+    "p90CpuBusyPercent": 12.68,
+    "maxCpuBusyPercent": 23.89522095580884,
+    "thermalStates": [
+      0
+    ]
+  },
+  "discardedAttempts": [
+    {
+      "app": "gpui",
+      "recorded": true,
+      "attempt": 1,
+      "at": "2026-09-24T06:49:13.628Z",
+      "reason": "Could not find stable visual frames: window=21, initial=28, top=82, switch=-1, maximumWindowChange=0.3419"
+    }
+  ]
+}

@@ -40,7 +40,7 @@ compose.desktop {
 
 val testPolicy by
     tasks.registering(Copy::class) {
-        from(rootProject.file("../../benchmarks/chat-history/syntax-highlighting-policy.json"))
+        from(rootProject.file("../../ChatHistory/benchmark/syntax-highlighting-policy.json"))
         into(
             rootProject.file("../../.build/chat-history-benchmarks/grammar-packs/v1/compose-syntax")
         )
