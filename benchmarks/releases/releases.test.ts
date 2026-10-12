@@ -84,7 +84,7 @@ test("release entry points show help without GitHub or build side effects", () =
 });
 
 test("release grammar assets must match every chat app's engine and pinned pack", async () => {
-  const { grammarEngines, grammarEngineForApp } = await import("../chat-history/grammar-packs");
+  const { grammarEngines, grammarEngineForApp } = await import("../../ChatHistory/benchmark/grammar-packs");
   const value = manifest();
   value.grammarAssets = grammarEngines.map(engine => ({ name: `grammars-${engine}-v1-macos-arm64.tar.gz`, bytes: 10, sha256: sha, treeSha256: sha, pack: { engine, version: "v1", bytes: 20, manifestSha256: sha } }));
   for (const asset of value.assets) if (asset.suite === "chat-history") asset.build.grammarPack = { ...value.grammarAssets.find(pack => pack.pack.engine === grammarEngineForApp(asset.app))!.pack };

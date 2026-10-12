@@ -40,9 +40,9 @@ On older macOS versions AppKit and SwiftUI fall back to an `NSVisualEffectView`;
 
 The report uses a long synthetic chat, scrolled to the top so that real rendered text continues behind the composer. Each screenshot is extracted 600 ms after the app's top-viewport event, before the chat switch. The fixture contains prose, lists, and highlighted TypeScript. These screenshots are presentation evidence, not new performance measurements, and are not the private corpus used for the timing tables.
 
-The native sizing/lifecycle regression check is [composer_glass_test.m](../apps/chat-history-gpui/tests/composer_glass_test.m); its header includes the command to run it.
+The native sizing/lifecycle regression check is [composer_glass_test.m](../ChatHistory/apps/chat-history-gpui/tests/composer_glass_test.m); its header includes the command to run it.
 
-Sources in this repository: [web CSS](../apps/chat-history-electron/src/styles.css), [Flutter widgets](../apps/chat-history-flutter/lib/main.dart), [GPUI renderer](../apps/chat-history-gpui/src/main.rs), and [shared native glass view](../packages/chat-history-swift/Sources/ChatHistoryMarkdown/TranscriptGlassView.swift). RN uses the sibling Legend Apps `glass-effect-view` package.
+Sources in this repository: [web CSS](../ChatHistory/apps/chat-history-electron/src/styles.css), [Flutter widgets](../ChatHistory/apps/chat-history-flutter/lib/main.dart), [GPUI renderer](../ChatHistory/apps/chat-history-gpui/src/main.rs), and [shared native glass view](../ChatHistory/packages/chat-history-swift/Sources/ChatHistoryMarkdown/TranscriptGlassView.swift). RN uses the sibling Legend Apps `glass-effect-view` package.
 
 ## Compose Multiplatform addition
 

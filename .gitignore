@@ -5,29 +5,20 @@ node_modules/
 .env
 *.log
 
-apps/chat-history-deno/build/
-apps/chat-history-deno/dist/
-apps/chat-history-electron/dist/
-apps/chat-history-flutter/build/
-apps/chat-history-gpui/target/
-apps/chat-history-tauri/dist/
-apps/chat-history-tauri/src-tauri/gen/schemas/
-apps/chat-history-tauri/src-tauri/target/
-benchmarks/chat-history/fixtures.local.json
-benchmarks/chat-history/results/
+# Build output for the apps of any benchmark (`<Benchmark>/apps/<framework>`).
+*/apps/*/build/
+*/apps/*/dist/
+*/apps/*/target/
+*/apps/*/src-tauri/target/
+*/apps/*/src-tauri/gen/
 
-# Minimal framework baselines
-apps/hello-world-*/dist/
-apps/hello-world-*/build/
-apps/hello-world-*/target/
-apps/hello-world-tauri/src-tauri/target/
-apps/hello-world-tauri/src-tauri/gen/
-apps/hello-world-react-native/macos/Pods/
-benchmarks/hello-world/results/
-apps/hello-world-react-native/macos/build/
+# Per-benchmark generated output.
+*/benchmark/results/
+ChatHistory/benchmark/fixtures.local.json
+HelloWorld/apps/hello-world-react-native/macos/Pods/
+HelloWorld/apps/hello-world-react-native/macos/build/
 
 # Compose/JVM build outputs
-apps/chat-history-compose/build/
-packages/compose-desktop/.gradle/
-packages/compose-desktop/.kotlin/
-packages/compose-syntax/build/
+shared/compose-desktop/.gradle/
+shared/compose-desktop/.kotlin/
+ChatHistory/packages/compose-syntax/build/

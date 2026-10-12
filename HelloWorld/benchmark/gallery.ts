@@ -94,6 +94,6 @@ document.getElementById('reset').onclick=()=>players.forEach(reset);
 
 if (import.meta.main) {
   const path = option("--results");
-  if (!path) throw new Error("Usage: bun benchmarks/hello-world/gallery.ts --results <results.json>");
+  if (!path) throw new Error("Usage: bun HelloWorld/benchmark/gallery.ts --results <results.json>");
   console.log(writeGallery(resolve(path)));
 }

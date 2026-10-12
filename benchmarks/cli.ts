@@ -1,10 +1,10 @@
-import { verifyAppGrammarPack } from "./chat-history/grammar-packs";
+import { verifyAppGrammarPack } from "../ChatHistory/benchmark/grammar-packs";
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
-import { allApps, labels, type AppName, repositoryRoot } from "./hello-world/config";
-import { renderingInputs, verifyRenderingInputs, type RenderingInputs } from "./chat-history/fairness";
+import { allApps, labels, type AppName, repositoryRoot } from "../HelloWorld/benchmark/config";
+import { renderingInputs, verifyRenderingInputs, type RenderingInputs } from "../ChatHistory/benchmark/fairness";
 
 import { assertReleaseSet, type BuildRecord } from "./releases/shared";
 
@@ -15,6 +15,9 @@ export type Options = {
   legendRepo: string; iterations: number; warmups: number; settleMs: number;
 };
 const suites: Suite[] = ["chat-history", "hello-world"];
+// Each benchmark owns its apps, packages, and build/run scripts in its own folder,
+// so a new benchmark (desktop or mobile) is one entry here plus that folder.
+const suiteDirectories: Record<Suite, string> = { "chat-history": "ChatHistory", "hello-world": "HelloWorld" };
 
 export function parseArgs(mode: Mode, args: string[]): Options {
   const values = new Map<string, string>();
@@ -60,7 +63,7 @@ export function plan(mode: Mode, options: Options) {
     }
     const targets = mode === "build" && suite === "chat-history"
       ? [...new Set(apps.map(app => app.startsWith("deno-") ? "deno" : app))] : apps;
-    const args = [resolve(repositoryRoot, `benchmarks/${suite}/${mode}.ts`), "--app", targets.join(",")];
+    const args = [resolve(repositoryRoot, `${suiteDirectories[suite]}/benchmark/${mode}.ts`), "--app", targets.join(",")];
     if (mode === "build") {
       args.push(suite === "chat-history" ? "--react-native-repo" : "--legend-apps-repo", options.legendRepo);
     } else {
@@ -91,7 +94,7 @@ export function preflightBuilds(jobs: ReturnType<typeof plan>, root = repository
     }
     if (job.suite === "chat-history") {
       verifyRenderingInputs({ ...inputs, currentPolicy: renderingInputs(root, "policy") });
-      if (!existsSync(resolve(root, "benchmarks/chat-history/fixtures.local.json"))) throw new Error("Missing pinned chat fixtures. Run bun run benchmark:fixtures first.");
+      if (!existsSync(resolve(root, "ChatHistory/benchmark/fixtures.local.json"))) throw new Error("Missing pinned chat fixtures. Run bun run benchmark:fixtures first.");
     }
   }
   assertReleaseSet(releaseRecords, root);

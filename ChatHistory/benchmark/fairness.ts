@@ -22,15 +22,16 @@ export type RenderingInputs = {
 };
 
 const webTargets = new Set(["electron", "tauri", "deno", "deno-webview", "deno-cef"]);
+const benchmarkRoot = resolve(import.meta.dir, "..");
 const hash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 
 export function renderingInputs(repositoryRoot: string, target: string, rnRoot?: string): RenderingInputs {
   const result: RenderingInputs = {
     contractSha256: hash(JSON.stringify(renderingContract)),
-    highlightingPolicySha256: hash(readFileSync(resolve(repositoryRoot, "benchmarks/chat-history/syntax-highlighting-policy.json"))),
+    highlightingPolicySha256: hash(readFileSync(resolve(import.meta.dir, "syntax-highlighting-policy.json"))),
   };
   if (target === "react-native" || webTargets.has(target)) {
-    const packageRoot = resolve(target === "react-native" ? rnRoot ?? repositoryRoot : repositoryRoot, "packages/legend-list-sparse-layout");
+    const packageRoot = resolve(target === "react-native" ? rnRoot ?? benchmarkRoot : benchmarkRoot, "packages/legend-list-sparse-layout");
     const metadata = JSON.parse(readFileSync(resolve(packageRoot, "package.json"), "utf8"));
     result.legendList = {
       version: metadata.version,

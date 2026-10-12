@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { changedRatio, firstStableFrame, regionFeature } from "./video";
+import { changedRatio, firstStableFrame } from "../../shared/video";
+import { regionFeature } from "./video";
 
 const width = 100;
 const height = 100;

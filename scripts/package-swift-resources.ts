@@ -1,4 +1,4 @@
-import { prepareGrammarPack, sealGrammarPack } from "../benchmarks/chat-history/grammar-packs";
+import { prepareGrammarPack, sealGrammarPack } from "../ChatHistory/benchmark/grammar-packs";
 import { cpSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 

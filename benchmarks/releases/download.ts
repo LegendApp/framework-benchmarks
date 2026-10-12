@@ -1,10 +1,10 @@
-import { grammarPackRoot, verifyGrammarPack } from "../chat-history/grammar-packs";
+import { grammarPackRoot, verifyGrammarPack } from "../../ChatHistory/benchmark/grammar-packs";
 import { execFileSync } from "node:child_process";
 import { closeSync, existsSync, mkdirSync, mkdtempSync, openSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs, plan } from "../cli";
-import { repositoryRoot } from "../hello-world/config";
-import { renderingInputs, verifyRenderingInputs } from "../chat-history/fairness";
+import { repositoryRoot } from "../../HelloWorld/benchmark/config";
+import { renderingInputs, verifyRenderingInputs } from "../../ChatHistory/benchmark/fairness";
 import { options, repository, tag } from "./options";
 import { buildKey, bundleHash, bundleName, cleanCommit, command, hashFile, manifestName, readManifest, type BuildRecord, type ReleaseIdentity } from "./shared";
 import { installTransaction } from "./install";

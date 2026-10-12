@@ -12,18 +12,18 @@
     "target": "ES2022",
     "types": ["bun", "jest", "node"]
   },
-  "include": ["apps", "benchmarks", "packages", "scripts"],
+  "include": ["ChatHistory", "HelloWorld", "benchmarks", "shared", "scripts"],
   "exclude": [
-    "benchmarks/**/results",
+    "*/benchmark/results",
     "**/.build",
     "**/build",
     "**/dist",
     "**/node_modules",
     "**/target",
-    "apps/chat-history-deno/src/main_cef.ts",
-    "apps/chat-history-deno/src/main_webview.ts",
-    "apps/chat-history-deno/src/runtime.ts",
-    "packages/*/vendor",
-    "apps/hello-world-deno/src/main.ts"
+    "ChatHistory/apps/chat-history-deno/src/main_cef.ts",
+    "ChatHistory/apps/chat-history-deno/src/main_webview.ts",
+    "ChatHistory/apps/chat-history-deno/src/runtime.ts",
+    "*/packages/*/vendor",
+    "HelloWorld/apps/hello-world-deno/src/main.ts"
   ]
 }

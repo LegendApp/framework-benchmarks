@@ -2,9 +2,9 @@ import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, lstatSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { buildRoot, repositoryRoot } from "./config";
-import type { WindowInfo } from "../chat-history/video";
+import type { WindowInfo } from "../../shared/video";
 
-const productHelpers = resolve(repositoryRoot, "benchmarks/chat-history");
+const captureHelpers = resolve(repositoryRoot, "shared/capture");
 export const launchExecutable = join(buildRoot, "launch-app");
 const windowExecutable = join(buildRoot, "window-info");
 // Use the existing capture identity so the OS permission is shared by both suites.
@@ -20,13 +20,13 @@ export function buildHelpers() {
       execFileSync("swiftc", ["-O", ...frameworks.flatMap((name) => ["-framework", name]), source, "-o", output]);
     }
   };
-  compile(launchExecutable, join(productHelpers, "launch-app.swift"), ["AppKit"]);
-  compile(windowExecutable, join(productHelpers, "window-info.swift"));
+  compile(launchExecutable, join(captureHelpers, "launch-app.swift"), ["AppKit"]);
+  compile(windowExecutable, join(captureHelpers, "window-info.swift"));
   compile(detectContentExecutable, resolve(import.meta.dir, "detect-content.swift"), ["Vision", "AVFoundation"]);
   compile(verifyTextExecutable, resolve(import.meta.dir, "verify-text.swift"), ["Vision", "AppKit"]);
   mkdirSync(join(captureApp, "Contents/MacOS"), { recursive: true });
-  copyFileSync(join(productHelpers, "CaptureInfo.plist"), join(captureApp, "Contents/Info.plist"));
-  compile(captureExecutable, join(productHelpers, "capture-screen.swift"), ["ScreenCaptureKit", "AVFoundation", "CoreMedia", "CoreGraphics"]);
+  copyFileSync(join(captureHelpers, "CaptureInfo.plist"), join(captureApp, "Contents/Info.plist"));
+  compile(captureExecutable, join(captureHelpers, "capture-screen.swift"), ["ScreenCaptureKit", "AVFoundation", "CoreMedia", "CoreGraphics"]);
   execFileSync("codesign", ["--force", "--sign", "-", "--identifier", "so.legend.chat-history-benchmark-capture", captureApp], { stdio: "pipe" });
 }
 

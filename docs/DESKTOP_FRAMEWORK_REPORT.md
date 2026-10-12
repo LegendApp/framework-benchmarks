@@ -134,7 +134,7 @@ The React interface renders in the system WebView, with a Rust host; on this Mac
 
 ### Deno Desktop — WebView
 
-This repository’s Deno Desktop build pairs a TypeScript backend and React frontend with the system WebView. It shares the application logic with the CEF variant. [Implementation notes](../benchmarks/chat-history/README.md#running-deno-desktop).
+This repository’s Deno Desktop build pairs a TypeScript backend and React frontend with the system WebView. It shares the application logic with the CEF variant. [Implementation notes](../ChatHistory/benchmark/README.md#running-deno-desktop).
 
 ![Deno Desktop — WebView chat-history app showing a long synthetic chat behind the composer](report-assets/deno-webview.png)
 
@@ -148,7 +148,7 @@ This repository’s Deno Desktop build pairs a TypeScript backend and React fron
 
 ### Deno Desktop — CEF
 
-The same Deno/React application runs with a bundled Chromium Embedded Framework renderer. [Implementation notes](../benchmarks/chat-history/README.md#running-deno-desktop).
+The same Deno/React application runs with a bundled Chromium Embedded Framework renderer. [Implementation notes](../ChatHistory/benchmark/README.md#running-deno-desktop).
 
 ![Deno Desktop — CEF chat-history app showing a long synthetic chat behind the composer](report-assets/deno-cef.png)
 
@@ -217,8 +217,8 @@ A Swift application built directly with AppKit’s macOS views, text system, and
 - [Build and benchmark instructions](../README.md#build-then-benchmark).
 - [Latest build-size table](../benchmarks/BUILD_SIZES.md) and [exact bytes/build provenance](../benchmarks/BUILD_SIZES.json).
 - [Controlled timing/memory results, p90, and conditions](../benchmarks/final-2026-09-17/RESULTS.md).
-- [Fairness standard](../benchmarks/chat-history/FAIRNESS_STANDARD.md) and [external grammar design](../benchmarks/chat-history/EXTERNAL_GRAMMARS.md).
-- [External grammar validation](../benchmarks/chat-history/EXTERNAL_GRAMMARS_VALIDATION.md). The report screenshots are copied beside this document so they remain available when the repository is cloned; the original videos and raw benchmark files referenced by the validation documents remain local, ignored evidence.
+- [Fairness standard](../ChatHistory/benchmark/FAIRNESS_STANDARD.md) and [external grammar design](../ChatHistory/benchmark/EXTERNAL_GRAMMARS.md).
+- [External grammar validation](../ChatHistory/benchmark/EXTERNAL_GRAMMARS_VALIDATION.md). The report screenshots are copied beside this document so they remain available when the repository is cloned; the original videos and raw benchmark files referenced by the validation documents remain local, ignored evidence.
 
 The full benchmark uses local pinned histories, which are not distributed with these apps. The screenshots’ synthetic transcript is a visual validation fixture, not the corpus used to produce the timing tables. Equivalent workloads and enabled parsing/highlighting do not imply identical tokenization, layout, pixels, or engine internals.
 

@@ -12,7 +12,7 @@
         "typescript": "^5.9.2",
       },
     },
-    "apps/chat-history-deno": {
+    "ChatHistory/apps/chat-history-deno": {
       "name": "@legend-apps/chat-history-deno",
       "version": "0.0.1",
       "dependencies": {
@@ -21,7 +21,7 @@
         "react-dom": "19.1.4",
       },
     },
-    "apps/chat-history-electron": {
+    "ChatHistory/apps/chat-history-electron": {
       "name": "@legend-apps/chat-history-electron",
       "version": "0.0.1",
       "dependencies": {
@@ -37,7 +37,7 @@
         "electron": "44.0.0",
       },
     },
-    "apps/chat-history-tauri": {
+    "ChatHistory/apps/chat-history-tauri": {
       "name": "@legend-apps/chat-history-tauri",
       "version": "0.0.1",
       "dependencies": {
@@ -51,18 +51,32 @@
         "@tauri-apps/cli": "2.11.4",
       },
     },
-    "apps/hello-world-deno": {
+    "ChatHistory/packages/legend-list-sparse-layout": {
+      "name": "@legendapp/list",
+      "version": "3.3.10-sparse-layout.a6f5ba13",
+      "dependencies": {
+        "use-sync-external-store": "^1.5.0",
+      },
+      "peerDependencies": {
+        "react": "*",
+        "react-dom": "*",
+      },
+      "optionalPeers": [
+        "react-dom",
+      ],
+    },
+    "HelloWorld/apps/hello-world-deno": {
       "name": "@legend-apps/hello-world-deno",
       "version": "0.0.1",
     },
-    "apps/hello-world-electron": {
+    "HelloWorld/apps/hello-world-electron": {
       "name": "@legend-apps/hello-world-electron",
       "version": "0.0.1",
       "devDependencies": {
         "electron": "44.0.0",
       },
     },
-    "apps/hello-world-react-native": {
+    "HelloWorld/apps/hello-world-react-native": {
       "name": "@legend-apps/hello-world-react-native",
       "version": "0.0.1",
       "dependencies": {
@@ -78,14 +92,14 @@
         "@react-native/metro-config": "0.81.6",
       },
     },
-    "apps/hello-world-tauri": {
+    "HelloWorld/apps/hello-world-tauri": {
       "name": "@legend-apps/hello-world-tauri",
       "version": "0.0.1",
       "devDependencies": {
         "@tauri-apps/cli": "2.11.4",
       },
     },
-    "packages/hello-world-web": {
+    "HelloWorld/packages/hello-world-web": {
       "name": "@legend-apps/hello-world-web",
       "version": "0.0.1",
       "dependencies": {
@@ -95,20 +109,6 @@
       "devDependencies": {
         "@types/react-dom": "19.1.9",
       },
-    },
-    "packages/legend-list-sparse-layout": {
-      "name": "@legendapp/list",
-      "version": "3.3.5-sparse-layout.94dfeeda.2",
-      "dependencies": {
-        "use-sync-external-store": "^1.5.0",
-      },
-      "peerDependencies": {
-        "react": "*",
-        "react-dom": "*",
-      },
-      "optionalPeers": [
-        "react-dom",
-      ],
     },
   },
   "trustedDependencies": [
@@ -324,23 +324,23 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
-    "@legend-apps/chat-history-deno": ["@legend-apps/chat-history-deno@workspace:apps/chat-history-deno"],
+    "@legend-apps/chat-history-deno": ["@legend-apps/chat-history-deno@workspace:ChatHistory/apps/chat-history-deno"],
 
-    "@legend-apps/chat-history-electron": ["@legend-apps/chat-history-electron@workspace:apps/chat-history-electron"],
+    "@legend-apps/chat-history-electron": ["@legend-apps/chat-history-electron@workspace:ChatHistory/apps/chat-history-electron"],
 
-    "@legend-apps/chat-history-tauri": ["@legend-apps/chat-history-tauri@workspace:apps/chat-history-tauri"],
+    "@legend-apps/chat-history-tauri": ["@legend-apps/chat-history-tauri@workspace:ChatHistory/apps/chat-history-tauri"],
 
-    "@legend-apps/hello-world-deno": ["@legend-apps/hello-world-deno@workspace:apps/hello-world-deno"],
+    "@legend-apps/hello-world-deno": ["@legend-apps/hello-world-deno@workspace:HelloWorld/apps/hello-world-deno"],
 
-    "@legend-apps/hello-world-electron": ["@legend-apps/hello-world-electron@workspace:apps/hello-world-electron"],
+    "@legend-apps/hello-world-electron": ["@legend-apps/hello-world-electron@workspace:HelloWorld/apps/hello-world-electron"],
 
-    "@legend-apps/hello-world-react-native": ["@legend-apps/hello-world-react-native@workspace:apps/hello-world-react-native"],
+    "@legend-apps/hello-world-react-native": ["@legend-apps/hello-world-react-native@workspace:HelloWorld/apps/hello-world-react-native"],
 
-    "@legend-apps/hello-world-tauri": ["@legend-apps/hello-world-tauri@workspace:apps/hello-world-tauri"],
+    "@legend-apps/hello-world-tauri": ["@legend-apps/hello-world-tauri@workspace:HelloWorld/apps/hello-world-tauri"],
 
-    "@legend-apps/hello-world-web": ["@legend-apps/hello-world-web@workspace:packages/hello-world-web"],
+    "@legend-apps/hello-world-web": ["@legend-apps/hello-world-web@workspace:HelloWorld/packages/hello-world-web"],
 
-    "@legendapp/list": ["@legendapp/list@workspace:packages/legend-list-sparse-layout"],
+    "@legendapp/list": ["@legendapp/list@workspace:ChatHistory/packages/legend-list-sparse-layout"],
 
     "@nodable/entities": ["@nodable/entities@3.0.0", "", {}, "sha512-8L9xFeTYKhm49xfIypoe2W5wV1m/3Z58kT+7kR9A8OyFxcPduI4VmxaUMQyKYrRjUoLLSXv6EKKID5Tvj9cUVw=="],
 

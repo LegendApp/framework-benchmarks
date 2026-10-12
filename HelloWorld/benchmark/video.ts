@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, rmSync, writeFileSync } from "node:fs";
 import { relative } from "node:path";
-import { changedRatio, cropVideo, extractFeatures, firstStableFrame, nearestFrame, probeVideo, videoWindow, type WindowInfo } from "../chat-history/video";
+import { changedRatio, cropVideo, extractFeatures, firstStableFrame, nearestFrame, probeVideo, videoWindow, type WindowInfo } from "../../shared/video";
 import { detectContentExecutable, verifyTextExecutable } from "./macos";
 
 export async function analyzeHelloWorld(input: {

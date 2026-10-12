@@ -1,7 +1,7 @@
 import { buildWebGrammarPack, buildSyntectGrammarPack } from "./build-grammar-packs";
 import { buildTreeSitterPack } from "./build-tree-sitter-pack";
 import { grammarPackRecord, prepareGrammarPack, sealGrammarPack, type GrammarPackRecord } from "./grammar-packs";
-import { buildEnvironment, type BuildEnvironment } from "../build-environment";
+import { buildEnvironment, type BuildEnvironment } from "../../benchmarks/build-environment";
 import { renderingInputs, verifyRenderingInputs, type RenderingInputs } from "./fairness";
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -28,6 +28,8 @@ type BuildRecord = {
   repositoryPath: string;
 };
 
+// import.meta.dir is the benchmark folder, where results live; .build/ and the
+// toolchain wrappers live at the repository root.
 const repositoryRoot = resolve(import.meta.dir, "../..");
 const buildRoot = resolve(repositoryRoot, ".build/chat-history-benchmarks");
 const buildManifestPath = resolve(buildRoot, "build-manifest.json");
@@ -171,13 +173,13 @@ function readBuildManifest() {
 
 const commands: Record<Exclude<BuildTarget, "react-native">, [string, string[]]> = {
   appkit: ["bun", ["run", "chat-history:appkit:build-benchmark"]],
-  deno: ["bun", ["--cwd", "apps/chat-history-deno", "build:benchmark"]],
-  electron: ["bun", ["--cwd", "apps/chat-history-electron", "build:benchmark"]],
+  deno: ["bun", ["--cwd", "ChatHistory/apps/chat-history-deno", "build:benchmark"]],
+  electron: ["bun", ["--cwd", "ChatHistory/apps/chat-history-electron", "build:benchmark"]],
   flutter: ["bun", ["run", "chat-history:flutter:build-benchmark"]],
-  compose: ["bun", ["packages/compose-desktop/package.ts", "chat-history"]],
+  compose: ["bun", ["shared/compose-desktop/package.ts", "chat-history"]],
   gpui: ["bun", ["run", "chat-history:gpui:build-benchmark"]],
   swiftui: ["bun", ["run", "chat-history:swiftui:build-benchmark"]],
-  tauri: ["bun", ["--cwd", "apps/chat-history-tauri", "build:benchmark"]],
+  tauri: ["bun", ["--cwd", "ChatHistory/apps/chat-history-tauri", "build:benchmark"]],
 };
 
 const targets = selectedTargets();
@@ -196,8 +198,8 @@ for (const target of targets) {
   if (target === "react-native") buildTreeSitterPack(rnRoot!, repositoryRoot);
   if (target === "flutter") {
     const directory = prepareGrammarPack(repositoryRoot, "dart-highlighting");
-    run(resolve(repositoryRoot, "scripts/with-local-flutter.sh"), ["flutter", "pub", "get"], resolve(repositoryRoot, "apps/chat-history-flutter"));
-    run(resolve(repositoryRoot, "scripts/with-local-flutter.sh"), ["dart", "run", "scripts/export-grammar-pack.dart", resolve(directory, "grammars.json")], resolve(repositoryRoot, "apps/chat-history-flutter"));
+    run(resolve(repositoryRoot, "scripts/with-local-flutter.sh"), ["flutter", "pub", "get"], resolve(import.meta.dir, "../apps/chat-history-flutter"));
+    run(resolve(repositoryRoot, "scripts/with-local-flutter.sh"), ["dart", "run", "scripts/export-grammar-pack.dart", resolve(directory, "grammars.json")], resolve(import.meta.dir, "../apps/chat-history-flutter"));
     sealGrammarPack(directory, "dart-highlighting");
   }
   if (target === "react-native") {

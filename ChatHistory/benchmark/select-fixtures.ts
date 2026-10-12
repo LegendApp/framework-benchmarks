@@ -16,7 +16,7 @@ import type {
   BenchmarkFixture,
   BenchmarkFixtureManifest,
   ChatProvider,
-} from "../../apps/chat-history-electron/src/model";
+} from "../apps/chat-history-electron/src/model";
 
 const defaultMinimumInactiveDays = 8;
 const outputPath = resolve(import.meta.dir, "fixtures.local.json");

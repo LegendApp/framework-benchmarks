@@ -1,12 +1,12 @@
-import { grammarEngines, grammarEngineForApp, type GrammarPackRecord } from "../chat-history/grammar-packs";
+import { grammarEngines, grammarEngineForApp, type GrammarPackRecord } from "../../ChatHistory/benchmark/grammar-packs";
 import type { BuildEnvironment } from "../build-environment";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { closeSync, lstatSync, openSync, readFileSync, readdirSync, readlinkSync, readSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { allApps, labels, type AppName } from "../hello-world/config";
+import { allApps, labels, type AppName } from "../../HelloWorld/benchmark/config";
 import type { Suite } from "../cli";
-import type { RenderingInputs } from "../chat-history/fairness";
+import type { RenderingInputs } from "../../ChatHistory/benchmark/fairness";
 
 export const manifestName = "benchmark-release.json";
 export type BuildRecord = { grammarPack?: GrammarPackRecord; environment?: BuildEnvironment; builtAt: string; gitCommit: string; gitDirty: boolean; repositoryPath?: string; bundle?: string; renderingInputs?: RenderingInputs; release?: ReleaseIdentity };

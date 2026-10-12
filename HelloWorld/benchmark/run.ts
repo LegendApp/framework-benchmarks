@@ -2,7 +2,7 @@ import { execFileSync, spawn } from "node:child_process";
 import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { startRecording, stopRecording, targetRecording } from "../chat-history/video";
+import { startRecording, stopRecording, targetRecording } from "../../shared/video";
 import { buildRoot, bundlePath, integerOption, labels, repositoryRoot, selectedApps, type AppName } from "./config";
 import { buildHelpers, bundleSize, captureExecutable, launchExecutable, median, percentile, settledMemory, stopApp, waitForWindow, webKitPids, type Memory } from "./macos";
 import { analyzeHelloWorld } from "./video";

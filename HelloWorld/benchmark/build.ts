@@ -1,8 +1,8 @@
-import { buildEnvironment, type BuildEnvironment } from "../build-environment";
+import { buildEnvironment, type BuildEnvironment } from "../../benchmarks/build-environment";
 import { execFileSync, spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { buildRoot, bundlePath, labels, repositoryRoot, selectedApps, option, type AppName } from "./config";
+import { benchmarkRoot, buildRoot, bundlePath, labels, repositoryRoot, selectedApps, option, type AppName } from "./config";
 
 const legendAppsRepository = resolve(option("--legend-apps-repo") ?? process.env.LEGEND_APPS_REPO ?? resolve(repositoryRoot, "../legend-apps"));
 
@@ -15,9 +15,9 @@ function run(command: string, args: string[], cwd = repositoryRoot, env = proces
 
 function web(appRoot: string) {
   mkdirSync(join(appRoot, "dist"), { recursive: true });
-  run("bun", ["build", "packages/hello-world-web/renderer.tsx", "--outdir", join(appRoot, "dist"),
+  run("bun", ["build", resolve(benchmarkRoot, "packages/hello-world-web/renderer.tsx"), "--outdir", join(appRoot, "dist"),
     "--target", "browser", "--format", "esm", "--production"]);
-  cpSync(resolve(repositoryRoot, "packages/hello-world-web/index.html"), join(appRoot, "dist/index.html"));
+  cpSync(resolve(benchmarkRoot, "packages/hello-world-web/index.html"), join(appRoot, "dist/index.html"));
 }
 
 function copyApp(source: string, app: AppName) {
@@ -53,7 +53,7 @@ function sign(app: AppName) {
 }
 
 async function build(app: AppName) {
-  const appRoot = resolve(repositoryRoot, `apps/hello-world-${app.startsWith("deno-") ? "deno" : app}`);
+  const appRoot = resolve(benchmarkRoot, `apps/hello-world-${app.startsWith("deno-") ? "deno" : app}`);
   switch (app) {
     case "legend-shell": {
       run("bun", ["run", "hello-world:benchmark:export", "--output", bundlePath(app)], legendAppsRepository);
@@ -78,7 +78,7 @@ async function build(app: AppName) {
       break;
     }
     case "compose": {
-      run("bun", ["packages/compose-desktop/package.ts", "hello-world"]);
+      run("bun", ["shared/compose-desktop/package.ts", "hello-world"]);
       break;
     }
     case "gpui": {
@@ -97,7 +97,7 @@ async function build(app: AppName) {
       web(appRoot);
       const backend = app === "deno-webview" ? "webview" : "cef";
       run(resolve(repositoryRoot, "scripts/with-local-deno.sh"), ["deno", "desktop", "--no-npm", "--allow-read", "--allow-net=127.0.0.1:8000",
-        "--include", "./dist", "--backend", backend, "--icon", "../chat-history-tauri/src-tauri/icons/icon.icns",
+        "--include", "./dist", "--backend", backend, "--icon", resolve(repositoryRoot, "assets/app-icon.icns"),
         "--output", `./build/Hello World - ${labels[app]}`, "src/main.ts"], appRoot);
       copyApp(join(appRoot, `build/Hello World - ${labels[app]}.app`), app);
       break;

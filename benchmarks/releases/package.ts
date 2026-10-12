@@ -1,9 +1,9 @@
-import { grammarPackRoot, verifyAppGrammarPack } from "../chat-history/grammar-packs";
+import { grammarPackRoot, verifyAppGrammarPack } from "../../ChatHistory/benchmark/grammar-packs";
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs, plan } from "../cli";
-import { repositoryRoot } from "../hello-world/config";
-import { renderingInputs, verifyRenderingInputs } from "../chat-history/fairness";
+import { repositoryRoot } from "../../HelloWorld/benchmark/config";
+import { renderingInputs, verifyRenderingInputs } from "../../ChatHistory/benchmark/fairness";
 import { options, tag } from "./options";
 import { buildKey, bundleHash, bundleName, cleanCommit, command, hashFile, manifestName, validateManifest, type BuildRecord, type Manifest } from "./shared";
 

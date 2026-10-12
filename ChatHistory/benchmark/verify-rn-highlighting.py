@@ -5,13 +5,14 @@ This is a correctness check, not a timed benchmark. Outputs stay under .build.
 """
 from pathlib import Path
 import subprocess,json,concurrent.futures,os,sys
-repo=Path(__file__).resolve().parents[2]
+here=Path(__file__).resolve().parent
+repo=here.parent.parent
 src=(repo/'../legend-apps/apps/chat-history/node_modules/react-native-enriched-markdown/cpp/highlight').resolve()
 out=repo/'.build/chat-history-benchmarks/syntax-check';out.mkdir(parents=True,exist_ok=True)
 external='--builtin' not in sys.argv
 langs=json.loads((repo/'../legend-apps/apps/chat-history/scripts/benchmark-markdown.json').read_text())['codeHighlightLanguages']
 subprocess.run(['node',str(src/'gen-registry.mjs'),'--vendor-dir',str(src/'vendor'),'--languages',','.join(langs),'--out',str(out)],check=True)
-fixtures=json.loads((repo/'benchmarks/chat-history/syntax-highlighting-fixtures.json').read_text())
+fixtures=json.loads((here/'syntax-highlighting-fixtures.json').read_text())
 body='''#include "CodeBlockHighlighter.hpp"
 #include "CodeBlockLanguages.hpp"
 #include "HighlightGrammars.hpp"

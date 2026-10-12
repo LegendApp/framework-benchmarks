@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 
 export const repositoryRoot = resolve(import.meta.dir, "../..");
+export const benchmarkRoot = resolve(import.meta.dir, "..");
 export const buildRoot = resolve(repositoryRoot, ".build/hello-world-benchmarks");
 export const labels = {
   "react-native": "React Native",

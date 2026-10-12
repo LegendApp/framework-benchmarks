@@ -1,8 +1,8 @@
 # Hello World framework baseline
 
-Latest: [September 16 final results for both workloads](../final-2026-09-16/RESULTS.md), with ten observations per app, built sizes, and the [100-video gallery](results/2026-09-16T21-25-32.060Z/videos.html).
+Latest: [September 16 final results for both workloads](../../benchmarks/final-2026-09-16/RESULTS.md), with ten observations per app, built sizes, and the [100-video gallery](results/2026-09-16T21-25-32.060Z/videos.html).
 
-This is the minimal-project counterpart to the [full chat product benchmark](../chat-history/README.md). All nine apps display **Hello, world!** in centered 32-point text on white, in a 1280×720 content window. These are deliberately minimal apps rather than unmodified generator demos.
+This is the minimal-project counterpart to the [full chat product benchmark](../../ChatHistory/benchmark/README.md). All nine apps display **Hello, world!** in centered 32-point text on white, in a 1280×720 content window. These are deliberately minimal apps rather than unmodified generator demos.
 
 | Runtime | Baseline source | Runtime dependencies |
 | --- | --- | --- |
@@ -87,7 +87,7 @@ Harness regression checks: `bun test benchmarks/hello-world/benchmark.test.ts`.
 
 ## Shared window-presentation policy
 
-Both suites now launch apps with process-local `-NSAutomaticWindowAnimationsEnabled NO`. This does not write system or user preferences. See [the fairness report](../chat-history/FAIRNESS_RESULTS.md) for the controlled validation and current results. `CHAT_HISTORY_BENCHMARK_SYSTEM_ANIMATIONS=1` retains system behavior for diagnostic comparisons; result metadata records the policy.
+Both suites now launch apps with process-local `-NSAutomaticWindowAnimationsEnabled NO`. This does not write system or user preferences. See [the fairness report](../../ChatHistory/benchmark/FAIRNESS_RESULTS.md) for the controlled validation and current results. `CHAT_HISTORY_BENCHMARK_SYSTEM_ANIMATIONS=1` retains system behavior for diagnostic comparisons; result metadata records the policy.
 
 Select several apps with `--app appkit,swiftui,react-native`. The default selects all nine. `--allow-locked-session` explicitly allows the existing locked-console workflow; timing and companion memory launches both retain their lock state. Such runs describe that session condition, not verified unlocked foreground behavior.
 

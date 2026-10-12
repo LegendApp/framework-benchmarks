@@ -5,7 +5,7 @@ WebView, Deno Desktop CEF, Flutter, GPUI, SwiftUI, and AppKit. React Native is
 maintained in the sibling `legend-apps` repository and exported into this
 repository's common production-build directory by the build command. Benchmark runs use existing builds.
 
-For the latest full run, see [September 16 final results for both workloads](../final-2026-09-16/RESULTS.md) and the [90-video viewer](results/2026-09-16T20-35-45.623Z-videos/index.html). The earlier parser/layout checkpoint is in [Swift/native parity results](SWIFT_PARITY_RESULTS.md). The prior production comparison is in [responsive AppKit results and SwiftUI diagnosis](RESPONSIVE_LAYOUT_RESULTS.md). The earlier detector correction and causal experiments are in [CAUSAL_ANALYSIS.md](CAUSAL_ANALYSIS.md). The earlier eight-app run and memory measurements are in [RESULTS.md](RESULTS.md).
+For the latest full run, see [September 16 final results for both workloads](../../benchmarks/final-2026-09-16/RESULTS.md) and the [90-video viewer](results/2026-09-16T20-35-45.623Z-videos/index.html). The earlier parser/layout checkpoint is in [Swift/native parity results](SWIFT_PARITY_RESULTS.md). The prior production comparison is in [responsive AppKit results and SwiftUI diagnosis](RESPONSIVE_LAYOUT_RESULTS.md). The earlier detector correction and causal experiments are in [CAUSAL_ANALYSIS.md](CAUSAL_ANALYSIS.md). The earlier eight-app run and memory measurements are in [RESULTS.md](RESULTS.md).
 [PERFORMANCE_ANALYSIS.md](PERFORMANCE_ANALYSIS.md) preserves the historical
 September 4 analysis and its earlier implementation/corpus.
 
@@ -17,11 +17,11 @@ The [fair comparison standard](FAIRNESS_STANDARD.md) defines comparable visible 
 
 ## Swift document backend
 
-AppKit and SwiftUI default to the equivalent lazy Swift parser. Their catalog discovery remains Swift/Foundation. Use `CHAT_HISTORY_PARSER=cpp` to run the same UIs with the vendored RN C++ document core; the report records the backend. See the [native implementation policy](../../packages/chat-history-swift/README.md) for the standardized layout rules and remaining renderer differences.
+AppKit and SwiftUI default to the equivalent lazy Swift parser. Their catalog discovery remains Swift/Foundation. Use `CHAT_HISTORY_PARSER=cpp` to run the same UIs with the vendored RN C++ document core; the report records the backend. See the [native implementation policy](../packages/chat-history-swift/README.md) for the standardized layout rules and remaining renderer differences.
 
 ## Minimal-project counterpart
 
-The [Hello World suite](../hello-world/README.md) measures the same nine runtimes with a standalone minimal app. Use `bun run benchmark:hello-world:build`, then `bun run benchmark:hello-world:run`, and `bun run benchmark:compare` to combine the two reports. Hello World compares startup, settled footprint, and bundle size; transcript-specific metrics below apply to the full product only.
+The [Hello World suite](../../HelloWorld/benchmark/README.md) measures the same nine runtimes with a standalone minimal app. Use `bun run benchmark:hello-world:build`, then `bun run benchmark:hello-world:run`, and `bun run benchmark:compare` to combine the two reports. Hello World compares startup, settled footprint, and bundle size; transcript-specific metrics below apply to the full product only.
 
 ## What is measured
 
@@ -228,7 +228,7 @@ Each framework uses its idiomatic host implementation:
   core as React Native, exposed through an Objective-C++ ownership adapter.
   Swift row IDs and metadata are available immediately; body and preview text
   are decoded and cached on demand. The original Swift parser is retained as a
-  conformance reference. See the [native core provenance and adapter notes](../../packages/chat-history-swift/Sources/ChatHistoryNative/README.md).
+  conformance reference. See the [native core provenance and adapter notes](../packages/chat-history-swift/Sources/ChatHistoryNative/README.md).
 
 This mode measures the actual architecture a production app would use.
 
