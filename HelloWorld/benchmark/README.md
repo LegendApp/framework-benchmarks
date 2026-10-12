@@ -68,7 +68,7 @@ Measurements are:
 
 Every process is fresh. Warmups are discarded, app order rotates each round, and invalid launches are retried at most twice before the suite fails. The default reference wait is five seconds after window discovery (`--settle-ms` can increase it). The runner rejects missing builds, invalid iteration counts, absent text, failed recordings, and missing footprint samples. It does not accept `--no-video`, since app callbacks do not validate visible Hello World content.
 
-Timestamped JSON and Markdown reports, videos, central text screenshots, OCR results, capture timestamp arrays, and frame sidecars live in ignored `benchmarks/hello-world/results/`. A one-iteration smoke run verifies the pipeline; use the default run for performance conclusions. No transcript fixtures or content-digest configuration is required. Each completed run includes `videos.html` with launch-aligned playback and a selector for every measured recording, plus `videos.md` with direct MP4 links. Capture timestamps and frame-selection metadata are retained beside every video.
+Timestamped JSON and Markdown reports, videos, central text screenshots, OCR results, capture timestamp arrays, and frame sidecars live in ignored `HelloWorld/benchmark/results/`. A one-iteration smoke run verifies the pipeline; use the default run for performance conclusions. No transcript fixtures or content-digest configuration is required. Each completed run includes `videos.html` with launch-aligned playback and a selector for every measured recording, plus `videos.md` with direct MP4 links. Capture timestamps and frame-selection metadata are retained beside every video.
 
 ## Compare the two workloads
 
@@ -76,14 +76,14 @@ The root `bun run benchmark` now measures existing builds in both workloads; it 
 
 ```sh
 bun run benchmark:compare \
-  --product benchmarks/chat-history/results/<product-run>.json \
-  --hello-world benchmarks/hello-world/results/<baseline-run>/results.json \
+  --product ChatHistory/benchmark/results/<product-run>.json \
+  --hello-world HelloWorld/benchmark/results/<baseline-run>/results.json \
   --output comparison.md
 ```
 
 Use measurements from the same machine and comparable release builds, display conditions, and video mode. The shared columns are startup, settled physical footprint, and bundle size. The product additionally reports discovery, parsing, bridge transfer, top jump, and transcript switch. Differences between the workloads include all product behavior and dependencies; they are not a controlled attribution to any single library or renderer.
 
-Harness regression checks: `bun test benchmarks/hello-world/benchmark.test.ts`.
+Harness regression checks: `bun test HelloWorld/benchmark/benchmark.test.ts`.
 
 ## Shared window-presentation policy
 

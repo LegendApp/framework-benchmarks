@@ -11,7 +11,7 @@ The former eager Swift implementation remains in `Parser.swift` as a test refere
 ```sh
 CHAT_HISTORY_PARSER=swift bun run chat-history:appkit
 CHAT_HISTORY_PARSER=cpp bun run chat-history:swiftui
-CHAT_HISTORY_PARSER=cpp bun run benchmarks/chat-history/run.ts --app appkit,swiftui
+CHAT_HISTORY_PARSER=cpp bun run ChatHistory/benchmark/run.ts --app appkit,swiftui
 ```
 
 Both backends use the same native UI code and lazy collection interface. The environment variable changes document parsing, not catalog discovery. Native content-ready events identify the selected backend, and benchmark JSON records `nativeParser`. Calling `openChatFile(..., parser: .swift)` or `.cpp` explicitly overrides the environment.
@@ -19,7 +19,7 @@ Both backends use the same native UI code and lazy collection interface. The env
 Tests compare Swift and C++ content digests, warnings, row identity, source lifetime, lazy metadata/text access, JSON escaping, reordered envelopes, non-string outputs, and the optional full pinned corpus:
 
 ```sh
-CHAT_HISTORY_TEST_FIXTURES="$PWD/benchmarks/chat-history/fixtures.local.json" \
+CHAT_HISTORY_TEST_FIXTURES="$PWD/ChatHistory/benchmark/fixtures.local.json" \
   swift test -c release --package-path packages/chat-history-swift
 ```
 

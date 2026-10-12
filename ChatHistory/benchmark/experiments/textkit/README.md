@@ -6,8 +6,8 @@ Run validation from the repository root:
 
 ```
 swift test --package-path packages/chat-history-swift --no-parallel
-python3 benchmarks/chat-history/experiments/verify-appkit-layout.py
-python3 benchmarks/chat-history/experiments/verify-swiftui-textkit.py
+python3 ChatHistory/benchmark/experiments/verify-appkit-layout.py
+python3 ChatHistory/benchmark/experiments/verify-swiftui-textkit.py
 ```
 
 The unit suite passed 16 tests. The AppKit harness covers 12 resize/top/tail configurations plus the real 1280-point window and 260-point sidebar. The SwiftUI harness builds the production source with an alternate entry point, checks wide/narrow/wide text preservation and bounds, and verifies a short user message stays compact inside MessageLayout. Logs are retained here.

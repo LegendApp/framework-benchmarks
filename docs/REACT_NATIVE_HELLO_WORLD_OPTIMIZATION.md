@@ -17,7 +17,7 @@ The first corrected-baseline run used two discarded warmups and ten measured
 rounds. It reported 233.8 ms median first content, 244.4 ms p90, and 23.4 MiB
 settled physical footprint. This is a new RN-only run, not a replacement for the
 older cross-framework ranking. Evidence:
-`benchmarks/hello-world/results/2026-09-18T08-41-10.352Z/`.
+`HelloWorld/benchmark/results/2026-09-18T08-41-10.352Z/`.
 
 ## Effective native compiler settings
 
@@ -119,7 +119,7 @@ actual executable-path validation. All greeting OCR checks passed.
 | minified | 233.2 / 245.1 | 23.34 | 8.512 |
 | direct | 233.6 / 234.9 | 23.25 | 8.010 |
 
-Evidence: `benchmarks/hello-world/results/2026-09-18T08-50-49.775Z/`.
+Evidence: `HelloWorld/benchmark/results/2026-09-18T08-50-49.775Z/`.
 
 The size changes are deterministic. The timing differences do not establish a
 startup improvement: most medians are within roughly one recording frame, and
@@ -210,7 +210,7 @@ parity, not a speed gain or proof that small regressions are absent. Retain
 `-Oz` as the requested size-oriented release default; qualify CPU-heavy app
 workloads before interpreting it as a performance improvement.
 
-Evidence: `benchmarks/chat-history/results/2026-09-18T09-10-00.961Z.{json,md}`
+Evidence: `ChatHistory/benchmark/results/2026-09-18T09-10-00.961Z.{json,md}`
 and `2026-09-18T09-15-55.170Z.{json,md}`, with their companion video directories.
 All-app configuration verification, workspace typecheck, and six release-profile
 and signing tests pass in Legend Apps. Test Kitchen Sink also builds with these
@@ -227,7 +227,7 @@ build tree occupies about 3.6 GiB and is retained locally.
 - The promoted official build passed one warmup and three measured greeting OCR
   checks, with separate memory launches: 218.9 / 275.7 ms first-content p50 / p90
   and 23.3 MiB settled footprint. This is smoke validation, not evidence of a
-  speed improvement. Evidence: `benchmarks/hello-world/results/2026-09-18T09-07-10.584Z/`.
+  speed improvement. Evidence: `HelloWorld/benchmark/results/2026-09-18T09-07-10.584Z/`.
 - Eight focused benchmark CLI/configuration tests and TypeScript checking pass.
 - Six variants passed repeated visible-content OCR checks and separate memory
   launches; native artifact paths were checked on each launch.
@@ -246,7 +246,7 @@ disposable local evidence, not files to publish with the talk.
 From this repository root, rebuild the optimized public baseline with:
 
 ```sh
-bun benchmarks/hello-world/build.ts --app react-native
+bun HelloWorld/benchmark/build.ts --app react-native
 ```
 
 The native experiments use the same workspace, scheme, Release configuration,

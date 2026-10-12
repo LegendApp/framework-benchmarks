@@ -189,14 +189,14 @@ bun run benchmark:run --suite chat-history
 Useful focused runs:
 
 ```sh
-bun benchmarks/chat-history/run.ts --app electron --warmups 0 --iterations 1
-bun benchmarks/chat-history/run.ts --app react-native --warmups 0 --iterations 1
-bun benchmarks/chat-history/run.ts --app all --warmups 2 --iterations 10
-bun benchmarks/chat-history/run.ts --app appkit,swiftui --warmups 2 --iterations 10
+bun ChatHistory/benchmark/run.ts --app electron --warmups 0 --iterations 1
+bun ChatHistory/benchmark/run.ts --app react-native --warmups 0 --iterations 1
+bun ChatHistory/benchmark/run.ts --app all --warmups 2 --iterations 10
+bun ChatHistory/benchmark/run.ts --app appkit,swiftui --warmups 2 --iterations 10
 ```
 
 Video recording is the default and requires `ffmpeg`, `ffprobe`, and macOS
-Screen Recording access for `Chat History Benchmark Capture`. Use the low-level `bun benchmarks/chat-history/run.ts` with
+Screen Recording access for `Chat History Benchmark Capture`. Use the low-level `bun ChatHistory/benchmark/run.ts` with
 `--no-video` only for internal-event diagnostics. Those reports are explicitly
 marked diagnostic-only and are not comparable with final video-derived
 reports. Framework callbacks generally precede WindowServer presentation, so
@@ -204,7 +204,7 @@ adding artificial delays to make the two boundaries agree would reduce rather
 than improve measurement accuracy.
 
 Machine-readable JSON, a Markdown summary, cropped videos, and frame sidecars
-are written under the ignored `benchmarks/chat-history/results/` directory. Building and measuring are separate commands; `bun run benchmark` runs existing builds across both workloads.
+are written under the ignored `ChatHistory/benchmark/results/` directory. Building and measuring are separate commands; `bun run benchmark` runs existing builds across both workloads.
 
 ## Modes
 
@@ -373,7 +373,7 @@ The AppKit target uses `NSSplitViewController` and reusable `NSTableView` cells
 for both the session catalog and transcript. It calls the same Swift core
 directly and therefore also reports zero bridge time.
 
-Content detector v3 scores the same transcript region in every app (24–98% of window width, 14–98% of height), excluding sidebar and header animations. Evidence retains legacy full-window scores and all source frame timestamps; saved video preserves frame count. Window timing is still detected separately. Run detector regression tests with `bun test benchmarks/chat-history/video.test.ts`.
+Content detector v3 scores the same transcript region in every app (24–98% of window width, 14–98% of height), excluding sidebar and header animations. Evidence retains legacy full-window scores and all source frame timestamps; saved video preserves frame count. Window timing is still detected separately. Run detector regression tests with `bun test ChatHistory/benchmark/video.test.ts`.
 
 For the measured causes of the native/RN differences, see the [platform timing investigation](PLATFORM_TIMING_REPORT.md).
 

@@ -26,7 +26,7 @@ Build example, after applying the patch:
 ```sh
 swift build -c release -debug-info-format none --package-path apps/chat-history-appkit
 bun apps/chat-history-appkit/scripts/package-benchmark.ts
-CHAT_HISTORY_APPKIT_VARIANT=bounded-text bun benchmarks/chat-history/run.ts --app appkit --warmups 1 --iterations 3 --allow-locked-session --launch-attempts 1
+CHAT_HISTORY_APPKIT_VARIANT=bounded-text bun ChatHistory/benchmark/run.ts --app appkit --warmups 1 --iterations 3 --allow-locked-session --launch-attempts 1
 ```
 
 The investigation compared old whole-window and corrected transcript-region
@@ -40,7 +40,7 @@ See [CAUSAL_ANALYSIS.md](../CAUSAL_ANALYSIS.md) for results and limitations.
 
 ## Production AppKit resize verification
 
-Run `python3 benchmarks/chat-history/experiments/verify-appkit-layout.py`. It builds a temporary copy of the current production AppKit source with the entry point replaced by `appkit-layout-check.swift`. The app source and production bundle are not modified. It opens the second pinned fixture and checks widths, text height, and top/bottom visibility at 1040 → 560 → 400 → 1040 point transcript widths. A required parent-width constraint represents the split-view allocation and prevents the standalone test window from sizing itself to intrinsic content. The helper checks AppKit alignment rectangles, which differ from text-field frames because of alignment insets.
+Run `python3 ChatHistory/benchmark/experiments/verify-appkit-layout.py`. It builds a temporary copy of the current production AppKit source with the entry point replaced by `appkit-layout-check.swift`. The app source and production bundle are not modified. It opens the second pinned fixture and checks widths, text height, and top/bottom visibility at 1040 → 560 → 400 → 1040 point transcript widths. A required parent-width constraint represents the split-view allocation and prevents the standalone test window from sizing itself to intrinsic content. The helper checks AppKit alignment rectangles, which differ from text-field frames because of alignment insets.
 
 ## SwiftUI layout diagnostics
 

@@ -12,7 +12,7 @@ start = source.index('    let app = NSApplication.shared')
 end = source.index('\n  }\n}', start)
 source = source[:start] + '    _ = NSApplication.shared\n    runLayoutQA()\n    runWindowGeometryQA()\n' + source[end:]
 source += '\n' + Path(__file__).with_name('appkit-layout-check.swift').read_text()
-fixtures = json.loads((repo / 'benchmarks/chat-history/fixtures.local.json').read_text())
+fixtures = json.loads((repo / 'ChatHistory/benchmark/fixtures.local.json').read_text())
 with tempfile.TemporaryDirectory(prefix='chat-appkit-layout-check-') as directory:
     package = Path(directory)
     target = package / 'Sources/LayoutQA'

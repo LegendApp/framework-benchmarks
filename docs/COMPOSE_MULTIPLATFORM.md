@@ -47,7 +47,7 @@ Tests compare both provider fixture digests to the established Rust/Swift normal
 
 Uncompressed regular-file sizes, including bundled JVM, renderer and signatures: Hello World 118,827,892 bytes; Chat History 121,912,714 bytes; syntax pack 3,579,102 bytes. System frameworks and build caches are excluded, matching the existing size convention.
 
-Local smoke evidence: `benchmarks/chat-history/results/2026-09-18T19-38-46.335Z.json` and `benchmarks/hello-world/results/2026-09-18T19-39-17.525Z/`. Videos accompany the reports. These ignored machine-local artifacts are not included in prebuilt releases.
+Local smoke evidence: `ChatHistory/benchmark/results/2026-09-18T19-38-46.335Z.json` and `HelloWorld/benchmark/results/2026-09-18T19-39-17.525Z/`. Videos accompany the reports. These ignored machine-local artifacts are not included in prebuilt releases.
 
 Repeat the synthetic lifecycle/visual check after building and preparing the standard runner's capture helpers:
 
@@ -78,6 +78,6 @@ A separate JFR diagnostic launch used the release JARs with the full matching JD
 
 The short profile's main sampled CPU paths were line scanning, range indexing and streaming validation. It establishes no exact hotspot percentages or universal optimality. JVM/JIT startup, GC policy, Compose list preparation and Skia text/blur work remain measured stack costs. There is no current evidence justifying a special heap cap, forced GC, prewarming or changing libraries merely to improve ranking.
 
-Unprofiled smoke evidence: Chat History `benchmarks/chat-history/results/2026-09-18T19-54-57.727Z.json`; Hello World `benchmarks/hello-world/results/2026-09-18T19-55-28.734Z/`. These launches include external video and separate memory measurements, but are not the two-warmup/ten-run publication protocol. The final task-marker layout correction follows those smoke runs and passed a separate synthetic initial/top/switch visual check in `benchmarks/chat-history/results/compose-visual-1789761434428-dark/`; the final frame confirms inline task-marker alignment.
+Unprofiled smoke evidence: Chat History `ChatHistory/benchmark/results/2026-09-18T19-54-57.727Z.json`; Hello World `HelloWorld/benchmark/results/2026-09-18T19-55-28.734Z/`. These launches include external video and separate memory measurements, but are not the two-warmup/ten-run publication protocol. The final task-marker layout correction follows those smoke runs and passed a separate synthetic initial/top/switch visual check in `ChatHistory/benchmark/results/compose-visual-1789761434428-dark/`; the final frame confirms inline task-marker alignment.
 
 The audited chat package is approximately 116.5 MiB plus the unchanged 3.4 MiB external syntax pack; the earlier table describes the original candidate. The practical conclusion is a competent, normally optimized application-stack comparison, with the documented renderer/prefetch/material differences. This is not a claim that all apps perform identical internal work or that further optimization is impossible.
