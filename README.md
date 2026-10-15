@@ -8,6 +8,8 @@ Apple M4, ARM64, macOS 26.6.1; medians of ten fresh-process observations after t
 
 ### Chat History — September 23–24, 2026
 
+> These results predate the published sample chats in `ChatHistory/fixtures/`; they were measured on the author’s local Codex and Claude history. A rerun on the sample set is pending.
+
 [Results and raw data](ChatHistory/results/) · [Conditions and p90](ChatHistory/results/results.md).
 
 | App | Window ms | First content ms | Jump ms | Switch ms | Initial MiB | App MiB | Grammar MiB |
