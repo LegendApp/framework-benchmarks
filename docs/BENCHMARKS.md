@@ -16,7 +16,7 @@ bun install
 # Preview all release builds, then confirm [y/N] before starting.
 bun run benchmark:build
 
-# Chat history only: select and pin local input files once.
+# Chat history only: expand the published synthetic input files.
 bun run benchmark:fixtures
 
 # Measure all existing builds; does not rebuild apps.
@@ -25,7 +25,7 @@ bun run benchmark:run
 
 With no arguments, both commands select **all 20 apps across both workloads**, sequentially. Building replaces selected bundles under `.build/chat-history-benchmarks/` and `.build/hello-world-benchmarks/` and writes provenance manifests there. There is no implicit build during benchmarking. `bun run benchmark` is an alias for `benchmark:run`; unlike the old command, it no longer builds or selects only chat history.
 
-The fixture selector uses your local Codex/Claude histories, choosing two large histories inactive for at least eight days. Paths and hashes stay in ignored `ChatHistory/benchmark/fixtures.local.json`. The runner verifies those files before measurement. Do not repin between comparative runs. Another person's corpus may produce different results. Hello World needs no history files; use `--suite hello-world` if you do not have a suitable corpus.
+Chat History always opens the first two published synthetic samples for initial content and switching. `benchmark:fixtures` expands their compressed JSONL to ignored `.build/chat-history-fixtures/` and writes `ChatHistory/benchmark/fixtures.local.json` for parser tools; the runner prepares and verifies the published samples automatically. All eight sample threads join each app's catalog after it scans real local Codex/Claude history. Discovery remains measured and machine-dependent; opened content is fixed, including on machines without either history store. Historical results used a different corpus and need a full rerun before comparison.
 
 Keep the Mac **unlocked and otherwise idle** throughout measurement. The runner holds the display awake. Close other copies of these apps, particularly Deno apps using port 8000. The full default run can take over an hour, plus build time. Warmups exercise caches: these are fresh-process launches, not cold-machine or first-install measurements.
 
@@ -79,7 +79,7 @@ Install the GitHub CLI (`gh`), authenticate with `gh auth login`, and have Pytho
 # From a checkout at the published release tag:
 bun install
 bun run benchmark:download --repo OWNER/REPO
-bun run benchmark:fixtures  # Once, only when measuring chat history
+bun run benchmark:fixtures  # Optional preparation for chat history; runner also prepares
 bun run benchmark:run
 
 # Pin a release and download only a subset.

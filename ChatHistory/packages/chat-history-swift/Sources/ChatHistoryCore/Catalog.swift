@@ -135,7 +135,15 @@ private func isCodexSubagent(_ path: String) -> Bool {
   return sourceValue["subagent"] != nil
 }
 
-public func getRecentChats(limit: Int = 20, home: String = NSHomeDirectory()) -> CatalogResult {
+private struct BenchmarkCatalog: Decodable {
+  let samples: [ChatSummary]?
+}
+
+public func getRecentChats(
+  limit: Int = 20,
+  home: String = NSHomeDirectory(),
+  benchmarkConfigPath: String? = ProcessInfo.processInfo.environment["CHAT_HISTORY_BENCHMARK_CONFIG"]
+) -> CatalogResult {
   let startedAt = monotonicMilliseconds()
   let boundedLimit = max(0, limit)
   guard boundedLimit > 0 else {
@@ -183,6 +191,12 @@ public func getRecentChats(limit: Int = 20, home: String = NSHomeDirectory()) ->
         updatedAt: updatedAt
       )
     )
+  }
+  if let path = benchmarkConfigPath,
+    let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
+    let config = try? JSONDecoder().decode(BenchmarkCatalog.self, from: data)
+  {
+    candidates += (config.samples ?? []).map { CatalogCandidate(indexed: true, summary: $0) }
   }
   candidates.sort {
     $0.summary.updatedAt == $1.summary.updatedAt

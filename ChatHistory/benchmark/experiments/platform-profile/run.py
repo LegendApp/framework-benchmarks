@@ -4,7 +4,7 @@ import subprocess,json,os,time,urllib.parse,shutil,signal,argparse
 repo=Path(__file__).resolve().parents[4]; root=Path(os.environ.get("CHAT_PLATFORM_PROFILE_ROOT", "/tmp/chat-platform-profile"))
 build=repo/'.build/chat-history-benchmarks'; out=root/'results';out.mkdir(exist_ok=True)
 manifest=json.loads((repo/'ChatHistory/benchmark/fixtures.local.json').read_text())
-config={'version':2,'loadImages':False,'topDelayMs':3000,'switchDelayMs':3000,'targets':[{k:f[k] for k in ['id','provider']} for f in manifest['fixtures']]}
+config={'version':2,'loadImages':False,'topDelayMs':3000,'switchDelayMs':3000,'targets':[{k:f[k] for k in ['id','provider']} for f in manifest['fixtures'][:2]],'samples':manifest['fixtures']}
 (root/'config.json').write_text(json.dumps(config))
 names={'appkit':('Chat History — AppKit.app','ChatHistoryAppKit'),'swiftui':('Chat History — SwiftUI.app','ChatHistorySwiftUI'),'react-native':('Chat History — React Native.app','Legend Chat History')}
 parser=argparse.ArgumentParser();parser.add_argument('--apps',default='appkit,swiftui,react-native');parser.add_argument('--rounds',type=int,default=3);parser.add_argument('--sample',action='store_true');parser.add_argument('--variant',default='baseline');parser.add_argument('--native-trace',action='store_true');parser.add_argument('--baseline-binary',action='store_true');args=parser.parse_args()

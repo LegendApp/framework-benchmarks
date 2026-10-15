@@ -2,6 +2,7 @@ import { realpath } from "node:fs/promises";
 import { homedir } from "node:os";
 import { extname, isAbsolute, join, relative, sep } from "node:path";
 import type { ChatProvider } from "./model";
+import { benchmarkSamples } from "./catalog";
 
 function isWithin(root: string, path: string) {
   const value = relative(root, path);
@@ -18,6 +19,12 @@ export async function validateChatPath(
     throw new Error("Unsupported chat provider");
   }
   const path = await realpath(sourcePath);
+  const samples = await benchmarkSamples();
+  for (const sample of samples) {
+    if (sample.provider === provider && await realpath(sample.path) === path && extname(path) === ".jsonl") {
+      return path;
+    }
+  }
   const roots = provider === "codex"
     ? [join(home, ".codex", "sessions"), join(home, ".codex", "archived_sessions")]
     : [join(home, ".claude", "projects")];

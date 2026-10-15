@@ -10,7 +10,9 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use chat_history_rust::{CatalogResult, get_recent_chat_catalog, open_chat_file, user_home};
+use chat_history_rust::{
+    CatalogResult, benchmark_samples, get_recent_chat_catalog, open_chat_file, user_home,
+};
 use settings::ChatHistorySettings;
 use tauri::Manager;
 
@@ -90,7 +92,11 @@ async fn open_chat(
         let path = PathBuf::from(path)
             .canonicalize()
             .map_err(|error| format!("Invalid transcript path: {error}"))?;
-        if !allowed_root(&home, &provider, &path)
+        let sample_path = benchmark_samples().iter().any(|sample| {
+            sample.provider == provider
+                && Path::new(&sample.path).canonicalize().is_ok_and(|sample| sample == path)
+        });
+        if (!allowed_root(&home, &provider, &path) && !sample_path)
             || path.extension().and_then(|value| value.to_str()) != Some("jsonl")
         {
             return Err("Transcript path is outside the provider history directory".into());

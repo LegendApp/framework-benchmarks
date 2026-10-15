@@ -876,6 +876,37 @@ mod tests {
     }
 
     #[test]
+    fn published_samples_match_owned_parser() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures");
+        let manifest_path = std::env::var_os("CHAT_HISTORY_TEST_FIXTURES")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| root.join("manifest.json"));
+        let manifest: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(manifest_path).unwrap()).unwrap();
+        for sample in manifest["fixtures"].as_array().unwrap() {
+            let name = sample["path"].as_str().unwrap();
+            if !name.ends_with(".jsonl") {
+                continue;
+            }
+            let provider = sample["provider"].as_str().unwrap();
+            let path = root.join(name);
+            let mapped = open_chat_file(provider, &path).unwrap();
+            let (owned, warnings, records, _, _) =
+                parse_chat_text(provider, &fs::read_to_string(&path).unwrap()).unwrap();
+            assert!(!mapped.rows.is_empty(), "{name}");
+            assert_eq!(
+                mapped.source_bytes as u64, sample["sourceBytes"].as_u64().unwrap(), "{name}"
+            );
+            assert_eq!(
+                normalized_content_digest(&mapped.rows), normalized_content_digest(&owned), "{name}"
+            );
+            assert_eq!(mapped.warning_count, warnings, "{name}");
+            assert_eq!(mapped.warning_count, 0, "{name}");
+            assert_eq!(mapped.record_count, records, "{name}");
+        }
+    }
+
+    #[test]
     fn mapped_sources_match_owned_parser() {
         for (provider, name) in [("codex", "codex.jsonl"), ("claude", "claude.jsonl")] {
             let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../chat-history/tests/fixtures").join(name);

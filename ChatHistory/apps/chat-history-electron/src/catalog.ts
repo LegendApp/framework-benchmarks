@@ -2,7 +2,12 @@ import { open, readFile, readdir, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, extname, join } from "node:path";
 import { performance } from "node:perf_hooks";
-import type { CatalogResult, ChatProvider, ChatSummary } from "./model";
+import type { BenchmarkConfig, CatalogResult, ChatProvider, ChatSummary } from "./model";
+
+export async function benchmarkSamples(): Promise<ChatSummary[]> {
+  const path = process.env.CHAT_HISTORY_BENCHMARK_CONFIG;
+  return path ? (JSON.parse(await readFile(path, "utf8")) as BenchmarkConfig).samples ?? [] : [];
+}
 
 type Metadata = {
   title: string;
@@ -198,7 +203,8 @@ export async function getRecentChats(limit = 20, home = (process.env.CHAT_HISTOR
         },
       };
     }));
-  const sorted = [...candidates, ...claudeCandidates]
+  const samples = (await benchmarkSamples()).map((summary) => ({ indexed: true, summary }));
+  const sorted = [...candidates, ...claudeCandidates, ...samples]
     .sort((left, right) => right.summary.updatedAt - left.summary.updatedAt || left.summary.id.localeCompare(right.summary.id));
   const summaries: ChatSummary[] = [];
   const seenIds = new Set<string>();

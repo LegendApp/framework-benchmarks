@@ -3,6 +3,24 @@ import kotlin.test.*
 
 class CatalogTest {
     @Test
+    fun benchmarkSamplesAreListedAlongsideMachineHistory() {
+        val home = Files.createTempDirectory("compose-sample-catalog-test").toFile()
+        try {
+            val sessions = home.resolve(".codex/sessions").apply { mkdirs() }
+            sessions.resolve("local.jsonl").writeText("{}\n")
+            val config = home.resolve("benchmark.json")
+            config.writeText(
+                """{"samples":[{"id":"codex:sample","path":"${home.resolve("sample.jsonl").path}","provider":"codex","title":"Synthetic sample","updatedAt":4000000000000}]}"""
+            )
+            val result = catalog(home, benchmarkConfigPath = config.path)
+            assertEquals(listOf("codex:sample", "codex:local"), result.map { it.id })
+            assertEquals("Synthetic sample", result.first().title)
+        } finally {
+            home.deleteRecursively()
+        }
+    }
+
+    @Test
     fun indexedDiscoveryExcludesSubagentsWithoutParsingTranscripts() {
         val home = Files.createTempDirectory("compose-catalog-test").toFile()
         try {

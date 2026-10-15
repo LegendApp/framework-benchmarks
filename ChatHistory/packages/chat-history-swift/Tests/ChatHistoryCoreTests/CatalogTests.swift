@@ -3,6 +3,24 @@ import Testing
 
 @testable import ChatHistoryCore
 
+@Test func benchmarkSamplesAreListedAlongsideMachineHistory() throws {
+  let fm = FileManager.default
+  let home = fm.temporaryDirectory.appending(path: "legend-sample-catalog-\(UUID().uuidString)")
+  defer { try? fm.removeItem(at: home) }
+  let root = home.appending(path: ".codex/sessions")
+  try fm.createDirectory(at: root, withIntermediateDirectories: true)
+  try Data("{}\n".utf8).write(to: root.appending(path: "local.jsonl"))
+  let config = home.appending(path: "benchmark.json")
+  let sample = ChatSummary(
+    id: "codex:sample", path: home.appending(path: "sample.jsonl").path,
+    provider: .codex, title: "Synthetic sample", updatedAt: 4_000_000_000_000)
+  try JSONEncoder().encode(["samples": [sample]]).write(to: config)
+
+  let result = getRecentChats(home: home.path, benchmarkConfigPath: config.path)
+  #expect(result.summaries.map(\.id) == ["codex:sample", "codex:local"])
+  #expect(result.summaries.first == sample)
+}
+
 @Test func missingProviderDirectoriesReturnAnEmptyCatalog() throws {
   let fileManager = FileManager.default
   let home = fileManager.temporaryDirectory.appending(

@@ -99,14 +99,16 @@ Window opening is detected independently by comparing the future window region
 with its pre-launch pixels. This measures a usable virtualized viewport, not
 construction of every offscreen row.
 
-Images are disabled for the standard corpus so network availability and local
-attachment decoding do not contaminate renderer comparisons. Fixture hashing
-reads every byte before measurement to establish a controlled warm filesystem
-cache. The runner keeps transcript paths and metadata in its private fixture
-manifest, but gives each app only the two pinned provider/id pairs. Every app
-must scan the native Codex and Claude stores, resolve those IDs to paths, and
-construct its sidebar catalog after process launch; that discovery is included
-in first-content time. Reports also show discovery separately as the app-side
+Images are disabled for the standard corpus so attachment decoding does not
+contaminate renderer comparisons. The published [synthetic samples](../fixtures/)
+include image placeholders, code, Markdown, tools, and short and long messages.
+The harness expands compressed JSONL and verifies every sample's size and SHA-256
+before measurement, warming the filesystem cache. Each app receives the same
+sample summaries and the first two sample IDs as the initial and switch targets.
+Every app still scans the machine's native Codex and Claude stores after launch,
+then adds the samples to that catalog. Discovery remains part of first-content
+time and therefore still depends on the local history store. Only the opened
+transcripts are reproducible across machines. Reports show discovery as app-side
 wall time from starting the native catalog request until the catalog is
 available back in the app. Every run starts a new production process. Two warm-up rounds are
 discarded and ten measured rounds rotate app order deterministically, giving
@@ -135,25 +137,25 @@ before writing a report if any implementation or iteration produces a
 different initial or switched digest. This prevents fast but incomplete
 parsers from entering the table without making validation part of the timing.
 
-### Pin stable fixtures
+### Prepare published samples
 
-The selector chooses the two largest non-subagent histories whose final record
-is at least eight days old. It writes an ignored local manifest containing the
-paths, activity times, byte sizes, and SHA-256 hashes:
+The repo contains eight entirely synthetic sessions in `ChatHistory/fixtures/`.
+The initial and switched threads are Codex histories of 239,115,823 and
+148,125,953 bytes, sized from aggregate statistics of the former local corpus.
+Six smaller Codex and Claude sessions broaden format and content coverage.
+No original history content is distributed.
 
 ```sh
 bun run benchmark:fixtures
 ```
 
-The runner verifies size and hash before launching an app and aborts if either
-fixture changed. On the current benchmark machine the pinned pair is:
-
-- `Diagnose LegendList overlap` — 228.25 MiB, last active August 20, 2026;
-- `Audit app performance issues` — 140.99 MiB, last active August 18, 2026.
-
-Both are Codex histories because this machine currently has no `~/.claude`
-history store. Claude remains covered by parser conformance fixtures, but a real
-Claude performance corpus requires importing and pinning a stable Claude file.
+This expands the two large `.jsonl.gz` files into ignored
+`.build/chat-history-fixtures/` and writes an ignored local manifest for parser
+tools. The runner also prepares these samples automatically and always uses the
+published manifest, even if an old local manifest is present. No history-store
+installation or local Codex/Claude files are required. Expansion is outside
+measurement and fixture hashes are checked before launch. The historical results
+above used the former local corpus; rerun all apps before comparing sample results.
 
 Prebuilt apps can be installed with `bun run benchmark:download --suite chat-history --repo OWNER/REPO` from the matching release checkout. See the [release instructions](../../docs/BENCHMARKS.md#prebuilt-releases) for prerequisites, version pinning, and publishing.
 

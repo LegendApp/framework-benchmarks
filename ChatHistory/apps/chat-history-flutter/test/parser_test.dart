@@ -17,6 +17,31 @@ String fixture(String name) {
 }
 
 void main() {
+  test('published sample files parse in the shared parser', () {
+    final root = Directory('${Directory.current.path}/../../fixtures');
+    final manifestPath =
+        Platform.environment['CHAT_HISTORY_TEST_FIXTURES'] ??
+        '${root.path}/manifest.json';
+    final manifest = jsonDecode(
+      File(manifestPath).readAsStringSync(),
+    ) as Map<String, dynamic>;
+    for (final sample in manifest['fixtures'] as List<dynamic>) {
+      final name = sample['path'] as String;
+      if (!name.endsWith('.jsonl')) continue;
+      final document = openChatFile(
+        ChatProviderName.parse(sample['provider'] as String),
+        File(name).isAbsolute ? name : '${root.path}/$name',
+      );
+      try {
+        expect(document.rows, isNotEmpty, reason: name);
+        expect(document.sourceBytes, sample['sourceBytes'], reason: name);
+        expect(document.warningCount, 0, reason: name);
+      } finally {
+        closeChatDocument(document);
+      }
+    }
+  });
+
   test('validates ignored JSON values and decodes selected strings', () {
     for (final source in [r'{"skip":[1,]}', r'{"skip":"\q"}', r'{"skip":01}']) {
       final bytes = Uint8List.fromList(utf8.encode(source));

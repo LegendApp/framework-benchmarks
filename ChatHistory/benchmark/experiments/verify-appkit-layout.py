@@ -26,6 +26,7 @@ let package = Package(name: "LayoutQA", platforms: [.macOS(.v14)], dependencies:
     subprocess.run(['swift', 'build', '-c', 'release', '-debug-info-format', 'none', '--package-path', directory], check=True)
     config = package / 'benchmark.json'
     config.write_text(json.dumps({'version': 2, 'loadImages': False, 'topDelayMs': 100000,
-        'switchDelayMs': 100000, 'targets': [{'id': item['id'], 'provider': item['provider']} for item in fixtures['fixtures']]}))
+        'switchDelayMs': 100000, 'targets': [{'id': item['id'], 'provider': item['provider']} for item in fixtures['fixtures'][:2]],
+        'samples': fixtures['fixtures']}))
     subprocess.run([str(package / '.build/release/LayoutQA'), fixtures['fixtures'][1]['path']], check=True,
         env={**os.environ, 'CHAT_HISTORY_BENCHMARK_CONFIG': str(config)})

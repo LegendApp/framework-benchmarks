@@ -187,7 +187,11 @@ bool _isCodexSubagent(String path) {
   }
 }
 
-CatalogResult getRecentChats(int limit, String home) {
+CatalogResult getRecentChats(
+  int limit,
+  String home, {
+  String? benchmarkConfigPath,
+}) {
   final stopwatch = Stopwatch()..start();
   final boundedLimit = limit < 0 ? 0 : limit;
   if (boundedLimit == 0 || home.isEmpty) {
@@ -245,6 +249,17 @@ CatalogResult getRecentChats(int limit, String home) {
         ),
       ),
     );
+  }
+  final configPath =
+      benchmarkConfigPath ??
+      Platform.environment['CHAT_HISTORY_BENCHMARK_CONFIG'];
+  final samples = configPath == null ? null : _readJson(configPath)?['samples'];
+  if (samples is List<dynamic>) {
+    for (final sample in samples.whereType<Map<String, dynamic>>()) {
+      candidates.add(
+        _Candidate(indexed: true, summary: ChatSummary.fromJson(sample)),
+      );
+    }
   }
   candidates.sort((left, right) {
     final date = right.summary.updatedAt.compareTo(left.summary.updatedAt);

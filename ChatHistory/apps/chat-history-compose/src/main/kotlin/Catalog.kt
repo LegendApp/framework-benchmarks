@@ -22,7 +22,11 @@ fun JsonObject.time(key: String): Long =
         it.longOrNull ?: runCatching { Instant.parse(it.content).toEpochMilli() }.getOrDefault(0)
     } ?: 0
 
-fun catalog(home: File, limit: Int = 20): List<Summary> {
+fun catalog(
+    home: File,
+    limit: Int = 20,
+    benchmarkConfigPath: String? = System.getenv("CHAT_HISTORY_BENCHMARK_CONFIG"),
+): List<Summary> {
     val codex = HashMap<String, Pair<String, Long>>()
     val claude = HashMap<String, Pair<String, Long>>()
     File(home, ".codex/session_index.jsonl")
@@ -77,6 +81,19 @@ fun catalog(home: File, limit: Int = 20): List<Summary> {
                     meta?.first?.takeIf { it.isNotEmpty() } ?: fallback,
                     time,
                 ) to (provider == "claude" || meta != null)
+        }
+    }
+    benchmarkConfigPath?.let { path ->
+        (jsonFile(File(path))?.get("samples") as? JsonArray)?.forEach { raw ->
+            val sample = raw.jsonObject
+            candidates +=
+                Summary(
+                    sample.text("id"),
+                    sample.text("path"),
+                    sample.text("provider"),
+                    sample.text("title"),
+                    sample.time("updatedAt"),
+                ) to true
         }
     }
     val seen = HashSet<String>()

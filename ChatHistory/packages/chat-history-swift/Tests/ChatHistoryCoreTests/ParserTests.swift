@@ -14,6 +14,26 @@ private func fixture(_ name: String) throws -> String {
   try String(contentsOf: fixtureRoot.appending(path: name), encoding: .utf8)
 }
 
+@Test func publishedSamplesMatchNativeAndSwiftParsers() throws {
+  let root = fixtureRoot.deletingLastPathComponent().deletingLastPathComponent()
+    .deletingLastPathComponent().deletingLastPathComponent().appending(path: "fixtures")
+  let data = try Data(contentsOf: root.appending(path: "manifest.json"))
+  let manifest = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+  for sample in manifest["fixtures"] as! [[String: Any]] {
+    let name = sample["path"] as! String
+    guard name.hasSuffix(".jsonl") else { continue }
+    let provider = ChatProvider(rawValue: sample["provider"] as! String)!
+    let path = root.appending(path: name).path
+    let native = try openChatFile(provider: provider, path: path, parser: .cpp)
+    let swift = try openChatFile(provider: provider, path: path, parser: .swift)
+    #expect(!native.rows.isEmpty)
+    #expect(native.sourceBytes == sample["sourceBytes"] as! Int)
+    #expect(native.contentDigest == swift.contentDigest)
+    #expect(native.warningCount == 0)
+    #expect(native.warningCount == swift.warningCount)
+  }
+}
+
 @Test func normalizesCodexHistory() throws {
   let result = parseChatText(provider: .codex, text: try fixture("codex.jsonl"))
   #expect(result.recordCount == 14)

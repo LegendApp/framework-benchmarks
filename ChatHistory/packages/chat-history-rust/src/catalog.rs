@@ -193,6 +193,41 @@ fn is_codex_subagent(path: &Path) -> bool {
 }
 
 pub fn get_recent_chat_catalog(limit: usize, home: &Path) -> CatalogResult {
+    let config = env::var_os("CHAT_HISTORY_BENCHMARK_CONFIG").map(PathBuf::from);
+    catalog_with_config(limit, home, config.as_deref())
+}
+
+pub fn benchmark_samples() -> Vec<ChatSummary> {
+    env::var_os("CHAT_HISTORY_BENCHMARK_CONFIG")
+        .map(|path| samples_from_config(Path::new(&path)))
+        .unwrap_or_default()
+}
+
+fn samples_from_config(path: &Path) -> Vec<ChatSummary> {
+    let Some(config) = fs::read_to_string(path)
+        .ok()
+        .and_then(|source| serde_json::from_str::<Value>(&source).ok())
+    else {
+        return Vec::new();
+    };
+    config
+        .get("samples")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|sample| {
+            Some(ChatSummary {
+                id: sample.get("id")?.as_str()?.into(),
+                path: sample.get("path")?.as_str()?.into(),
+                provider: sample.get("provider")?.as_str()?.into(),
+                title: sample.get("title")?.as_str()?.into(),
+                updated_at: sample.get("updatedAt")?.as_f64()?,
+            })
+        })
+        .collect()
+}
+
+fn catalog_with_config(limit: usize, home: &Path, config: Option<&Path>) -> CatalogResult {
     let started = Instant::now();
     if limit == 0 {
         return CatalogResult {
@@ -262,6 +297,16 @@ pub fn get_recent_chat_catalog(limit: usize, home: &Path) -> CatalogResult {
             },
         });
     }
+    if let Some(config) = config {
+        candidates.extend(
+            samples_from_config(config)
+                .into_iter()
+                .map(|summary| Candidate {
+                    indexed: true,
+                    summary,
+                }),
+        );
+    }
     candidates.sort_by(|left, right| {
         right
             .summary
@@ -318,6 +363,35 @@ mod tests {
         ));
         fs::create_dir_all(&root).unwrap();
         root
+    }
+
+    #[test]
+    fn benchmark_samples_are_listed_alongside_machine_history() {
+        let root = temporary_home();
+        let sessions = root.join(".codex/sessions");
+        fs::create_dir_all(&sessions).unwrap();
+        fs::write(sessions.join("local.jsonl"), "{}\n").unwrap();
+        let config = root.join("benchmark.json");
+        fs::write(
+            &config,
+            serde_json::json!({ "samples": [{
+                "id": "codex:sample", "path": root.join("sample.jsonl"), "provider": "codex",
+                "title": "Synthetic sample", "updatedAt": 4_000_000_000_000u64
+            }]})
+            .to_string(),
+        )
+        .unwrap();
+        let result = catalog_with_config(20, &root, Some(&config));
+        fs::remove_dir_all(root).unwrap();
+        assert_eq!(
+            result
+                .summaries
+                .iter()
+                .map(|summary| summary.id.as_str())
+                .collect::<Vec<_>>(),
+            ["codex:sample", "codex:local"]
+        );
+        assert_eq!(result.summaries[0].title, "Synthetic sample");
     }
 
     #[test]

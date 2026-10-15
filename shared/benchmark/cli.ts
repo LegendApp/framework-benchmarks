@@ -94,7 +94,7 @@ export function preflightBuilds(jobs: ReturnType<typeof plan>, root = repository
     }
     if (job.suite === "chat-history") {
       verifyRenderingInputs({ ...inputs, currentPolicy: renderingInputs(root, "policy") });
-      if (!existsSync(resolve(root, "ChatHistory/benchmark/fixtures.local.json"))) throw new Error("Missing pinned chat fixtures. Run bun run benchmark:fixtures first.");
+      if (!existsSync(resolve(root, "ChatHistory/fixtures/manifest.json"))) throw new Error("Missing published chat samples.");
     }
   }
   assertReleaseSet(releaseRecords, root);

@@ -115,11 +115,12 @@ export type BenchmarkConfig = {
   switchDelayMs: number;
   topDelayMs: number;
   targets: [BenchmarkTarget, BenchmarkTarget];
+  samples?: ChatSummary[];
   version: 2;
 };
 
 export type BenchmarkFixtureManifest = {
-  fixtures: [BenchmarkFixture, BenchmarkFixture];
+  fixtures: BenchmarkFixture[];
   loadImages: boolean;
   switchDelayMs: number;
   version: 2;

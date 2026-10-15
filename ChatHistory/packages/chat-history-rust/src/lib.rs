@@ -6,7 +6,7 @@ mod catalog;
 mod model;
 mod parser;
 
-pub use catalog::{get_recent_chat_catalog, user_home};
+pub use catalog::{benchmark_samples, get_recent_chat_catalog, user_home};
 pub use model::{
     CatalogResult, ChatDocument, ChatFileChange, ChatRow, ChatSummary, NativeTiming,
     normalized_content_digest,

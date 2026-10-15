@@ -1,11 +1,10 @@
 import { installRuntimeGrammarPacks, verifyAppGrammarPack, type GrammarPackRecord } from "./grammar-packs";
 import { renderingContract, renderingInputs, verifyRenderingInputs, type RenderingInputs } from "./fairness";
-import { createHash } from "node:crypto";
+import { prepareFixtures } from "./fixtures";
 import { execFileSync } from "node:child_process";
 import {
   appendFileSync,
   copyFileSync,
-  createReadStream,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -21,7 +20,6 @@ import { basename, join, resolve } from "node:path";
 import type {
   BenchmarkConfig,
   BenchmarkContentReadyEvent,
-  BenchmarkFixtureManifest,
   BenchmarkViewportReadyEvent,
 } from "../apps/chat-history-electron/src/model";
 import { analyzeRecording, type VideoEvidence } from "./video";
@@ -109,7 +107,6 @@ type AppResult = {
 
 const repositoryRoot = resolve(import.meta.dir, "../..");
 const buildRoot = resolve(repositoryRoot, ".build/chat-history-benchmarks");
-const manifestPath = resolve(import.meta.dir, "fixtures.local.json");
 const resultsRoot = resolve(import.meta.dir, "../results");
 const windowInfoExecutable = resolve(buildRoot, "chat-history-window-info");
 const windowInfoSource = resolve(import.meta.dir, "../../shared/capture/window-info.swift");
@@ -205,25 +202,6 @@ function selectedApps(): AppName[] {
     return requested;
   }
   throw new Error(`Unknown app ${value}`);
-}
-
-async function sha256(path: string) {
-  const hash = createHash("sha256");
-  for await (const chunk of createReadStream(path)) {
-    hash.update(chunk);
-  }
-  return hash.digest("hex");
-}
-
-async function verifyFixtures(config: BenchmarkFixtureManifest) {
-  for (const fixture of config.fixtures) {
-    if (statSync(fixture.path).size !== fixture.sourceBytes) {
-      throw new Error(`Fixture size changed: ${fixture.path}`);
-    }
-    if (await sha256(fixture.path) !== fixture.sha256) {
-      throw new Error(`Fixture hash changed: ${fixture.path}`);
-    }
-  }
 }
 
 function bundleSize(path: string): number {
@@ -827,16 +805,13 @@ async function main() {
       }
     }
   }
-  const fixtureManifest = JSON.parse(readFileSync(manifestPath, "utf8")) as BenchmarkFixtureManifest;
-  if (fixtureManifest.version !== 2 || fixtureManifest.fixtures.length !== 2) {
-    throw new Error("Unsupported fixture manifest; rerun bun run benchmark:fixtures");
-  }
-  await verifyFixtures(fixtureManifest);
+  const fixtureManifest = await prepareFixtures();
   const config: BenchmarkConfig = {
     loadImages: fixtureManifest.loadImages,
     switchDelayMs: Math.max(fixtureManifest.switchDelayMs, minimumSettledPhaseDelayMs),
     topDelayMs: Math.max(fixtureManifest.switchDelayMs, minimumSettledPhaseDelayMs),
-    targets: fixtureManifest.fixtures.map(({ id, provider }) => ({ id, provider })) as BenchmarkConfig["targets"],
+    targets: fixtureManifest.fixtures.slice(0, 2).map(({ id, provider }) => ({ id, provider })) as BenchmarkConfig["targets"],
+    samples: fixtureManifest.fixtures.map(({ id, provider, title, updatedAt, path }) => ({ id, provider, title, updatedAt, path })),
     version: 2,
   };
   const iterations = Math.max(1, Number(option("--iterations") ?? 10));

@@ -74,7 +74,7 @@ Use an unlocked, idle Mac with an active display, Bun, Xcode command-line tools,
 ```sh
 bun install
 bun run benchmark:build      # Preview and confirm release builds
-bun run benchmark:fixtures   # Pin local histories once; Chat History only
+bun run benchmark:fixtures   # Expand published synthetic chats; Chat History only
 bun run benchmark:run        # Measure existing builds; does not rebuild
 
 # Select one workload/framework (default: both workloads, all apps).
@@ -83,3 +83,5 @@ bun run benchmark:run --suite hello-world --app gpui
 ```
 
 Use `--help` for options or `--dry-run` to inspect the plan. See the [command and release reference](docs/BENCHMARKS.md), [Chat History methodology](ChatHistory/benchmark/README.md), [Hello World methodology](HelloWorld/benchmark/README.md), and [framework report](docs/DESKTOP_FRAMEWORK_REPORT.md) for details.
+
+Chat History opens fixed synthetic sample threads in every app while retaining the local Codex/Claude catalog scan in discovery timing. The displayed September results predate this sample corpus.

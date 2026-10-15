@@ -135,6 +135,11 @@ async function emitBenchmarkEvent(
 
 async function validatedChatPath(provider: ChatProvider, sourcePath: string) {
   const path = await Deno.realPath(sourcePath);
+  for (const sample of (await benchmarkConfig())?.samples ?? []) {
+    if (sample.provider === provider && await Deno.realPath(sample.path) === path && extname(path) === ".jsonl") {
+      return path;
+    }
+  }
   const home = homeDirectory();
   const roots = provider === "codex"
     ? [
