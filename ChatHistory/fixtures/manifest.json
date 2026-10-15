@@ -1,0 +1,95 @@
+{
+  "version": 2,
+  "loadImages": false,
+  "switchDelayMs": 3000,
+  "fixtures": [
+    {
+      "id": "codex:synthetic-codex-first",
+      "provider": "codex",
+      "title": "Synthetic Codex First",
+      "path": "synthetic-codex-first.jsonl.gz",
+      "sourceBytes": 239115823,
+      "sha256": "aafdff19daae1ad1799b56b294700109687d9942e9b9a6af74cc2b2b8fb347d0",
+      "lastActivityAt": 1767225600000,
+      "modifiedAt": 1767225600000,
+      "updatedAt": 1767225600000
+    },
+    {
+      "id": "codex:synthetic-codex-switch",
+      "provider": "codex",
+      "title": "Synthetic Codex Switch",
+      "path": "synthetic-codex-switch.jsonl.gz",
+      "sourceBytes": 148125953,
+      "sha256": "e1c02ea68f03ce47e5b79812bfd9dd608522cc9766e02a0066bc1406f62253e9",
+      "lastActivityAt": 1767225600000,
+      "modifiedAt": 1767225600000,
+      "updatedAt": 1767225600000
+    },
+    {
+      "id": "codex:synthetic-codex-brief",
+      "provider": "codex",
+      "title": "Synthetic Codex Brief",
+      "path": "synthetic-codex-brief.jsonl",
+      "sourceBytes": 4527,
+      "sha256": "7e7ed23ad232c951314bd1c6ca3004b2a5ff6517426c5debe9af5eb5a14e75c0",
+      "lastActivityAt": 1767225600000,
+      "modifiedAt": 1767225600000,
+      "updatedAt": 1767225600000
+    },
+    {
+      "id": "codex:synthetic-codex-language-tour",
+      "provider": "codex",
+      "title": "Synthetic Codex Language Tour",
+      "path": "synthetic-codex-language-tour.jsonl",
+      "sourceBytes": 364632,
+      "sha256": "54ca95be0142d2cd3c765104fc1649ec9c4848b315731a021c8e9db85d052808",
+      "lastActivityAt": 1767225600000,
+      "modifiedAt": 1767225600000,
+      "updatedAt": 1767225600000
+    },
+    {
+      "id": "claude:synthetic-claude-brief",
+      "provider": "claude",
+      "title": "Synthetic Claude Brief",
+      "path": "synthetic-claude-brief.jsonl",
+      "sourceBytes": 3379,
+      "sha256": "56547f4f7d138eca35b962d43475a8074bf3ec12926045c86f374d8b9bcac076",
+      "lastActivityAt": 1767225600000,
+      "modifiedAt": 1767225600000,
+      "updatedAt": 1767225600000
+    },
+    {
+      "id": "claude:synthetic-claude-branches",
+      "provider": "claude",
+      "title": "Synthetic Claude Branches",
+      "path": "synthetic-claude-branches.jsonl",
+      "sourceBytes": 17274,
+      "sha256": "1489e3e08ad68df22688ef339e8cb532a67225f89c383193ae12ef11b75fc00e",
+      "lastActivityAt": 1767225600000,
+      "modifiedAt": 1767225600000,
+      "updatedAt": 1767225600000
+    },
+    {
+      "id": "claude:synthetic-claude-language-tour",
+      "provider": "claude",
+      "title": "Synthetic Claude Language Tour",
+      "path": "synthetic-claude-language-tour.jsonl",
+      "sourceBytes": 672872,
+      "sha256": "ad8c0394ce11e7c8cf875f14abb700e2fbfe75f89a1a151c1d25587e8d6ee918",
+      "lastActivityAt": 1767225600000,
+      "modifiedAt": 1767225600000,
+      "updatedAt": 1767225600000
+    },
+    {
+      "id": "claude:synthetic-claude-long-notebook",
+      "provider": "claude",
+      "title": "Synthetic Claude Long Notebook",
+      "path": "synthetic-claude-long-notebook.jsonl",
+      "sourceBytes": 2340196,
+      "sha256": "2d9da29d698da93fc62a681f0da9f3f1f69029ac9842d9e47d1f51e460710fcc",
+      "lastActivityAt": 1767225600000,
+      "modifiedAt": 1767225600000,
+      "updatedAt": 1767225600000
+    }
+  ]
+}
